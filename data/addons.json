@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:15:30Z",
+ "updated": "2026-11-15T19:15:49Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1294,6 +1294,19 @@
    "filename": "Real Raft Survival (world_template) (MDF).mctemplate",
    "sha256": "27679466cf4216e0e1e19e9040be68af523b96d84abe281535085c037b7d0d4a",
    "added": "2026-11-15T19:15:30Z",
+   "icon": true
+  },
+  {
+   "id": "another-furniture-add-on",
+   "name": "Another Furniture Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/another-furniture-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/another-furniture-add-on/Another.Furniture.Add-On.mcaddon",
+   "size": 8275350,
+   "type": "addon",
+   "filename": "Another Furniture Add-On .mcaddon",
+   "sha256": "e67115ab664f25722a3e2008a0c265dbb3c9b1ddb2ca650c98d9bde68e0a8258",
+   "added": "2026-11-15T19:15:49Z",
    "icon": true
   }
  ]
