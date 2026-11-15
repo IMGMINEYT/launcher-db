@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:47:16Z",
+ "updated": "2026-11-15T18:47:44Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -294,6 +294,19 @@
    "filename": "PixelPals Evolved Add-On 1.1 BY MARKETPLACE TRADER.mcaddon",
    "sha256": "8a61453d5e0452efb193b437e2496eb64fc6947442eb42d9b7d912ca1fdc7940",
    "added": "2026-11-15T18:47:16Z",
+   "icon": true
+  },
+  {
+   "id": "ultra-cars-add-on",
+   "name": "Ultra Cars Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/ultra-cars-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/ultra-cars-add-on/Ultra.Cars.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 11689445,
+   "type": "addon",
+   "filename": "Ultra Cars Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "f755e289a2cd0b02f56f2baa3f401dda7a1a9d8beb927a272ba6b7c1059b52d0",
+   "added": "2026-11-15T18:47:44Z",
    "icon": true
   }
  ]
