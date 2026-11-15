@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:25:04Z",
+ "updated": "2026-11-15T19:25:18Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -519,6 +519,19 @@
    "filename": "Cute Texture Pack by FREE MC MARKET PLACE.mcpack",
    "sha256": "739259aa3aa2190bf45120918cfdd45d7f6c00c727a610d2755b899185478b8f",
    "added": "2026-11-15T19:24:57Z",
+   "icon": true
+  },
+  {
+   "id": "lycanforge-add-on-v1-2-0",
+   "name": "LycanForge Add-On v1.2.0",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/lycanforge-add-on-v1-2-0.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/lycanforge-add-on-v1-2-0/LycanForge.Add-On.v1.2.0.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 5610966,
+   "type": "addon",
+   "filename": "LycanForge Add-On v1.2.0 by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "668986346b27e3af403adb91abaed69b9867293916fe8b0cf85a0af538b08fc1",
+   "added": "2026-11-15T19:25:18Z",
    "icon": true
   }
  ]
