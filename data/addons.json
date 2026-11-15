@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:33:45Z",
+ "updated": "2026-11-15T19:34:08Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -934,6 +934,19 @@
    "filename": "Watchers (skin_pack).mcpack",
    "sha256": "a5c635893126cc06d4287d0447e2e68af5eaa9a62703a722b41f1b9c5030644c",
    "added": "2026-11-15T19:33:44Z"
+  },
+  {
+   "id": "roller-coaster-add-on-1-0-addon",
+   "name": "Roller Coaster Add-On 1.0 (addon)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/roller-coaster-add-on-1-0-addon.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/roller-coaster-add-on-1-0-addon/Roller.Coaster.Add-On.1.0.addon.mcaddon",
+   "size": 41915932,
+   "type": "addon",
+   "filename": "Roller Coaster Add-On 1.0 (addon).mcaddon",
+   "sha256": "41fe5887bf35fc1216c7fb466f88804458844e3c11e7c39e3c7b22a84c21e38d",
+   "added": "2026-11-15T19:34:08Z",
+   "icon": true
   }
  ]
 }
