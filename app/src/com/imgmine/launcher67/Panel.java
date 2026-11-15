@@ -469,7 +469,7 @@ final class Panel {
             List<Addon> c = Api.cached(ctx);
             if (c != null) { all = c; refilter(false); }
         }
-        if (all.isEmpty() || System.currentTimeMillis() - Api.lastFetch > 60000) fetch();
+        if (all.isEmpty() || System.currentTimeMillis() - Api.lastFetch > 10000) fetch();
         root.setAlpha(0f);
         card.setScaleX(0.94f);
         card.setScaleY(0.94f);
