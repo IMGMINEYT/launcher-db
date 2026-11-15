@@ -14,7 +14,7 @@ import android.view.ViewGroup;
 import android.widget.*;
 
 public class MainActivity extends Activity {
-    private TextView allow, notif, start, stop, hint, dnsNote;
+    private TextView allow, notif, start, stop, hint, dnsNote, usage;
     private LinearLayout promoBox;
 
     private boolean canOverlay() { return Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(this); }
@@ -77,7 +77,13 @@ public class MainActivity extends Activity {
             col.addView(notif, wrap(0));
         }
 
-        col.addView(step(Build.VERSION.SDK_INT >= 33 ? "3" : "2", "Start", false));
+        col.addView(step(Build.VERSION.SDK_INT >= 33 ? "3" : "2", "Hide the ball when Minecraft is closed (Usage access)", false));
+        usage = Ui.button(this, "ALLOW USAGE ACCESS", Ui.CARD, Ui.INK);
+        usage.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { try { startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)); } catch (Exception ignored) {} }
+        });
+        col.addView(usage, wrap(0));
+        col.addView(step(Build.VERSION.SDK_INT >= 33 ? "4" : "3", "Start", false));
         start = Ui.button(this, "START + OPEN MINECRAFT", Ui.GREEN, 0xFF0C1A0E);
         start.setTextSize(16);
         start.setPadding(Ui.dp(14), Ui.dp(14), Ui.dp(14), Ui.dp(16));
@@ -189,6 +195,9 @@ public class MainActivity extends Activity {
         allow.setText(ok ? "ALLOWED" : "ALLOW");
         allow.setAlpha(ok ? 0.5f : 1f);
         start.setAlpha(ok ? 1f : 0.5f);
+        boolean us = OverlayService.hasUsage(this);
+        usage.setText(us ? "USAGE ACCESS ON" : "ALLOW USAGE ACCESS");
+        usage.setAlpha(us ? 0.5f : 1f);
         dnsNote.setVisibility(adBlockDns() ? View.VISIBLE : View.GONE);
         stop.setVisibility(OverlayService.running ? View.VISIBLE : View.GONE);
         if (Build.VERSION.SDK_INT >= 33) {
