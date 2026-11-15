@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:01:11Z",
+ "updated": "2026-11-15T19:01:39Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -892,6 +892,19 @@
    "filename": "Creepy Plushies Add-On 1.1 BY MARKETPLACE TRADER.mcaddon",
    "sha256": "2fdb2d230d595065a4dedb9084db9cd615be9258b346a3e0c92ea42052ea56eb",
    "added": "2026-11-15T19:01:11Z",
+   "icon": true
+  },
+  {
+   "id": "over-mob-add-on",
+   "name": "Over Mob Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/over-mob-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/over-mob-add-on/Over.Mob.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 13706415,
+   "type": "addon",
+   "filename": "Over Mob Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "622944d3556277156b3f470385cbb804048ed1def020a7d7fcd6d66831600981",
+   "added": "2026-11-15T19:01:38Z",
    "icon": true
   }
  ]
