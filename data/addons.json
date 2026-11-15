@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:27:04Z",
+ "updated": "2026-11-15T19:27:26Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -584,6 +584,19 @@
    "filename": "Skyblock 2 BY MARKETPLACE TRADER.mcworld",
    "sha256": "803105162c06729c1c96da04ad043f5b9bcde059fac58df3b9e6eacbc70c46bb",
    "added": "2026-11-15T19:27:04Z",
+   "icon": true
+  },
+  {
+   "id": "anime-jutsu-2-0-add-on",
+   "name": "ANIME JUTSU 2.0 (Add-on)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/anime-jutsu-2-0-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/anime-jutsu-2-0-add-on/ANIME.JUTSU.2.0.Add-on.mcaddon",
+   "size": 16135156,
+   "type": "addon",
+   "filename": "ANIME JUTSU 2.0 (Add-on).mcaddon",
+   "sha256": "69f7ca85faacb85dceda2aa96edcd24b7ca1b4669d9579b1a26737c5b503d0bc",
+   "added": "2026-11-15T19:27:26Z",
    "icon": true
   }
  ]
