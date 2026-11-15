@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:12:26Z",
+ "updated": "2026-11-15T19:15:30Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1281,6 +1281,19 @@
    "filename": "Raft Survival Add-On by skupka.mcaddon",
    "sha256": "8837a6e95389fa1e88d2accd2bc08b15065f09fcd30a1b6eeed7069dc6cd85cc",
    "added": "2026-11-15T19:12:26Z",
+   "icon": true
+  },
+  {
+   "id": "real-raft-survival-world-template-mdf",
+   "name": "Real Raft Survival (world template) (MDF)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/real-raft-survival-world-template-mdf.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/real-raft-survival-world-template-mdf/Real.Raft.Survival.world_template.MDF.mctemplate",
+   "size": 164582431,
+   "type": "template",
+   "filename": "Real Raft Survival (world_template) (MDF).mctemplate",
+   "sha256": "27679466cf4216e0e1e19e9040be68af523b96d84abe281535085c037b7d0d4a",
+   "added": "2026-11-15T19:15:30Z",
    "icon": true
   }
  ]
