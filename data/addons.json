@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:40:30Z",
+ "updated": "2026-11-15T18:40:39Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -112,6 +112,19 @@
    "filename": "Roads + Add-On by FREE MC MARKET PLACE.mcaddon",
    "sha256": "537184f336fd8d269fff55fdf15c3dcb9d4a8cee450d61df7b2c48621530068e",
    "added": "2026-11-15T18:40:29Z",
+   "icon": true
+  },
+  {
+   "id": "markers-pack",
+   "name": "Markers Pack",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/markers-pack.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/markers-pack/Markers.Pack.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 371560,
+   "type": "addon",
+   "filename": "Markers Pack by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "e4746d1a5cf0c02c176f710a6e901c11c5761034a6cba90e3a7ad9a68882f129",
+   "added": "2026-11-15T18:40:39Z",
    "icon": true
   }
  ]
