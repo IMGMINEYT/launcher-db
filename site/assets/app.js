@@ -44,7 +44,9 @@
     var r=document.createElement('div');r.className='row';r.appendChild(dl(a));
     var c=document.createElement('button');c.className='btn ghost';c.textContent='Close';c.onclick=function(){dlg.close()};r.appendChild(c);
     if(a.size){var s=document.createElement('span');s.style.cssText='color:var(--mute);align-self:center';s.textContent=fmt(a.size);r.appendChild(s)}
-    d.appendChild(h);d.appendChild(p);d.appendChild(r);dlg.appendChild(d);
+    d.appendChild(h);d.appendChild(p);d.appendChild(r);
+    if(a.source&&/^https:\/\//.test(a.source)){var sc=document.createElement('p');sc.className='desc';sc.appendChild(document.createTextNode('Details from '));var sl=document.createElement('a');sl.href=a.source;sl.rel='noopener nofollow';sl.target='_blank';sl.textContent=a.source.replace(/^https:\/\/(www\.)?/,'').split('/')[0];sc.appendChild(sl);d.appendChild(sc)}
+    dlg.appendChild(d);
     if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');
   }
   function card(a,i){
