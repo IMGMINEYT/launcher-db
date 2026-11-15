@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:57:09Z",
+ "updated": "2026-11-15T18:57:23Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -736,6 +736,19 @@
    "filename": "DYNAMIC LIGHT Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "6e84b1aafa432db227fcbae4d6be8e57fa7ae15d201b6366252940a2785449ad",
    "added": "2026-11-15T18:57:08Z",
+   "icon": true
+  },
+  {
+   "id": "herschel-backpack-trials-add-on",
+   "name": "Herschel Backpack Trials Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/herschel-backpack-trials-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/herschel-backpack-trials-add-on/Herschel.Backpack.Trials.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 566839,
+   "type": "addon",
+   "filename": "Herschel Backpack Trials Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "8a4ccd4ab572994f15ec0ed3bc0a543efae857ab0433ccf3fe7d5e35fb431209",
+   "added": "2026-11-15T18:57:23Z",
    "icon": true
   }
  ]
