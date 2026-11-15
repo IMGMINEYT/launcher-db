@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:55:43Z",
+ "updated": "2026-11-15T18:55:54Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -658,6 +658,19 @@
    "filename": "Avatar Legends Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "bab35d91e204721d168f1f9d357faf7fbbaaed17a816c866f73a9bad3cac192f",
    "added": "2026-11-15T18:55:42Z",
+   "icon": true
+  },
+  {
+   "id": "boats-1-1",
+   "name": "BOATS 1.1",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/boats-1-1.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/boats-1-1/BOATS.1.1.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 1246158,
+   "type": "addon",
+   "filename": "BOATS 1.1 BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "239e99713a5ad588596a0d1c4c12e96d575fff31ad6d3f280cb3e4e917e29000",
+   "added": "2026-11-15T18:55:53Z",
    "icon": true
   }
  ]
