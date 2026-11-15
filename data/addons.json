@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:27:39Z",
+ "updated": "2026-11-15T19:27:57Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -610,6 +610,19 @@
    "filename": "VANILLA BLASTERS Add-On (addon).mcaddon",
    "sha256": "f3947a3bdbc286101c6536351fee90a4005fef41f5c518e69d29334bfc16167b",
    "added": "2026-11-15T19:27:38Z",
+   "icon": true
+  },
+  {
+   "id": "evolving-mobs-2-0-add-on",
+   "name": "Evolving Mobs 2.0 Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/evolving-mobs-2-0-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/evolving-mobs-2-0-add-on/Evolving.Mobs.2.0.Add-On.by.skupka.mcaddon",
+   "size": 13903453,
+   "type": "addon",
+   "filename": "Evolving Mobs 2.0 Add-On by skupka.mcaddon",
+   "sha256": "a33308658eb3d753328b333a84d52cfca1f9094d1e84ddda5f9d9136ba6ddc79",
+   "added": "2026-11-15T19:27:57Z",
    "icon": true
   }
  ]
