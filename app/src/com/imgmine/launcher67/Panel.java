@@ -368,8 +368,11 @@ final class Panel {
         h.img.setImageDrawable(Images.art(a.name, ctx.getResources()));
         if (a.banner != null) Images.load(h.img, a.banner, a.icon);
         boolean o = open.contains(a.id);
+        if (a.desc.trim().length() == 0) o = false;
         h.desc.setVisibility(o ? View.VISIBLE : View.GONE);
-        h.desc.setText(a.desc.length() > 0 ? a.desc : "No description yet.");
+        h.desc.setText(a.desc);
+        h.q.setVisibility(a.desc.trim().length() > 0 ? View.VISIBLE : View.GONE);
+        if (a.desc.trim().length() == 0) o = false;
         h.q.setText(o ? "-" : "?");
         btn(h.dl, a);
     }
