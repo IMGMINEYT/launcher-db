@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:47:57Z",
+ "updated": "2026-11-15T18:48:39Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -320,6 +320,19 @@
    "filename": "Traders++ Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "2910215025fe13651afa709abc094dd32d67609dc2971673f169b561f5326dd5",
    "added": "2026-11-15T18:47:56Z",
+   "icon": true
+  },
+  {
+   "id": "realism-weapons-add-on",
+   "name": "Realism Weapons Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/realism-weapons-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/realism-weapons-add-on/Realism.Weapons.Add-On.mcaddon",
+   "size": 32158928,
+   "type": "addon",
+   "filename": "Realism Weapons Add-On.mcaddon",
+   "sha256": "d500ae3b7dd39d18cff25d210ce93f12f909ed4786a14015c317907e03c9ae6a",
+   "added": "2026-11-15T18:48:39Z",
    "icon": true
   }
  ]
