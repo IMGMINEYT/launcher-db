@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:21:28Z",
+ "updated": "2026-11-15T19:22:49Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -402,6 +402,19 @@
    "filename": "100+ GOLEMS by FREE MC MARKET PLACE.mcworld",
    "sha256": "1e390c0d6e7159d62a27344cb12295471dbb5815ce2a4c79ef818e00af11e9c4",
    "added": "2026-11-15T19:21:27Z",
+   "icon": true
+  },
+  {
+   "id": "liminal-sound-pack-1-0",
+   "name": "LIMINAL Sound Pack 1.0",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/liminal-sound-pack-1-0.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/liminal-sound-pack-1-0/LIMINAL.Sound.Pack.1.0.by.FREE.MC.MARKET.PLACE.mcpack",
+   "size": 104700903,
+   "type": "pack",
+   "filename": "LIMINAL Sound Pack 1.0 by FREE MC MARKET PLACE.mcpack",
+   "sha256": "12a8123017fed93123354fdd46a4aa803a95ee16f8c6593f9e90000575765c03",
+   "added": "2026-11-15T19:22:49Z",
    "icon": true
   }
  ]
