@@ -1,0 +1,68 @@
+:root{
+  --bg:#14171c; --bg2:#1b1f26; --card:#20252d; --line:#2e3540; --ink:#e9e6dc; --mute:#9aa3ad;
+  --green:#5fd068; --green-d:#2f8a39; --gold:#e8b33a; --red:#d9534f;
+  --px:4px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.55 "Barlow",system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;
+  background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:32px 32px}
+a{color:inherit}
+.wrap{width:min(1180px,92vw);margin:0 auto}
+header.top{border-bottom:var(--px) solid #000;background:var(--bg2);position:sticky;top:0;z-index:20}
+header.top .wrap{display:flex;align-items:center;gap:20px;height:64px}
+.logo{font:400 20px "Pixelify Sans",monospace;text-decoration:none;letter-spacing:.5px;display:flex;align-items:center;gap:10px}
+.logo i{display:inline-grid;place-items:center;width:34px;height:34px;background:var(--green);color:#0c1a0e;font-style:normal;font-size:18px;box-shadow:inset -3px -3px 0 var(--green-d),inset 3px 3px 0 #9df2a3}
+nav.links{margin-left:auto;display:flex;gap:18px;font-size:15px}
+nav.links a{color:var(--mute);text-decoration:none}
+nav.links a:hover{color:var(--ink)}
+.hero{padding:56px 0 28px}
+.hero h1{font:400 clamp(30px,5vw,52px)/1.08 "Pixelify Sans",monospace;max-width:15ch}
+.hero h1 em{font-style:normal;color:var(--green)}
+.hero p{margin-top:14px;color:var(--mute);max-width:52ch}
+.tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:26px 0 10px}
+.search{flex:1 1 280px;position:relative}
+.search input{width:100%;height:48px;background:var(--card);border:2px solid var(--line);color:var(--ink);padding:0 14px 0 44px;font:inherit;outline:none}
+.search input:focus{border-color:var(--green)}
+.search svg{position:absolute;left:14px;top:14px;width:20px;height:20px;fill:none;stroke:var(--mute);stroke-width:2}
+select.sort{height:48px;background:var(--card);border:2px solid var(--line);color:var(--ink);padding:0 12px;font:inherit}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.chip{background:transparent;border:2px solid var(--line);color:var(--mute);padding:5px 14px;font:inherit;cursor:pointer}
+.chip[aria-pressed=true]{border-color:var(--green);color:var(--green);background:rgba(95,208,104,.08)}
+.count{color:var(--mute);font-size:14px;margin:14px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;padding-bottom:30px}
+.card{background:var(--card);border:2px solid var(--line);display:flex;flex-direction:column;transition:transform .12s,border-color .12s}
+.card:hover{transform:translateY(-3px);border-color:#3f4856}
+.banner{aspect-ratio:16/9;background:#0e1115;overflow:hidden;position:relative}
+.banner img{width:100%;height:100%;object-fit:cover;display:block}
+.banner canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+.body{padding:14px 14px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.body h3{font:400 17px/1.25 "Pixelify Sans",monospace;word-break:break-word}
+.body p{color:var(--mute);font-size:14.5px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.meta{margin-top:auto;display:flex;justify-content:space-between;align-items:center;color:var(--mute);font-size:13px;padding-top:6px}
+.btn{display:inline-block;background:var(--green);color:#0c1a0e;font:600 15px "Barlow",sans-serif;text-decoration:none;padding:9px 16px;border:0;cursor:pointer;box-shadow:inset -3px -3px 0 var(--green-d),inset 3px 3px 0 #9df2a3}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:none;border:2px solid var(--line)}
+.more{display:block;margin:6px auto 40px}
+.empty{padding:60px 0;text-align:center;color:var(--mute)}
+.skel{height:300px;background:linear-gradient(100deg,var(--card) 30%,#262c35 50%,var(--card) 70%);background-size:200% 100%;animation:sh 1.2s infinite;border:2px solid var(--line)}
+@keyframes sh{to{background-position:-200% 0}}
+footer{margin-top:auto;border-top:var(--px) solid #000;background:var(--bg2);padding:26px 0;color:var(--mute);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between}
+footer nav{display:flex;gap:18px;flex-wrap:wrap}
+footer a{text-decoration:none}footer a:hover{color:var(--ink)}
+dialog{margin:auto;background:var(--card);color:var(--ink);border:2px solid var(--line);width:min(640px,94vw);padding:0}
+dialog::backdrop{background:rgba(0,0,0,.7)}
+dialog .banner{aspect-ratio:16/8}
+dialog .in{padding:20px;display:grid;gap:12px}
+dialog h2{font:400 24px "Pixelify Sans",monospace}
+dialog .desc{white-space:pre-wrap;color:#c7cbd0;max-height:34vh;overflow:auto}
+dialog .row{display:flex;gap:10px;flex-wrap:wrap}
+.page{padding:48px 0 70px;max-width:760px}
+.page h1{font:400 34px "Pixelify Sans",monospace;margin-bottom:6px}
+.page h2{font:400 20px "Pixelify Sans",monospace;margin:28px 0 8px;color:var(--green)}
+.page p,.page li{color:#c7cbd0;margin-bottom:10px}
+.page ul{padding-left:22px}
+.page .date{color:var(--mute);font-size:14px;margin-bottom:20px}
+@media(max-width:560px){nav.links{gap:12px;font-size:14px}.hero{padding-top:34px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
