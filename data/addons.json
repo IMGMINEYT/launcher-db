@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:11:05Z",
+ "updated": "2026-11-15T19:11:18Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1216,6 +1216,19 @@
    "filename": "World Builder 1.6.1 Add-On (addon).mcaddon",
    "sha256": "2bcc1976ee61c224aaa8b1fbcb0e4daf52ffe29c9a76856eed0168c6d09a3355",
    "added": "2026-11-15T19:11:04Z",
+   "icon": true
+  },
+  {
+   "id": "villagers-add-on-byskupka",
+   "name": "Villagers++ Add-On BySkupka",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/villagers-add-on-byskupka.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/villagers-add-on-byskupka/Villagers%2B%2B.Add-On.BySkupka.mcaddon",
+   "size": 3758038,
+   "type": "addon",
+   "filename": "Villagers++ Add-On BySkupka.mcaddon",
+   "sha256": "888ce800ca97b857595d3b8f8ac2f72e03d96de3ca075114e1b576249d049e1d",
+   "added": "2026-11-15T19:11:17Z",
    "icon": true
   }
  ]
