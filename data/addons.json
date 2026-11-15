@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:40:39Z",
+ "updated": "2026-11-15T18:40:57Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -125,6 +125,19 @@
    "filename": "Markers Pack by FREE MC MARKET PLACE.mcaddon",
    "sha256": "e4746d1a5cf0c02c176f710a6e901c11c5761034a6cba90e3a7ad9a68882f129",
    "added": "2026-11-15T18:40:39Z",
+   "icon": true
+  },
+  {
+   "id": "vampire-expansion-add-on",
+   "name": "Vampire Expansion Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/vampire-expansion-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/vampire-expansion-add-on/Vampire.Expansion.Add-On.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 2214816,
+   "type": "addon",
+   "filename": "Vampire Expansion Add-On by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "241b8a74ed298ff6beb124a53386eff8df18df72fc21981924982a9944473269",
+   "added": "2026-11-15T18:40:57Z",
    "icon": true
   }
  ]
