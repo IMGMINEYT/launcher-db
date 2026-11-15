@@ -56,12 +56,12 @@
   function dl(a,cls){var l=document.createElement('a');l.className=cls||'btn';l.textContent='Download';l.href=a.download;l.rel='noopener';return l}
   function open(a){
     dlg.textContent='';dlg.appendChild(banner(a,true));var d=document.createElement('div');d.className='in';
-    var h=document.createElement('h2');h.textContent=a.name;var p=document.createElement('div');p.className='desc';p.textContent=a.description||(a.name+' '+((a.type||'addon')==='map'?'map':'addon')+' for Minecraft Bedrock - download and import in one tap.');
+    var h=document.createElement('h2');h.textContent=a.name;var p=document.createElement('div');p.className='desc';p.textContent=a.description||'';
     var r=document.createElement('div');r.className='row';r.appendChild(dl(a));
     var c=document.createElement('button');c.className='btn ghost';c.textContent='Close';c.onclick=function(){dlg.close()};r.appendChild(c);
     if(a.size){var s=document.createElement('span');s.style.cssText='color:var(--mute);align-self:center';s.textContent=fmt(a.size);r.appendChild(s)}
-    d.appendChild(h);d.appendChild(p);d.appendChild(r);
-    if(a.source&&/^https:\/\//.test(a.source)){var sc=document.createElement('p');sc.className='desc';sc.appendChild(document.createTextNode('Details from '));var sl=document.createElement('a');sl.href=a.source;sl.rel='noopener nofollow';sl.target='_blank';sl.textContent=a.source.replace(/^https:\/\/(www\.)?/,'').split('/')[0];sc.appendChild(sl);d.appendChild(sc)}
+    d.appendChild(h);if(a.description)d.appendChild(p);d.appendChild(r);
+    if(a.description&&a.source&&/^https:\/\//.test(a.source)){var sc=document.createElement('p');sc.className='desc';sc.appendChild(document.createTextNode('Details from '));var sl=document.createElement('a');sl.href=a.source;sl.rel='noopener nofollow';sl.target='_blank';sl.textContent=a.source.replace(/^https:\/\/(www\.)?/,'').split('/')[0];sc.appendChild(sl);d.appendChild(sc)}
     dlg.appendChild(d);
     if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');
   }
