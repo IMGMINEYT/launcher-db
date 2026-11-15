@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:04:35Z",
+ "updated": "2026-11-15T19:05:53Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -984,6 +984,18 @@
    "sha256": "75de8ccfd7f71ec2589bd450bd5f67982ad8478ccb1b63a89873e5e14305ec2a",
    "added": "2026-11-15T19:04:35Z",
    "icon": true
+  },
+  {
+   "id": "aphmaus-picnic-pals",
+   "name": "Aphmaus Picnic Pals",
+   "description": "",
+   "banner": null,
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/aphmaus-picnic-pals/Aphmaus.Picnic.Pals.BY.MARKETPLACE.TRADER.mcpack",
+   "size": 64115,
+   "type": "pack",
+   "filename": "Aphmaus Picnic Pals BY MARKETPLACE TRADER.mcpack",
+   "sha256": "8a148d6899765d01bfc3f2cf92e6795563eff8784677b1c77882336485b64547",
+   "added": "2026-11-15T19:05:52Z"
   }
  ]
 }
