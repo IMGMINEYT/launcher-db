@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:18:23Z",
+ "updated": "2026-11-15T19:18:34Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1423,6 +1423,19 @@
    "filename": "Villager News 1.0 Add-On (addon) by FREE MC MARKET PLACE.mcaddon",
    "sha256": "1e1544a5776d9a0a49c7e346957d895ce1bf4e522074ac31f8d513db6599b96d",
    "added": "2026-11-15T19:18:23Z",
+   "icon": true
+  },
+  {
+   "id": "better-weather-glass-fixed",
+   "name": "Better-Weather-Glass-FIXED",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/better-weather-glass-fixed.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/better-weather-glass-fixed/Better-Weather-Glass-FIXED.mcaddon",
+   "size": 356560,
+   "type": "addon",
+   "filename": "Better-Weather-Glass-FIXED.mcaddon",
+   "sha256": "d4e82fad1a499316e880415b8bd262e79fe978b67c6b23b82078f61869bde3e4",
+   "added": "2026-11-15T19:18:33Z",
    "icon": true
   }
  ]
