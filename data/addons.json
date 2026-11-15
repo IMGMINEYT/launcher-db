@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:54:27Z",
+ "updated": "2026-11-15T18:54:39Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -593,6 +593,19 @@
    "filename": "MOB ARMOR Add-On 1.2 BY MARKETPLACE TRADER.mcaddon",
    "sha256": "12d52817b6f96158ceedb71263b2e95e777a86b48e03c99cc20e2dbebfd7cf51",
    "added": "2026-11-15T18:54:26Z",
+   "icon": true
+  },
+  {
+   "id": "mob-weapons-1-4-add-on",
+   "name": "Mob Weapons 1.4 Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/mob-weapons-1-4-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/mob-weapons-1-4-add-on/Mob.Weapons.1.4.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 3112629,
+   "type": "addon",
+   "filename": "Mob Weapons 1.4 Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "688d9924e4baa6f33f27f137cf54d98c4b4dd3dae953664f837474f4fa642015",
+   "added": "2026-11-15T18:54:39Z",
    "icon": true
   }
  ]
