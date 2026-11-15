@@ -59,8 +59,6 @@ final class Api {
             if (d.id.length() == 0) d.id = "a" + i;
             d.lname = Fuzzy.norm(d.name);
             d.ldesc = Fuzzy.norm(d.desc);
-            if (d.desc.trim().length() == 0)
-                d.desc = d.name.trim() + " " + (d.type.equals("map") ? "map" : "addon") + " for Minecraft Bedrock - download and import in one tap.";
             out.add(d);
         }
         Collections.sort(out, new Comparator<Addon>() {
