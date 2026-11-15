@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:53:52Z",
+ "updated": "2026-11-15T18:54:02Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -554,6 +554,19 @@
    "filename": "Golem Mania Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "f694d15c63a414be627a7dba19e412b147d049a4ce3f6a53ddb065cffa22ac2d",
    "added": "2026-11-15T18:53:52Z",
+   "icon": true
+  },
+  {
+   "id": "days-survived-lite",
+   "name": "Days Survived Lite",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/days-survived-lite.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/days-survived-lite/Days.Survived.Lite.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 209502,
+   "type": "addon",
+   "filename": "Days Survived Lite BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "79e65d223729ec2e79049f1cc3dcfc27768615da931a427e5aa518403952fe16",
+   "added": "2026-11-15T18:54:02Z",
    "icon": true
   }
  ]
