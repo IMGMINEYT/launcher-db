@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:08:28Z",
+ "updated": "2026-11-15T19:08:42Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1125,6 +1125,19 @@
    "filename": "Create_Add-On RU.mcaddon",
    "sha256": "d33b55c4f23f9b43b9ff80ff073d8dad9f38c25be81029ece2212694d32f678c",
    "added": "2026-11-15T19:08:28Z",
+   "icon": true
+  },
+  {
+   "id": "spacecraft-addon-v1-1",
+   "name": "spacecraft-addon-v1 1",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/spacecraft-addon-v1-1.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/spacecraft-addon-v1-1/spacecraft-addon-v1_1.mcaddon",
+   "size": 303807,
+   "type": "addon",
+   "filename": "spacecraft-addon-v1_1.mcaddon",
+   "sha256": "aced476b6748d81a2e120d9a0de12058077fd8358c8079e8cc78fc06a3d1a4fc",
+   "added": "2026-11-15T19:08:37Z",
    "icon": true
   }
  ]
