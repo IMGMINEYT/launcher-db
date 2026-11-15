@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:26:11Z",
+ "updated": "2026-11-15T19:26:48Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -558,6 +558,19 @@
    "filename": "Security Add-On by FREE MC MARKET PLACE.mcaddon",
    "sha256": "14bd8545e214cd1fc0be869e358f5e22eb165f7aebfca232ddd3ff6b89abdb1a",
    "added": "2026-11-15T19:26:07Z",
+   "icon": true
+  },
+  {
+   "id": "lut-add-on",
+   "name": "LUT Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/lut-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/lut-add-on/LUT.Add-On.FREE.MC.MARKETPLACE.mcaddon",
+   "size": 11536166,
+   "type": "addon",
+   "filename": "LUT Add-On FREE MC MARKETPLACE.mcaddon",
+   "sha256": "058e7bdb55506185f7b872bd6ef5616ad5b69d72ff66091d83b4b633f5190ba1",
+   "added": "2026-11-15T19:26:48Z",
    "icon": true
   }
  ]
