@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:20:05Z",
+ "updated": "2026-11-15T19:20:16Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1488,6 +1488,19 @@
    "filename": "Liminal Dimension Add-On v1.1 by FREE MC MARKET PLACE.mcaddon",
    "sha256": "e76928f2a08efb0428493d1a4fc6129fdce0170b912b1c5274dd60f344d18c5a",
    "added": "2026-11-15T19:20:05Z",
+   "icon": true
+  },
+  {
+   "id": "elemental-crops",
+   "name": "Elemental Crops",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/elemental-crops.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/elemental-crops/Elemental.Crops.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 498109,
+   "type": "addon",
+   "filename": "Elemental Crops by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "4a9af28c18b52b505726dc1eb3b5d213f8cf717d03ee879fa1d55b02ed69df78",
+   "added": "2026-11-15T19:20:15Z",
    "icon": true
   }
  ]
