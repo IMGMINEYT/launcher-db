@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:07:41Z",
+ "updated": "2026-11-15T19:07:52Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1073,6 +1073,19 @@
    "filename": "Zombie World Generator (world_template).mctemplate",
    "sha256": "0aa6b587820e17c5a513029c7e395a534b769dde2d137f5d0689480a5aecd784",
    "added": "2026-11-15T19:07:40Z",
+   "icon": true
+  },
+  {
+   "id": "skibidi-toilet-titan-wars",
+   "name": "Skibidi Toilet Titan Wars",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/skibidi-toilet-titan-wars.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/skibidi-toilet-titan-wars/Skibidi.Toilet.Titan.Wars.mcaddon",
+   "size": 10371022,
+   "type": "addon",
+   "filename": "Skibidi Toilet Titan Wars.mcaddon",
+   "sha256": "8c80afb79c6a70b515862528b174e984b7378d40a961eb577d45d2952e1b5404",
+   "added": "2026-11-15T19:07:52Z",
    "icon": true
   }
  ]
