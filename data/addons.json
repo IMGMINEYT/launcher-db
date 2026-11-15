@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T13:49:37Z",
+ "updated": "2026-11-15T13:50:10Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -23,6 +23,18 @@
    "type": "addon",
    "filename": "Block Furniture Add-On.mcaddon",
    "added": "2026-11-15T13:26:12Z",
+   "icon": true
+  },
+  {
+   "id": "security-expansion",
+   "name": "Security Expansion",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/security-expansion.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/security-expansion/Security.Expansion.BY.MARKETPLACE.TRADER.mcworld",
+   "size": 14090299,
+   "type": "map",
+   "filename": "Security Expansion BY MARKETPLACE TRADER.mcworld",
+   "added": "2026-11-15T13:50:09Z",
    "icon": true
   }
  ]
