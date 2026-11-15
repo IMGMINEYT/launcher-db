@@ -25,5 +25,5 @@ final class Addon {
         return Math.max(1, size / 1024) + " KB";
     }
 
-    String typeLabel() { return type.equals("map") ? "MAP" : type.equals("addon") ? "ADDON" : "FILE"; }
+    String typeLabel() { return type.equals("world") ? "WORLD" : type.equals("addon") ? "ADDON" : type.equals("pack") ? "PACK" : type.equals("template") ? "TEMPLATE" : "FILE"; }
 }
