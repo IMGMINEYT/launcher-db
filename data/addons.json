@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:05:53Z",
+ "updated": "2026-11-15T19:06:29Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -996,6 +996,19 @@
    "filename": "Aphmaus Picnic Pals BY MARKETPLACE TRADER.mcpack",
    "sha256": "8a148d6899765d01bfc3f2cf92e6795563eff8784677b1c77882336485b64547",
    "added": "2026-11-15T19:05:52Z"
+  },
+  {
+   "id": "what-is-that-add-on",
+   "name": "What Is That Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/what-is-that-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/what-is-that-add-on/What.Is.That.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 268996,
+   "type": "addon",
+   "filename": "What Is That Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "188f21caa4700ed4d002a72d86a49795e418c40086be0c07ae90c554a6b51a6b",
+   "added": "2026-11-15T19:06:29Z",
+   "icon": true
   }
  ]
 }
