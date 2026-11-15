@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:55:54Z",
+ "updated": "2026-11-15T18:56:03Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -671,6 +671,19 @@
    "filename": "BOATS 1.1 BY MARKETPLACE TRADER.mcaddon",
    "sha256": "239e99713a5ad588596a0d1c4c12e96d575fff31ad6d3f280cb3e4e917e29000",
    "added": "2026-11-15T18:55:53Z",
+   "icon": true
+  },
+  {
+   "id": "cinemacraft-add-on",
+   "name": "CinemaCraft Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/cinemacraft-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/cinemacraft-add-on/CinemaCraft.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 121417,
+   "type": "addon",
+   "filename": "CinemaCraft Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "3f8902c8be0a5dad97be0545e83372d387cf7c1032858987a95c8d3e2471f668",
+   "added": "2026-11-15T18:56:03Z",
    "icon": true
   }
  ]
