@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:50:20Z",
+ "updated": "2026-11-15T18:50:33Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -411,6 +411,19 @@
    "filename": "The Entity Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "7ad384a61f140da16445adfde4ea73e67885c72603ec97fda2d0ac0cc63f147d",
    "added": "2026-11-15T18:50:20Z",
+   "icon": true
+  },
+  {
+   "id": "backpack",
+   "name": "Backpack",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/backpack.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/backpack/Backpack.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 3720369,
+   "type": "addon",
+   "filename": "Backpack BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "16c0ae4dc5bf09a9d0b620e964b89fb402e96f2ab1523fcde8c9533c31eb63c9",
+   "added": "2026-11-15T18:50:33Z",
    "icon": true
   }
  ]
