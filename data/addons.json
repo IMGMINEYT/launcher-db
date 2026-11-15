@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:50:01Z",
+ "updated": "2026-11-15T18:50:20Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -398,6 +398,19 @@
    "filename": "Just Letters Add-on BY MARKETPLACE TRADER.mcaddon",
    "sha256": "779c0deee5999554b77610dd8ae287ac138404eee4f2d22fcae98918343e953e",
    "added": "2026-11-15T18:50:01Z",
+   "icon": true
+  },
+  {
+   "id": "the-entity-add-on",
+   "name": "The Entity Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/the-entity-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/the-entity-add-on/The.Entity.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 3079832,
+   "type": "addon",
+   "filename": "The Entity Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "7ad384a61f140da16445adfde4ea73e67885c72603ec97fda2d0ac0cc63f147d",
+   "added": "2026-11-15T18:50:20Z",
    "icon": true
   }
  ]
