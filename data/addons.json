@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:25:18Z",
+ "updated": "2026-11-15T19:25:35Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -532,6 +532,19 @@
    "filename": "LycanForge Add-On v1.2.0 by FREE MC MARKET PLACE.mcaddon",
    "sha256": "668986346b27e3af403adb91abaed69b9867293916fe8b0cf85a0af538b08fc1",
    "added": "2026-11-15T19:25:18Z",
+   "icon": true
+  },
+  {
+   "id": "anime-weapons",
+   "name": "Anime Weapons",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/anime-weapons.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/anime-weapons/Anime.Weapons.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 9309673,
+   "type": "addon",
+   "filename": "Anime Weapons by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "dbfdde07da73cf92d5864dbaee9d43a3ec08fba64f213749eb39bbd60cbb575b",
+   "added": "2026-11-15T19:25:35Z",
    "icon": true
   }
  ]
