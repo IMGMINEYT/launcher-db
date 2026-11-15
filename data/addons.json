@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:15:49Z",
+ "updated": "2026-11-15T19:16:04Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1307,6 +1307,19 @@
    "filename": "Another Furniture Add-On .mcaddon",
    "sha256": "e67115ab664f25722a3e2008a0c265dbb3c9b1ddb2ca650c98d9bde68e0a8258",
    "added": "2026-11-15T19:15:49Z",
+   "icon": true
+  },
+  {
+   "id": "hypercraft-add-on-uphold",
+   "name": "HyperCraft Add-On Uphold",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/hypercraft-add-on-uphold.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/hypercraft-add-on-uphold/HyperCraft.Add-On.Uphold.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 3722148,
+   "type": "addon",
+   "filename": "HyperCraft Add-On Uphold by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "0a349732b53ddff7b567885f0c0c574ca320144da17ed8c0ed65bb0f69859f79",
+   "added": "2026-11-15T19:16:03Z",
    "icon": true
   }
  ]
