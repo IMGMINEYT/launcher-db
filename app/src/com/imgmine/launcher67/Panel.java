@@ -26,7 +26,8 @@ final class Panel {
     private ListView list;
     private TextView state, count, clear;
     private EditText search;
-    private TextView[] chips = new TextView[3];
+    private TextView[] chips = new TextView[5];
+    private static final String[] KEYS = {"", "addon", "world", "pack", "template"};
     private boolean shown;
     private int cw, ch, typeFilter;
     private List<Addon> all = new ArrayList<>(), view = new ArrayList<>();
@@ -184,22 +185,25 @@ final class Panel {
 
         // type chips
         LinearLayout cr = new LinearLayout(ctx);
-        String[] names = {"ALL", "ADDONS", "MAPS"};
-        for (int i = 0; i < 3; i++) {
+        String[] names = {"ALL", "ADDONS", "WORLDS", "PACKS", "TEMPLATES"};
+        for (int i = 0; i < 5; i++) {
             final int k = i;
             TextView c = text(names[i], 12, Ui.MUTE);
             c.setGravity(Gravity.CENTER);
-            c.setPadding(Ui.dp(12), Ui.dp(5), Ui.dp(12), Ui.dp(7));
+            c.setPadding(Ui.dp(9), Ui.dp(5), Ui.dp(9), Ui.dp(7));
             c.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { typeFilter = k; chipStyle(); refilter(true); } });
             chips[i] = c;
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            lp.rightMargin = Ui.dp(6);
+            lp.rightMargin = Ui.dp(5);
             cr.addView(c, lp);
         }
         chipStyle();
         LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         clp.setMargins(Ui.dp(2), 0, Ui.dp(2), Ui.dp(6));
-        card.addView(cr, clp);
+        HorizontalScrollView hs = new HorizontalScrollView(ctx);
+        hs.setHorizontalScrollBarEnabled(false);
+        hs.addView(cr);
+        card.addView(hs, clp);
 
         // list + state
         FrameLayout body = new FrameLayout(ctx);
@@ -227,7 +231,7 @@ final class Panel {
     }
 
     private void chipStyle() {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 5; i++) {
             boolean on = i == typeFilter;
             chips[i].setTextColor(on ? Ui.GREEN : Ui.MUTE);
             chips[i].setBackground(new Ui.Bevel(on ? 0xFF1E2B22 : Ui.CARD, on ? Ui.GREEN_D : Ui.shade(Ui.CARD, 1.2f), Ui.shade(on ? 0xFF1E2B22 : Ui.CARD, 0.7f), 0xFF000000));
@@ -262,8 +266,7 @@ final class Panel {
     private void refilter(boolean toTop) {
         List<Addon> typed = new ArrayList<>();
         for (Addon a : all) {
-            if (typeFilter == 1 && !a.type.equals("addon")) continue;
-            if (typeFilter == 2 && !a.type.equals("map")) continue;
+            if (typeFilter > 0 && !KEYS[typeFilter].equals(a.type)) continue;
             typed.add(a);
         }
         view = Fuzzy.search(typed, search == null ? "" : search.getText().toString());
