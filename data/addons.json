@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:18:48Z",
+ "updated": "2026-11-15T19:19:06Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1449,6 +1449,19 @@
    "filename": "Elytra Expansion Add-On 2.0 by FREE MC MARKET PLACE.mcaddon",
    "sha256": "b97ecd729a776bcb693a6b995fb72afce99dcaeeb1faebb9ae39227d5a5ef69e",
    "added": "2026-11-15T19:18:48Z",
+   "icon": true
+  },
+  {
+   "id": "xray",
+   "name": "XRAY!",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/xray.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/xray/XRAY.by.FREE.MC.MARKET.PLACE.mcworld",
+   "size": 10426565,
+   "type": "world",
+   "filename": "XRAY! by FREE MC MARKET PLACE.mcworld",
+   "sha256": "6358d96da7710a7fe4e829f1952ffe1d1a427e7abe32ba9c3bf1693405345d1f",
+   "added": "2026-11-15T19:19:06Z",
    "icon": true
   }
  ]
