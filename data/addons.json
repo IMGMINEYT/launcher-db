@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:59:21Z",
+ "updated": "2026-11-15T18:59:35Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -788,6 +788,19 @@
    "filename": "Craftable Builds Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "ee2c25a8ce37df73ece0e7999f2d33b39724a62d5b7e53684f4f13884cd954e7",
    "added": "2026-11-15T18:59:20Z",
+   "icon": true
+  },
+  {
+   "id": "mob-companions-add-on-1-0",
+   "name": "Mob Companions Add-On 1.0",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/mob-companions-add-on-1-0.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/mob-companions-add-on-1-0/Mob.Companions.Add-On.1.0.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 5108004,
+   "type": "addon",
+   "filename": "Mob Companions Add-On 1.0 BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "95fbe23ce5a5ad11b84191a50be1b8c1139f976b1a0f4e8cd5ef84462c7acb05",
+   "added": "2026-11-15T18:59:35Z",
    "icon": true
   }
  ]
