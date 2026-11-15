@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:49:46Z",
+ "updated": "2026-11-15T18:50:01Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -385,6 +385,19 @@
    "filename": "SECURITY Add-On BY MARKETPLACE TRADER (1).mcaddon",
    "sha256": "834dafec792e99c8281018c657190e0f578a7225749189df15d4b1fb4eaf6c51",
    "added": "2026-11-15T18:49:46Z",
+   "icon": true
+  },
+  {
+   "id": "just-letters-add-on",
+   "name": "Just Letters Add-on",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/just-letters-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/just-letters-add-on/Just.Letters.Add-on.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 4910116,
+   "type": "addon",
+   "filename": "Just Letters Add-on BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "779c0deee5999554b77610dd8ae287ac138404eee4f2d22fcae98918343e953e",
+   "added": "2026-11-15T18:50:01Z",
    "icon": true
   }
  ]
