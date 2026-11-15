@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:56:37Z",
+ "updated": "2026-11-15T18:56:49Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -710,6 +710,19 @@
    "filename": "Festive Biomes Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "1ebe29c83f3eb7e5be83d7d62d7643b770043e9700219d0d3599c7bfd4b0ba82",
    "added": "2026-11-15T18:56:36Z",
+   "icon": true
+  },
+  {
+   "id": "vanilla-biomes-1-1-add-on",
+   "name": "Vanilla Biomes+ 1.1 Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/vanilla-biomes-1-1-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/vanilla-biomes-1-1-add-on/Vanilla.Biomes%2B.1.1.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 4092537,
+   "type": "addon",
+   "filename": "Vanilla Biomes+ 1.1 Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "709772b31212934811dd9c037b59f3c8485773d62f6b9cb8604888d0cfa19a68",
+   "added": "2026-11-15T18:56:49Z",
    "icon": true
   }
  ]
