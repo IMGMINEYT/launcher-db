@@ -352,6 +352,8 @@ def setup(client, owner_id, tmp_dir):
         fname = next((a.file_name for a in doc.attributes if getattr(a, "file_name", None)), "addon")
         fname = fname.replace("/", "_").replace("\\", "_")
         caption = (msg.message or "").strip()
+        if getattr(msg, "fwd_from", None):
+            caption = ""  # forwarded posts carry channel promo captions, not a chosen name
         custom = bool(caption)
         stem = os.path.splitext(fname)[0]
         name = caption.splitlines()[0][:80] if custom else stem
