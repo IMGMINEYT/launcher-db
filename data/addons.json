@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:20:36Z",
+ "updated": "2026-11-15T19:21:28Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -389,6 +389,19 @@
    "filename": "Better-Weather-Glass-FIXED.mcaddon",
    "sha256": "d4e82fad1a499316e880415b8bd262e79fe978b67c6b23b82078f61869bde3e4",
    "added": "2026-11-15T19:18:33Z",
+   "icon": true
+  },
+  {
+   "id": "100-golems",
+   "name": "100+ GOLEMS",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/100-golems.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/100-golems/100%2B.GOLEMS.by.FREE.MC.MARKET.PLACE.mcworld",
+   "size": 65917592,
+   "type": "world",
+   "filename": "100+ GOLEMS by FREE MC MARKET PLACE.mcworld",
+   "sha256": "1e390c0d6e7159d62a27344cb12295471dbb5815ce2a4c79ef818e00af11e9c4",
+   "added": "2026-11-15T19:21:27Z",
    "icon": true
   }
  ]
