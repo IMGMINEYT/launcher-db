@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:03:07Z",
+ "updated": "2026-11-15T19:04:00Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -957,6 +957,19 @@
    "filename": "Alien Dimension Add-On.mcaddon",
    "sha256": "6c7ca79fbd8c4b4a3fd0970f7b58a695c682eabf1322c2d88b59160792401ca8",
    "added": "2026-11-15T19:03:06Z",
+   "icon": true
+  },
+  {
+   "id": "mob-pets",
+   "name": "Mob Pets",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/mob-pets.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/mob-pets/Mob.Pets.mcworld",
+   "size": 52204962,
+   "type": "world",
+   "filename": "Mob Pets .mcworld",
+   "sha256": "3fc206d0e3f4778d48531ca0e5798aa9441e50d8084fe356da595b55b69cacfe",
+   "added": "2026-11-15T19:03:59Z",
    "icon": true
   }
  ]
