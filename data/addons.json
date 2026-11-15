@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:41:56Z",
+ "updated": "2026-11-15T18:42:06Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -190,6 +190,19 @@
    "filename": "Overgrown by FREE MC MARKET PLACE.mcpack",
    "sha256": "aef1898c398fa04cccf7a036c91c6e9b86ec5676a9fb59f55916a30657e79a6d",
    "added": "2026-11-15T18:41:56Z",
+   "icon": true
+  },
+  {
+   "id": "itemate-add-on-addon",
+   "name": "ITEMATE Add-On (addon)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/itemate-add-on-addon.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/itemate-add-on-addon/ITEMATE.Add-On.addon.mcaddon",
+   "size": 325206,
+   "type": "addon",
+   "filename": "ITEMATE Add-On (addon).mcaddon",
+   "sha256": "79a6610dd1b13e65ddd2d95ecb1ced849f6db53c4b22cddd42e089f47af02255",
+   "added": "2026-11-15T18:42:05Z",
    "icon": true
   }
  ]
