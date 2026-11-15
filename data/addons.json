@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:25:35Z",
+ "updated": "2026-11-15T19:26:11Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -545,6 +545,19 @@
    "filename": "Anime Weapons by FREE MC MARKET PLACE.mcaddon",
    "sha256": "dbfdde07da73cf92d5864dbaee9d43a3ec08fba64f213749eb39bbd60cbb575b",
    "added": "2026-11-15T19:25:35Z",
+   "icon": true
+  },
+  {
+   "id": "security-add-on",
+   "name": "Security Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/security-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/security-add-on/Security.Add-On.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 14440677,
+   "type": "addon",
+   "filename": "Security Add-On by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "14bd8545e214cd1fc0be869e358f5e22eb165f7aebfca232ddd3ff6b89abdb1a",
+   "added": "2026-11-15T19:26:07Z",
    "icon": true
   }
  ]
