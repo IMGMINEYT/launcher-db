@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:30:42Z",
+ "updated": "2026-11-15T19:31:07Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -765,6 +765,19 @@
    "filename": "What Is That Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "188f21caa4700ed4d002a72d86a49795e418c40086be0c07ae90c554a6b51a6b",
    "added": "2026-11-15T19:30:41Z",
+   "icon": true
+  },
+  {
+   "id": "fishing-add-on-2-0",
+   "name": "Fishing + Add-On 2.0",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/fishing-add-on-2-0.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/fishing-add-on-2-0/Fishing.%2B.Add-On.2.0.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 7329141,
+   "type": "addon",
+   "filename": "Fishing + Add-On 2.0 BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "110bc15dac0af09e31b6ac971e38d76520a787f53943815b329c86911689abdc",
+   "added": "2026-11-15T19:31:07Z",
    "icon": true
   }
  ]
