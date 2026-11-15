@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:32:54Z",
+ "updated": "2026-11-15T19:33:04Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -869,6 +869,19 @@
    "filename": "Physics Pro 1.0 Add-On (addon).mcaddon",
    "sha256": "a44606dd231564f59e7b5b7a35b942dedabdbc52809b96a374619adfce67b0a7",
    "added": "2026-11-15T19:32:53Z",
+   "icon": true
+  },
+  {
+   "id": "ultimate-tnt-addon",
+   "name": "Ultimate TNT (addon)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/ultimate-tnt-addon.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/ultimate-tnt-addon/Ultimate.TNT.addon.mcaddon",
+   "size": 6200806,
+   "type": "addon",
+   "filename": "Ultimate TNT (addon).mcaddon",
+   "sha256": "0f3ae704fb00e65fb92d0e28ce3278798736a96b7cf6e5f0e76e6af9e89879e8",
+   "added": "2026-11-15T19:33:04Z",
    "icon": true
   }
  ]
