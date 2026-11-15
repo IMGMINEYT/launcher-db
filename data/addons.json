@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:33:26Z",
+ "updated": "2026-11-15T19:33:37Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -908,6 +908,19 @@
    "filename": "Великолепная мебель Add-On (addon).mcaddon",
    "sha256": "2c61bc801d171a86b571beac88202339c36023d49c16e54597ad769a35410a66",
    "added": "2026-11-15T19:33:25Z",
+   "icon": true
+  },
+  {
+   "id": "forgecraft-add-on",
+   "name": "FORGECRAFT! ADD-ON",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/forgecraft-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/forgecraft-add-on/FORGECRAFT.ADD-ON.mcaddon",
+   "size": 7630405,
+   "type": "addon",
+   "filename": "FORGECRAFT! ADD-ON.mcaddon",
+   "sha256": "223e5825e3a48498369f030074753a399e0cc65c6c20a4403eb8716c325ea64f",
+   "added": "2026-11-15T19:33:36Z",
    "icon": true
   }
  ]
