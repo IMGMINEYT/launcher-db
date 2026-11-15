@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:23:59Z",
+ "updated": "2026-11-15T19:24:10Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -467,6 +467,19 @@
    "filename": "ANIMALS Add-On by FREE MC MARKET PLACE.mcaddon",
    "sha256": "8614fd3f4bf1ad258d3a4b09455f2ef801ade06a9876db5b87d6c31272b1a6bc",
    "added": "2026-11-15T19:23:59Z",
+   "icon": true
+  },
+  {
+   "id": "biomes-animals-and-structures",
+   "name": "Biomes, Animals and Structures",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/biomes-animals-and-structures.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/biomes-animals-and-structures/Biomes.Animals.and.Structures.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 1619488,
+   "type": "addon",
+   "filename": "Biomes, Animals and Structures by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "dd86a0227e8c43746d82085690f36cdcce5bfc116b317c6fb2da3ee428ea3fb3",
+   "added": "2026-11-15T19:24:10Z",
    "icon": true
   }
  ]
