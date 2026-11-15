@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:00:58Z",
+ "updated": "2026-11-15T19:01:11Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -879,6 +879,19 @@
    "filename": "Princesses BY MARKETPLACE TRADER.mcworld",
    "sha256": "34ad5627f8807618475a4d26d0d2ae628a63f2c4f0bb89343364ceba261550b3",
    "added": "2026-11-15T19:00:58Z",
+   "icon": true
+  },
+  {
+   "id": "creepy-plushies-add-on-1-1",
+   "name": "Creepy Plushies Add-On 1.1",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/creepy-plushies-add-on-1-1.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/creepy-plushies-add-on-1-1/Creepy.Plushies.Add-On.1.1.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 3317887,
+   "type": "addon",
+   "filename": "Creepy Plushies Add-On 1.1 BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "2fdb2d230d595065a4dedb9084db9cd615be9258b346a3e0c92ea42052ea56eb",
+   "added": "2026-11-15T19:01:11Z",
    "icon": true
   }
  ]
