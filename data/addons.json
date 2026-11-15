@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:27:26Z",
+ "updated": "2026-11-15T19:27:39Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -597,6 +597,19 @@
    "filename": "ANIME JUTSU 2.0 (Add-on).mcaddon",
    "sha256": "69f7ca85faacb85dceda2aa96edcd24b7ca1b4669d9579b1a26737c5b503d0bc",
    "added": "2026-11-15T19:27:26Z",
+   "icon": true
+  },
+  {
+   "id": "vanilla-blasters-add-on-addon",
+   "name": "VANILLA BLASTERS Add-On (addon)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/vanilla-blasters-add-on-addon.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/vanilla-blasters-add-on-addon/VANILLA.BLASTERS.Add-On.addon.mcaddon",
+   "size": 3603045,
+   "type": "addon",
+   "filename": "VANILLA BLASTERS Add-On (addon).mcaddon",
+   "sha256": "f3947a3bdbc286101c6536351fee90a4005fef41f5c518e69d29334bfc16167b",
+   "added": "2026-11-15T19:27:38Z",
    "icon": true
   }
  ]
