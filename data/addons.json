@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:39:01Z",
+ "updated": "2026-11-15T18:39:17Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -60,6 +60,19 @@
    "filename": "Redstone Plus Add-On (addon).mcaddon",
    "sha256": "bb79d79186a0b860ed18b4e0c3022034108485c0eb6f9eb8c307404bd196511a",
    "added": "2026-11-15T18:39:00Z",
+   "icon": true
+  },
+  {
+   "id": "dimensional-backpacks-add-on-addon",
+   "name": "Dimensional Backpacks Add-On (addon)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/dimensional-backpacks-add-on-addon.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/dimensional-backpacks-add-on-addon/Dimensional.Backpacks.Add-On.addon.mcaddon",
+   "size": 25768435,
+   "type": "addon",
+   "filename": "Dimensional Backpacks Add-On (addon).mcaddon",
+   "sha256": "439e286530f011f22051d1a81f24dae53c00b2e9a4b2edebb91253523e9e5dda",
+   "added": "2026-11-15T18:39:16Z",
    "icon": true
   }
  ]
