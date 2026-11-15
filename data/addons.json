@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:31:47Z",
+ "updated": "2026-11-15T19:32:14Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -817,6 +817,19 @@
    "filename": "Craftable Homes Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "eeab06354bafda30cef5969fde078f5dc3da53c9558a48da0b9290950fcba2a8",
    "added": "2026-11-15T19:31:47Z",
+   "icon": true
+  },
+  {
+   "id": "scp-survival",
+   "name": "SCP Survival",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/scp-survival.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/scp-survival/SCP.Survival.mcaddon",
+   "size": 2045376,
+   "type": "addon",
+   "filename": "SCP Survival.mcaddon",
+   "sha256": "4719262728fc1948c696734f6a07db7cb686da0a9ecadb5d68f0ddf5ba77f9c2",
+   "added": "2026-11-15T19:32:14Z",
    "icon": true
   }
  ]
