@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:29:34Z",
+ "updated": "2026-11-15T19:29:43Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -702,6 +702,18 @@
    "sha256": "d2e15b2a626a9b4828d5940206fd06f65d58187b951059314305a0babd6b5a59",
    "added": "2026-11-15T19:29:34Z",
    "icon": true
+  },
+  {
+   "id": "aphmaus-picnic-pals",
+   "name": "Aphmaus Picnic Pals",
+   "description": "",
+   "banner": null,
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/aphmaus-picnic-pals/Aphmaus.Picnic.Pals.BY.MARKETPLACE.TRADER.mcpack",
+   "size": 64115,
+   "type": "pack",
+   "filename": "Aphmaus Picnic Pals BY MARKETPLACE TRADER.mcpack",
+   "sha256": "8a148d6899765d01bfc3f2cf92e6795563eff8784677b1c77882336485b64547",
+   "added": "2026-11-15T19:29:43Z"
   }
  ]
 }
