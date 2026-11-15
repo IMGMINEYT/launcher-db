@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:09:42Z",
+ "updated": "2026-11-15T19:10:01Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1164,6 +1164,19 @@
    "filename": "Luxury Cars Add-On.mcaddon",
    "sha256": "9aa6d433d8e91cd0a035e4ddf8c7087f72ea66713b32f48e56cdf5b6f2093ab5",
    "added": "2026-11-15T19:09:41Z",
+   "icon": true
+  },
+  {
+   "id": "airplanes-add-on",
+   "name": "Airplanes Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/airplanes-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/airplanes-add-on/Airplanes.Add-On.mcaddon",
+   "size": 9904985,
+   "type": "addon",
+   "filename": "Airplanes Add-On.mcaddon",
+   "sha256": "91fa40034a7530be32e77f03d0396293ae9594ca47714ecbfef22d46e42fdee4",
+   "added": "2026-11-15T19:10:01Z",
    "icon": true
   }
  ]
