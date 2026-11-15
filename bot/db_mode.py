@@ -202,6 +202,53 @@ def _delete_release(tag):
     _gh("DELETE", _api("git/refs/tags/" + urllib.parse.quote(tag)))
 
 
+# ---------------------------------------------------------------- duplicate check
+def _sha256_file(path):
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _sha256_url(url):
+    import hashlib
+    h = hashlib.sha256()
+    req = urllib.request.Request(url, headers={"User-Agent": "addon-db-bot"})
+    with urllib.request.urlopen(req, timeout=600) as r:
+        for chunk in iter(lambda: r.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _find_dup_by_name(addons, fname):
+    f = (fname or "").strip().lower()
+    for a in addons:
+        if f and (a.get("filename") or "").strip().lower() == f:
+            return a
+    return None
+
+
+def _find_dup_by_content(addons, sha, size):
+    """Same bytes. Entries with a stored sha256 compare directly; older entries without one
+    are only downloaded and hashed when their size matches."""
+    for a in addons:
+        if a.get("sha256") == sha:
+            return a
+    for a in addons:
+        if a.get("sha256") or not a.get("download"):
+            continue
+        if a.get("size") and size and int(a["size"]) != int(size):
+            continue
+        try:
+            if _sha256_url(a["download"]) == sha:
+                return a
+        except Exception:
+            continue
+    return None
+
+
 # ---------------------------------------------------------------- MCPEDL lookup
 def _http_text(url, timeout=20):
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept-Language": "en"})
@@ -600,8 +647,25 @@ def setup(client, owner_id, tmp_dir):
         tmp = Path(tmp_dir) / ("db_%s" % msg.id)
         aid = None
         committed = False
+
+        async def say_dup(a):
+            result["dup"] = True
+            text = "This file is already in the database: %s (%s). Nothing was added." % (
+                a.get("name") or a.get("id"), a.get("id"))
+            try:
+                if getattr(msg, "is_channel", False) and not getattr(msg, "is_group", False):
+                    await client.send_message(owner_id, text + " (channel post, file %s)" % fname)
+                else:
+                    await msg.reply(text)
+            except Exception:
+                pass
         try:
             tmp.parent.mkdir(exist_ok=True)
+            d0, _ = await asyncio.to_thread(_read_data)
+            hit = _find_dup_by_name(d0["addons"], fname)
+            if hit:
+                await say_dup(hit)
+                return
             last = {"t": 0.0}
 
             async def prog(done, total):
@@ -618,8 +682,14 @@ def setup(client, owner_id, tmp_dir):
                 await status.edit("Database: creating download link")
             except Exception:
                 pass
+            sha = await asyncio.to_thread(_sha256_file, str(tmp))
             async with lock:
                 doc0, _ = await asyncio.to_thread(_read_data)
+                hit = _find_dup_by_name(doc0["addons"], fname) or await asyncio.to_thread(
+                    _find_dup_by_content, doc0["addons"], sha, os.path.getsize(str(tmp)))
+                if hit:
+                    await say_dup(hit)
+                    return
                 taken = set(a.get("id") for a in doc0["addons"])
                 base = _slug(name)
                 aid, n = base, 2
@@ -674,7 +744,7 @@ def setup(client, owner_id, tmp_dir):
                             have_img = True
             entry = {"id": aid, "name": name, "description": desc, "banner": banner_url,
                      "download": dl_url, "size": size, "type": typ, "filename": fname,
-                     "added": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+                     "sha256": sha, "added": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
             if is_icon and banner_url:
                 entry["icon"] = True
             if source:
@@ -815,7 +885,7 @@ def setup(client, owner_id, tmp_dir):
                     res["ok"] = False
             except Exception:
                 res["ok"] = False
-            if not retry and opts.get("batch"):
+            if not retry and opts.get("batch") and not res.get("dup"):
                 (batch["ok"] if res.get("ok") else batch["fail"]).append(_label(msg))
             if opts.get("quiet") or opts.get("batch"):
                 await asyncio.sleep(2)   # gentle pacing for batches and channel imports
