@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:23:00Z",
+ "updated": "2026-11-15T19:23:27Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -428,6 +428,19 @@
    "filename": "Armor++ Add-On by FREE MC MARKET PLACE.mcaddon",
    "sha256": "c5167c37cb0393d4396ef5f1c7129560a9fa0849cacc8ec530392d449f5270ab",
    "added": "2026-11-15T19:23:00Z",
+   "icon": true
+  },
+  {
+   "id": "better-jukeboxes-add-on",
+   "name": "Better Jukeboxes Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/better-jukeboxes-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/better-jukeboxes-add-on/Better.Jukeboxes.Add-On.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 22510594,
+   "type": "addon",
+   "filename": "Better Jukeboxes Add-On by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "78bc897fd1f92b92f822b9336c78f7d0170911eee5672b06807f48bc25fa7465",
+   "added": "2026-11-15T19:23:27Z",
    "icon": true
   }
  ]
