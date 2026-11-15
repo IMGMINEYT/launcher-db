@@ -438,6 +438,7 @@ def setup(client, owner_id, tmp_dir):
             await msg.reply("Download link:\n" + dl_url)
             # banner / description: the owner's own first
             banner_url = None
+            is_icon = False
             desc = ""
             source = ""
             now = time.time()
@@ -456,6 +457,7 @@ def setup(client, owner_id, tmp_dir):
                     async with lock:
                         banner_url = await asyncio.to_thread(_put_banner, aid, idata, iext)
                     have_img = True
+                    is_icon = True
             # lookup only without a custom name, and only for the missing parts
             if not custom and (not have_img or not desc):
                 try:
@@ -476,6 +478,8 @@ def setup(client, owner_id, tmp_dir):
             entry = {"id": aid, "name": name, "description": desc, "banner": banner_url,
                      "download": dl_url, "size": size, "type": typ, "filename": fname,
                      "added": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+            if is_icon and banner_url:
+                entry["icon"] = True
             if source:
                 entry["source"] = source
 
