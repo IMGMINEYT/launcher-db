@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:56:49Z",
+ "updated": "2026-11-15T18:57:09Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -723,6 +723,19 @@
    "filename": "Vanilla Biomes+ 1.1 Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "709772b31212934811dd9c037b59f3c8485773d62f6b9cb8604888d0cfa19a68",
    "added": "2026-11-15T18:56:49Z",
+   "icon": true
+  },
+  {
+   "id": "dynamic-light-add-on",
+   "name": "DYNAMIC LIGHT Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/dynamic-light-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/dynamic-light-add-on/DYNAMIC.LIGHT.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 11130497,
+   "type": "addon",
+   "filename": "DYNAMIC LIGHT Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "6e84b1aafa432db227fcbae4d6be8e57fa7ae15d201b6366252940a2785449ad",
+   "added": "2026-11-15T18:57:08Z",
    "icon": true
   }
  ]
