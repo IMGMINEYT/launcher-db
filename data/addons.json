@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:49:12Z",
+ "updated": "2026-11-15T18:49:32Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -359,6 +359,19 @@
    "filename": "Horror Creatures Add-On BY MARKETPLACE TRADER (1).mcaddon",
    "sha256": "6aeec01252bfc965bc859c00ab4a6fcc9134e1b4d9d57927e8e34ae86594e977",
    "added": "2026-11-15T18:49:12Z",
+   "icon": true
+  },
+  {
+   "id": "cursed-add-on",
+   "name": "Cursed Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/cursed-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/cursed-add-on/Cursed.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 9526072,
+   "type": "addon",
+   "filename": "Cursed Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "656c83953c8dea3076a925243178350f96c8b73ca7db4a32bc88e600e14908d9",
+   "added": "2026-11-15T18:49:31Z",
    "icon": true
   }
  ]
