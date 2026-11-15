@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:10:15Z",
+ "updated": "2026-11-15T19:10:54Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1190,6 +1190,19 @@
    "filename": "Natural Disasters Add-On.mcaddon",
    "sha256": "517807fa4da27c9c2107c778b2c6fbc7ac01664719835638c5c9405ca7c3e837",
    "added": "2026-11-15T19:10:14Z",
+   "icon": true
+  },
+  {
+   "id": "biomes-add-on-mdf",
+   "name": "Biomes Add-On (MDF)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/biomes-add-on-mdf.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/biomes-add-on-mdf/Biomes.Add-On.MDF.mcaddon",
+   "size": 38170838,
+   "type": "addon",
+   "filename": "Biomes Add-On (MDF).mcaddon",
+   "sha256": "6e530e9cc9e68200cb02a2d26699e454abad6959ea700906c3bf55ff8a2231d2",
+   "added": "2026-11-15T19:10:53Z",
    "icon": true
   }
  ]
