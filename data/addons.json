@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:16:04Z",
+ "updated": "2026-11-15T19:16:13Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1320,6 +1320,19 @@
    "filename": "HyperCraft Add-On Uphold by FREE MC MARKET PLACE.mcaddon",
    "sha256": "0a349732b53ddff7b567885f0c0c574ca320144da17ed8c0ed65bb0f69859f79",
    "added": "2026-11-15T19:16:03Z",
+   "icon": true
+  },
+  {
+   "id": "build-your-vehicle-add-on",
+   "name": "Build your Vehicle Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/build-your-vehicle-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/build-your-vehicle-add-on/Build.your.Vehicle.Add-On.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 492627,
+   "type": "addon",
+   "filename": "Build your Vehicle Add-On by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "149a9088dd07a1811fcf2bc86c84c209ec4cfd0cc87ab4428fe7b330631843e5",
+   "added": "2026-11-15T19:16:13Z",
    "icon": true
   }
  ]
