@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:11:28Z",
+ "updated": "2026-11-15T19:11:49Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1242,6 +1242,19 @@
    "filename": "AutoFisher Add-On.mcaddon",
    "sha256": "91d6c51cf47156d6c1981ab0dc8a417de3400c09b770e7039726e550f6e790ca",
    "added": "2026-11-15T19:11:28Z",
+   "icon": true
+  },
+  {
+   "id": "wither-apocalypse",
+   "name": "WITHER APOCALYPSE",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/wither-apocalypse.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/wither-apocalypse/WITHER.APOCALYPSE.mcaddon",
+   "size": 13328243,
+   "type": "addon",
+   "filename": "WITHER APOCALYPSE.mcaddon",
+   "sha256": "23b82bd0482e95e3c3e7c65efb39e08d0f62436e7f96714e3c2dad329fe443d1",
+   "added": "2026-11-15T19:11:49Z",
    "icon": true
   }
  ]
