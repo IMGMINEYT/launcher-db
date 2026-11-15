@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:32:31Z",
+ "updated": "2026-11-15T19:32:45Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -843,6 +843,19 @@
    "filename": "bloodysleep1.1.5.mcworld",
    "sha256": "055895b79cd648ebf9f32320bc0a00d7187f724b10979bb685af89c8cfdedfba",
    "added": "2026-11-15T19:32:31Z",
+   "icon": true
+  },
+  {
+   "id": "mowzie-s-mobs-add-on-1-2",
+   "name": "Mowzie's Mobs Add-On 1.2",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/mowzie-s-mobs-add-on-1-2.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/mowzie-s-mobs-add-on-1-2/Mowzie.s.Mobs.Add-On.1.2.mcaddon",
+   "size": 20731240,
+   "type": "addon",
+   "filename": "Mowzie's Mobs Add-On 1.2.mcaddon",
+   "sha256": "87be011d579f5ea116add6cf4a806e9de22c1eaa5b5f2b97921e4da629803819",
+   "added": "2026-11-15T19:32:45Z",
    "icon": true
   }
  ]
