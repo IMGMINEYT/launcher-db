@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:16:25Z",
+ "updated": "2026-11-15T19:16:35Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1346,6 +1346,19 @@
    "filename": "Maximum Security Add-On 1.0 by FREE MC MARKET PLACE.mcaddon",
    "sha256": "0e706a68f68e75ed257a9cb48f5e5bccc878fa52bc094df8ec4b61272900b5f3",
    "added": "2026-11-15T19:16:25Z",
+   "icon": true
+  },
+  {
+   "id": "xp-gems-add-on",
+   "name": "XP Gems Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/xp-gems-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/xp-gems-add-on/XP.Gems.Add-On.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 168838,
+   "type": "addon",
+   "filename": "XP Gems Add-On by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "2267ecc8e4a47b5ff3bd55eabe8e60b66df6ad7299d8b046bf4cdff0647728b2",
+   "added": "2026-11-15T19:16:34Z",
    "icon": true
   }
  ]
