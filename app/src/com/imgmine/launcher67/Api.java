@@ -13,7 +13,7 @@ import org.json.JSONObject;
 final class Api {
     static final String RAW = "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/";
     static final String CDN = "https://cdn.jsdelivr.net/gh/IMGMINEYT/launcher-db@main/";
-    static final String[] SRC = {CDN + "data/addons.json", RAW + "data/addons.json"};
+    static final String[] SRC = {RAW + "data/addons.json", CDN + "data/addons.json"};
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static final java.util.concurrent.ExecutorService IO = java.util.concurrent.Executors.newSingleThreadExecutor();
     static volatile long lastFetch;
@@ -31,7 +31,6 @@ final class Api {
             JSONObject p = pa.optJSONObject(k);
             if (p == null) continue;
             String im = p.optString("image"), lk = p.optString("link");
-            if (im.startsWith(RAW)) im = CDN + im.substring(RAW.length());
             if (!im.startsWith("https://")) continue;
             pr.add(new String[]{im, lk.startsWith("https://") || lk.startsWith("http://") ? lk : ""});
         }
@@ -53,7 +52,6 @@ final class Api {
             d.size = j.optLong("size");
             d.icon = j.optBoolean("icon");
             String b = j.isNull("banner") ? "" : j.optString("banner");
-            if (b.startsWith(RAW)) b = CDN + b.substring(RAW.length());
             d.banner = b.startsWith("https://") ? b : null;
             try { d.added = f.parse(j.optString("added")).getTime(); } catch (Exception ignored) {}
             if (d.name.length() == 0 || !d.download.startsWith("https://")) continue;
@@ -95,7 +93,7 @@ final class Api {
                 List<Addon> res = null;
                 for (int i = 0; i < SRC.length && res == null; i++) {
                     try {
-                        String u = SRC[i] + (i > 0 ? "?t=" + System.currentTimeMillis() / 60000 : "");
+                        String u = SRC[i] + "?t=" + System.currentTimeMillis() / 60000;
                         HttpURLConnection c = (HttpURLConnection) new URL(u).openConnection();
                         c.setConnectTimeout(8000);
                         c.setReadTimeout(10000);
