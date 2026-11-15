@@ -22,11 +22,12 @@
     else b.appendChild(art(a.name));
     return b;
   }
-  function types(){var t={};state.all.forEach(function(a){t[a.type||'addon']=1});return Object.keys(t).sort()}
+  var LAB={all:'All',addon:'Addons',world:'Worlds',pack:'Packs',template:'Templates'};
+  function types(){return ['addon','world','pack','template']}
   function drawChips(){
-    chips.textContent='';var ts=types();if(ts.length<2)return;
+    chips.textContent='';var ts=types();
     ['all'].concat(ts).forEach(function(t){var b=document.createElement('button');b.className='chip';b.type='button';
-      b.textContent=t==='all'?'All':t.charAt(0).toUpperCase()+t.slice(1);b.setAttribute('aria-pressed',String(state.type===t));
+      b.textContent=LAB[t];b.setAttribute('aria-pressed',String(state.type===t));
       b.onclick=function(){state.type=t;state.shown=PAGE;drawChips();render()};chips.appendChild(b)});
   }
   function nz(t){return String(t||'').toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim()}
@@ -88,7 +89,7 @@
     var cached=null;try{cached=JSON.parse(sessionStorage.getItem('ad1')||'null')}catch(e){}
     if(cached&&Date.now()-cached.t<120000){state.all=cached.d;drawChips();render();return}
     get(0).catch(function(){return get(1)}).then(function(j){
-      state.all=(j.addons||[]).filter(function(a){return a&&a.name&&a.download&&/^https:\/\//.test(a.download)}).map(function(a){if(a.banner&&a.banner.indexOf(RAW)===0)a.banner=CDN+a.banner.slice(RAW.length);return a});
+      state.all=(j.addons||[]).filter(function(a){return a&&a.name&&a.download&&/^https:\/\//.test(a.download)}).map(function(a){if(a.banner&&a.banner.indexOf(RAW)===0)a.banner=CDN+a.banner.slice(RAW.length);if(a.type==='map')a.type='world';return a});
       try{sessionStorage.setItem('ad1',JSON.stringify({t:Date.now(),d:state.all}))}catch(e){}
       drawChips();render();
     }).catch(function(){grid.textContent='';var e=document.createElement('div');e.className='empty';e.textContent='Could not load the list. Refresh in a moment.';grid.appendChild(e)});
