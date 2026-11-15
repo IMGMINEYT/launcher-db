@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:41:23Z",
+ "updated": "2026-11-15T18:41:41Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -164,6 +164,19 @@
    "filename": "Horror Circus Add-on by FREE MC MARKET PLACE.mcaddon",
    "sha256": "d2e15b2a626a9b4828d5940206fd06f65d58187b951059314305a0babd6b5a59",
    "added": "2026-11-15T18:41:23Z",
+   "icon": true
+  },
+  {
+   "id": "abyssal-echoes",
+   "name": "Abyssal Echoes",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/abyssal-echoes.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/abyssal-echoes/Abyssal.Echoes.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 5278612,
+   "type": "addon",
+   "filename": "Abyssal Echoes by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "f03c31c83caf4be828c20492147ff6fb614baa48863df0313762f8da52bafa86",
+   "added": "2026-11-15T18:41:40Z",
    "icon": true
   }
  ]
