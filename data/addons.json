@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:46:31Z",
+ "updated": "2026-11-15T18:46:42Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -255,6 +255,19 @@
    "filename": "Natural Disasters Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "69f8222b69f277220b89eb81271c6d6948ae4589566d3d393e100b45089bd84c",
    "added": "2026-11-15T18:46:31Z",
+   "icon": true
+  },
+  {
+   "id": "cinecam-add-on",
+   "name": "Cinecam Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/cinecam-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/cinecam-add-on/Cinecam.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 490460,
+   "type": "addon",
+   "filename": "Cinecam Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "ee4c6b53a7e93fbea75d03039d966583ed028238bb7c193e9a497b7586cb8641",
+   "added": "2026-11-15T18:46:42Z",
    "icon": true
   }
  ]
