@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T13:03:31Z",
+ "updated": "2026-11-15T13:04:26Z",
  "addons": [
   {
    "id": "magic-school-by-free-mc-market-place",
@@ -12,6 +12,17 @@
    "type": "map",
    "filename": "Magic School by FREE MC MARKET PLACE.mcworld",
    "added": "2026-11-15T13:03:31Z"
+  },
+  {
+   "id": "explore-all-our-channels",
+   "name": "💎 Explore all our channels",
+   "description": "",
+   "banner": null,
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/explore-all-our-channels/Weapons.FREE.MC.MARKETPLACE.mcaddon",
+   "size": 4718684,
+   "type": "addon",
+   "filename": "Weapons FREE MC MARKETPLACE.mcaddon",
+   "added": "2026-11-15T13:04:26Z"
   }
  ]
 }
