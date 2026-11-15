@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:22:49Z",
+ "updated": "2026-11-15T19:23:00Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -415,6 +415,19 @@
    "filename": "LIMINAL Sound Pack 1.0 by FREE MC MARKET PLACE.mcpack",
    "sha256": "12a8123017fed93123354fdd46a4aa803a95ee16f8c6593f9e90000575765c03",
    "added": "2026-11-15T19:22:49Z",
+   "icon": true
+  },
+  {
+   "id": "armor-add-on",
+   "name": "Armor++ Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/armor-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/armor-add-on/Armor%2B%2B.Add-On.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 2125130,
+   "type": "addon",
+   "filename": "Armor++ Add-On by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "c5167c37cb0393d4396ef5f1c7129560a9fa0849cacc8ec530392d449f5270ab",
+   "added": "2026-11-15T19:23:00Z",
    "icon": true
   }
  ]
