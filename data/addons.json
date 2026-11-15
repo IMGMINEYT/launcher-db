@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:23:39Z",
+ "updated": "2026-11-15T19:23:59Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -454,6 +454,19 @@
    "filename": "Builders Tools Add-on by FREE MC MARKET PLACE.mcaddon",
    "sha256": "350139e93a6e67a0f28027b455db2a19a9bee959d13fb909e8f5993929bc1f8a",
    "added": "2026-11-15T19:23:39Z",
+   "icon": true
+  },
+  {
+   "id": "animals-add-on",
+   "name": "ANIMALS Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/animals-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/animals-add-on/ANIMALS.Add-On.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 9566553,
+   "type": "addon",
+   "filename": "ANIMALS Add-On by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "8614fd3f4bf1ad258d3a4b09455f2ef801ade06a9876db5b87d6c31272b1a6bc",
+   "added": "2026-11-15T19:23:59Z",
    "icon": true
   }
  ]
