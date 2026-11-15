@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:16:13Z",
+ "updated": "2026-11-15T19:16:25Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1333,6 +1333,19 @@
    "filename": "Build your Vehicle Add-On by FREE MC MARKET PLACE.mcaddon",
    "sha256": "149a9088dd07a1811fcf2bc86c84c209ec4cfd0cc87ab4428fe7b330631843e5",
    "added": "2026-11-15T19:16:13Z",
+   "icon": true
+  },
+  {
+   "id": "maximum-security-add-on-1-0",
+   "name": "Maximum Security Add-On 1.0",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/maximum-security-add-on-1-0.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/maximum-security-add-on-1-0/Maximum.Security.Add-On.1.0.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 2161842,
+   "type": "addon",
+   "filename": "Maximum Security Add-On 1.0 by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "0e706a68f68e75ed257a9cb48f5e5bccc878fa52bc094df8ec4b61272900b5f3",
+   "added": "2026-11-15T19:16:25Z",
    "icon": true
   }
  ]
