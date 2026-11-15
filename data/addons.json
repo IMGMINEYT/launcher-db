@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:52:55Z",
+ "updated": "2026-11-15T18:53:06Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -502,6 +502,19 @@
    "filename": "PETS Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "ed96894326878c0e4ed4c6aca697874c8300528fb323a1af38c12331b359ce40",
    "added": "2026-11-15T18:52:54Z",
+   "icon": true
+  },
+  {
+   "id": "holiday-helpers",
+   "name": "Holiday Helpers",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/holiday-helpers.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/holiday-helpers/Holiday.Helpers.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 406226,
+   "type": "addon",
+   "filename": "Holiday Helpers BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "5f1f14660e3a3be25d0b96c201b7f4075e3bf9ec04dadf0de174b98ef82d53cc",
+   "added": "2026-11-15T18:53:05Z",
    "icon": true
   }
  ]
