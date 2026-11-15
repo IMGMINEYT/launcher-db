@@ -20,6 +20,56 @@ public class OverlayService extends Service {
     private Panel panel;
     private SharedPreferences sp;
     private int size;
+    private final android.os.Handler h = new android.os.Handler(android.os.Looper.getMainLooper());
+    private boolean mcFg = true;
+    private long lastQ;
+    private int away;
+    private final Runnable poll = new Runnable() {
+        public void run() {
+            try { tick(); } catch (Exception ignored) {}
+            h.postDelayed(this, 1500);
+        }
+    };
+
+    static boolean hasUsage(Context c) {
+        try {
+            AppOpsManager a = (AppOpsManager) c.getSystemService(Context.APP_OPS_SERVICE);
+            return a.checkOpNoThrow("android:get_usage_stats", android.os.Process.myUid(), c.getPackageName()) == AppOpsManager.MODE_ALLOWED;
+        } catch (Exception e) { return false; }
+    }
+
+    /** Show the bubble only while Minecraft is the app on screen. Needs Usage access; without it the bubble stays. */
+    private void tick() {
+        if (bubble == null) return;
+        if (!hasUsage(this)) { setPresent(true); return; }
+        android.app.usage.UsageStatsManager u = (android.app.usage.UsageStatsManager) getSystemService(USAGE_STATS_SERVICE);
+        long now = System.currentTimeMillis();
+        long from = lastQ == 0 ? now - 10 * 60000L : lastQ - 2000;
+        android.app.usage.UsageEvents ev = u.queryEvents(from, now);
+        android.app.usage.UsageEvents.Event e = new android.app.usage.UsageEvents.Event();
+        boolean seen = lastQ != 0, any = false;
+        while (ev.hasNextEvent()) {
+            ev.getNextEvent(e);
+            int t = e.getEventType();
+            boolean fg = t == android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND;
+            boolean bg = t == android.app.usage.UsageEvents.Event.MOVE_TO_BACKGROUND;
+            if (!fg && !bg) continue;
+            String pk = e.getPackageName();
+            if (Downloader.MC.equals(pk)) { mcFg = fg; any = true; }
+            else if (fg && !pk.equals(getPackageName()) && !pk.startsWith("com.android.systemui") && !pk.contains("inputmethod")) { mcFg = false; any = true; }
+        }
+        lastQ = now;
+        if (mcFg) away = 0; else away++;
+        setPresent(mcFg || away < 2);
+    }
+
+    private void setPresent(boolean on) {
+        if (panel != null && panel.isShown()) {
+            if (!on) panel.hide();
+            return;
+        }
+        if (bubble != null) bubble.setVisibility(on ? View.VISIBLE : View.GONE);
+    }
 
     private final class BubbleView extends View {
         final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -53,6 +103,7 @@ public class OverlayService extends Service {
         panel = new Panel(this, new Runnable() { public void run() { if (bubble != null) bubble.setVisibility(View.VISIBLE); } });
         addBubble();
         running = true;
+        h.postDelayed(poll, 1500);
     }
 
     @Override public int onStartCommand(Intent i, int flags, int id) {
@@ -163,6 +214,7 @@ public class OverlayService extends Service {
 
     @Override public void onDestroy() {
         running = false;
+        h.removeCallbacks(poll);
         if (panel != null) panel.destroy();
         if (bubble != null) { try { wm.removeView(bubble); } catch (Exception ignored) {} bubble = null; }
         super.onDestroy();
