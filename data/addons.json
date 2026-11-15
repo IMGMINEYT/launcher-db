@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:11:18Z",
+ "updated": "2026-11-15T19:11:28Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1229,6 +1229,19 @@
    "filename": "Villagers++ Add-On BySkupka.mcaddon",
    "sha256": "888ce800ca97b857595d3b8f8ac2f72e03d96de3ca075114e1b576249d049e1d",
    "added": "2026-11-15T19:11:17Z",
+   "icon": true
+  },
+  {
+   "id": "autofisher-add-on",
+   "name": "AutoFisher Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/autofisher-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/autofisher-add-on/AutoFisher.Add-On.mcaddon",
+   "size": 854737,
+   "type": "addon",
+   "filename": "AutoFisher Add-On.mcaddon",
+   "sha256": "91d6c51cf47156d6c1981ab0dc8a417de3400c09b770e7039726e550f6e790ca",
+   "added": "2026-11-15T19:11:28Z",
    "icon": true
   }
  ]
