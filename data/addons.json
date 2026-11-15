@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:59:45Z",
+ "updated": "2026-11-15T18:59:58Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -814,6 +814,19 @@
    "filename": "Capybara Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "b27f19ec331755e3a667a32318e4d2dd3817eaacf3370e8ecbfe7f443290476e",
    "added": "2026-11-15T18:59:45Z",
+   "icon": true
+  },
+  {
+   "id": "mob-pets-add-on-1-0",
+   "name": "Mob Pets Add-On 1.0",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/mob-pets-add-on-1-0.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/mob-pets-add-on-1-0/Mob.Pets.Add-On.1.0.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 2365004,
+   "type": "addon",
+   "filename": "Mob Pets Add-On 1.0 BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "140cb70e5e7d95120d4d28a7f18ff26494db44c01e0ae53d2e9abaf897d61c38",
+   "added": "2026-11-15T18:59:57Z",
    "icon": true
   }
  ]
