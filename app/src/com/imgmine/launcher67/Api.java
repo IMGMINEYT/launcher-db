@@ -13,7 +13,6 @@ import org.json.JSONObject;
 final class Api {
     static final String RAW = "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/";
     static final String CDN = "https://cdn.jsdelivr.net/gh/IMGMINEYT/launcher-db@main/";
-    static final String[] SRC = {RAW + "data/addons.json", CDN + "data/addons.json"};
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static final java.util.concurrent.ExecutorService IO = java.util.concurrent.Executors.newSingleThreadExecutor();
     static volatile long lastFetch;
@@ -87,25 +86,66 @@ final class Api {
         return bo.toByteArray();
     }
 
+    private static final String[] SOURCES = {
+            "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/data/addons.json?t=",
+            "https://github.com/IMGMINEYT/launcher-db/raw/main/data/addons.json?t=",
+            "https://api.github.com/repos/IMGMINEYT/launcher-db/contents/data/addons.json?ref=main&t=",
+            "https://fastly.jsdelivr.net/gh/IMGMINEYT/launcher-db@main/data/addons.json?t=",
+            "https://cdn.jsdelivr.net/gh/IMGMINEYT/launcher-db/data/addons.json?t="};
+
+    private static byte[] get(String base) {
+        try {
+            HttpURLConnection c = (HttpURLConnection) new URL(base + System.currentTimeMillis() / 60000).openConnection();
+            c.setConnectTimeout(5000);
+            c.setReadTimeout(7000);
+            c.setRequestProperty("User-Agent", "67Launcher/1.5");
+            c.setRequestProperty("Accept", base.contains("api.github.com") ? "application/vnd.github.raw" : "application/json");
+            if (c.getResponseCode() != 200) return null;
+            byte[] b = readAll(c.getInputStream(), 8 << 20);
+            new JSONObject(new String(b, "UTF-8"));   // must be valid
+            return b;
+        } catch (Exception e) { return null; }
+    }
+
+    /** Asks every source at the same time and keeps the newest answer, so one blocked or stale host cannot hang or outdate the list. */
+    static byte[] race() {
+        final java.util.concurrent.ExecutorService ex = java.util.concurrent.Executors.newFixedThreadPool(SOURCES.length);
+        java.util.concurrent.ExecutorCompletionService<byte[]> cs = new java.util.concurrent.ExecutorCompletionService<>(ex);
+        for (final String s : SOURCES) cs.submit(new java.util.concurrent.Callable<byte[]>() { public byte[] call() { return get(s); } });
+        byte[] best = null;
+        String bestU = "";
+        long start = System.currentTimeMillis(), firstOk = 0;
+        try {
+            for (int n = 0; n < SOURCES.length; n++) {
+                long left = 10000 - (System.currentTimeMillis() - start);
+                if (firstOk > 0) left = Math.min(left, 1500 - (System.currentTimeMillis() - firstOk));
+                if (left <= 0) break;
+                java.util.concurrent.Future<byte[]> f = cs.poll(left, java.util.concurrent.TimeUnit.MILLISECONDS);
+                if (f == null) break;
+                byte[] b = f.get();
+                if (b == null) continue;
+                String u = new JSONObject(new String(b, "UTF-8")).optString("updated");
+                if (best == null || u.compareTo(bestU) > 0) { best = b; bestU = u; }
+                if (firstOk == 0) firstOk = System.currentTimeMillis();
+            }
+        } catch (Exception ignored) {}
+        ex.shutdownNow();
+        return best;
+    }
+
     static void fetch(final Context app, final CB cb) {
         IO.execute(new Runnable() {
             public void run() {
                 List<Addon> res = null;
-                for (int i = 0; i < SRC.length && res == null; i++) {
-                    try {
-                        String u = SRC[i] + "?t=" + System.currentTimeMillis() / 60000;
-                        HttpURLConnection c = (HttpURLConnection) new URL(u).openConnection();
-                        c.setConnectTimeout(8000);
-                        c.setReadTimeout(10000);
-                        c.setRequestProperty("User-Agent", "67Launcher/1.0");
-                        if (c.getResponseCode() != 200) continue;
-                        byte[] b = readAll(c.getInputStream(), 8 << 20);
+                try {
+                    byte[] b = race();
+                    if (b != null) {
                         res = parse(new String(b, "UTF-8"));
                         FileOutputStream fo = new FileOutputStream(new File(app.getFilesDir(), "addons.json"));
                         fo.write(b);
                         fo.close();
-                    } catch (Exception ignored) {}
-                }
+                    }
+                } catch (Exception ignored) {}
                 final List<Addon> r = res;
                 if (r != null) lastFetch = System.currentTimeMillis();
                 MAIN.post(new Runnable() { public void run() { if (r != null) cb.ok(r); else cb.fail(); } });
