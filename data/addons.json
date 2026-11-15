@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:56:03Z",
+ "updated": "2026-11-15T18:56:13Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -684,6 +684,19 @@
    "filename": "CinemaCraft Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "3f8902c8be0a5dad97be0545e83372d387cf7c1032858987a95c8d3e2471f668",
    "added": "2026-11-15T18:56:03Z",
+   "icon": true
+  },
+  {
+   "id": "dimension-homes-add-on",
+   "name": "Dimension Homes Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/dimension-homes-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/dimension-homes-add-on/Dimension.Homes.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 736634,
+   "type": "addon",
+   "filename": "Dimension Homes Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "4c0584931bc14f6346b6db0d47f21d23cb9eb967705f6dbfbed45224b097d30c",
+   "added": "2026-11-15T18:56:13Z",
    "icon": true
   }
  ]
