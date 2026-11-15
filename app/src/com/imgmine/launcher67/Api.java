@@ -48,6 +48,7 @@ final class Api {
             d.desc = j.optString("description");
             d.download = j.optString("download");
             d.type = j.optString("type", "file");
+            if (d.type.equals("map")) d.type = "world";
             d.filename = j.optString("filename");
             d.size = j.optLong("size");
             d.icon = j.optBoolean("icon");
