@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:10:01Z",
+ "updated": "2026-11-15T19:10:15Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1177,6 +1177,19 @@
    "filename": "Airplanes Add-On.mcaddon",
    "sha256": "91fa40034a7530be32e77f03d0396293ae9594ca47714ecbfef22d46e42fdee4",
    "added": "2026-11-15T19:10:01Z",
+   "icon": true
+  },
+  {
+   "id": "natural-disasters-add-on-2",
+   "name": "Natural Disasters Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/natural-disasters-add-on-2.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/natural-disasters-add-on-2/Natural.Disasters.Add-On.mcaddon",
+   "size": 1079464,
+   "type": "addon",
+   "filename": "Natural Disasters Add-On.mcaddon",
+   "sha256": "517807fa4da27c9c2107c778b2c6fbc7ac01664719835638c5c9405ca7c3e837",
+   "added": "2026-11-15T19:10:14Z",
    "icon": true
   }
  ]
