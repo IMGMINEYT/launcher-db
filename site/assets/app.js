@@ -56,7 +56,7 @@
   function dl(a,cls){var l=document.createElement('a');l.className=cls||'btn';l.textContent='Download';l.href=a.download;l.rel='noopener';return l}
   function open(a){
     dlg.textContent='';dlg.appendChild(banner(a,true));var d=document.createElement('div');d.className='in';
-    var h=document.createElement('h2');h.textContent=a.name;var p=document.createElement('div');p.className='desc';p.textContent=a.description||'No description yet.';
+    var h=document.createElement('h2');h.textContent=a.name;var p=document.createElement('div');p.className='desc';p.textContent=a.description||(a.name+' '+((a.type||'addon')==='map'?'map':'addon')+' for Minecraft Bedrock - download and import in one tap.');
     var r=document.createElement('div');r.className='row';r.appendChild(dl(a));
     var c=document.createElement('button');c.className='btn ghost';c.textContent='Close';c.onclick=function(){dlg.close()};r.appendChild(c);
     if(a.size){var s=document.createElement('span');s.style.cssText='color:var(--mute);align-self:center';s.textContent=fmt(a.size);r.appendChild(s)}
