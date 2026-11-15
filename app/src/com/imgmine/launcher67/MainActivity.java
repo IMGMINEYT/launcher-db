@@ -14,7 +14,8 @@ import android.view.ViewGroup;
 import android.widget.*;
 
 public class MainActivity extends Activity {
-    private TextView allow, notif, start, stop, hint;
+    private TextView allow, notif, start, stop, hint, dnsNote;
+    private LinearLayout promoBox;
 
     private boolean canOverlay() { return Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(this); }
 
@@ -95,6 +96,17 @@ public class MainActivity extends Activity {
         hint.setTypeface(null);
         hint.setPadding(0, Ui.dp(18), 0, 0);
         col.addView(hint);
+        dnsNote = label("Ad-blocking Private DNS detected. Promos and support may not load or work while it is on.", 12, 0xFF1B1400);
+        dnsNote.setTypeface(null);
+        dnsNote.setBackground(Ui.panel(Ui.GOLD));
+        dnsNote.setPadding(Ui.dp(10), Ui.dp(8), Ui.dp(10), Ui.dp(8));
+        dnsNote.setVisibility(View.GONE);
+        LinearLayout.LayoutParams dl = wrap(Ui.dp(18));
+        col.addView(dnsNote, dl);
+        promoBox = new LinearLayout(this);
+        promoBox.setOrientation(LinearLayout.VERTICAL);
+        col.addView(promoBox, wrap(Ui.dp(8)));
+        Images.init(this);
         setContentView(sv);
     }
 
@@ -128,13 +140,56 @@ public class MainActivity extends Activity {
         refresh();
     }
 
-    @Override protected void onResume() { super.onResume(); refresh(); }
+    @Override protected void onResume() {
+        super.onResume();
+        refresh();
+        showPromos(Api.promos);
+        Api.cached(this);
+        Api.fetch(getApplicationContext(), new Api.CB() {
+            public void ok(java.util.List<Addon> l) { showPromos(Api.promos); }
+            public void fail() {}
+        });
+    }
+
+    private static final String[] BLOCK_DNS = {"adguard", "mullvad", "nextdns", "controld", "adblock", "blahdns", "dnswarden", "ads.", "libredns", "dns.sb", "rethinkdns", "ahadns", "adfree", "noads", "pi-hole", "pihole", "seby.io", "decloudus", "uncensoreddns"};
+
+    private boolean adBlockDns() {
+        try {
+            String host = Settings.Global.getString(getContentResolver(), "private_dns_specifier");
+            String mode = Settings.Global.getString(getContentResolver(), "private_dns_mode");
+            if (host == null || !"hostname".equals(mode)) return false;
+            host = host.toLowerCase();
+            for (String k : BLOCK_DNS) if (host.contains(k)) return true;
+        } catch (Exception ignored) {}
+        return false;
+    }
+
+    private void showPromos(java.util.List<String[]> pr) {
+        if (promoBox == null) return;
+        promoBox.removeAllViews();
+        for (final String[] p : pr) {
+            ImageView iv = new ImageView(this);
+            iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            iv.setBackground(Ui.panel(Ui.CARD));
+            iv.setPadding(Ui.dp(3), Ui.dp(3), Ui.dp(3), Ui.dp(3));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(130));
+            lp.topMargin = Ui.dp(10);
+            promoBox.addView(iv, lp);
+            Images.load(iv, p[0], false);
+            if (p[1].length() > 0) iv.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(p[1]))); } catch (Exception ignored) {}
+                }
+            });
+        }
+    }
 
     private void refresh() {
         boolean ok = canOverlay();
         allow.setText(ok ? "ALLOWED" : "ALLOW");
         allow.setAlpha(ok ? 0.5f : 1f);
         start.setAlpha(ok ? 1f : 0.5f);
+        dnsNote.setVisibility(adBlockDns() ? View.VISIBLE : View.GONE);
         stop.setVisibility(OverlayService.running ? View.VISIBLE : View.GONE);
         if (Build.VERSION.SDK_INT >= 33) {
             boolean n = checkSelfPermission("android.permission.POST_NOTIFICATIONS") == PackageManager.PERMISSION_GRANTED;
