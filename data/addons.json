@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:32:14Z",
+ "updated": "2026-11-15T19:32:31Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -830,6 +830,19 @@
    "filename": "SCP Survival.mcaddon",
    "sha256": "4719262728fc1948c696734f6a07db7cb686da0a9ecadb5d68f0ddf5ba77f9c2",
    "added": "2026-11-15T19:32:14Z",
+   "icon": true
+  },
+  {
+   "id": "bloodysleep1-1-5",
+   "name": "bloodysleep1 1 5",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/bloodysleep1-1-5.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/bloodysleep1-1-5/bloodysleep1.1.5.mcworld",
+   "size": 29881172,
+   "type": "world",
+   "filename": "bloodysleep1.1.5.mcworld",
+   "sha256": "055895b79cd648ebf9f32320bc0a00d7187f724b10979bb685af89c8cfdedfba",
+   "added": "2026-11-15T19:32:31Z",
    "icon": true
   }
  ]
