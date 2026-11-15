@@ -245,6 +245,38 @@ def _mcpedl_lookup(name):
     return None
 
 
+def _extract_icon(path):
+    """Find pack_icon.png/jpg inside an addon zip (also inside nested .mcpack/.zip). Returns (bytes, ext) or (None, None)."""
+    import io
+    import zipfile
+
+    def scan(zf, depth):
+        names = [n for n in zf.namelist() if not n.endswith("/")]
+        best = None
+        for n in names:
+            base = n.rsplit("/", 1)[-1].lower()
+            if base in ("pack_icon.png", "pack_icon.jpg", "pack_icon.jpeg") and zf.getinfo(n).file_size < 5_000_000:
+                if best is None or n.count("/") < best.count("/"):
+                    best = n
+        if best:
+            return zf.read(best), ("png" if best.lower().endswith(".png") else "jpg")
+        if depth < 2:
+            for n in names:
+                if n.lower().endswith((".mcpack", ".zip", ".mcaddon")) and zf.getinfo(n).file_size < 150_000_000:
+                    try:
+                        res = scan(zipfile.ZipFile(io.BytesIO(zf.read(n))), depth + 1)
+                    except Exception:
+                        continue
+                    if res[0]:
+                        return res
+        return None, None
+    try:
+        with zipfile.ZipFile(path) as zf:
+            return scan(zf, 0)
+    except Exception:
+        return None, None
+
+
 def _fetch_image(url):
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     with urllib.request.urlopen(req, timeout=30) as r:
@@ -417,6 +449,13 @@ def setup(client, owner_id, tmp_dir):
                 desc = pp["desc"]
                 async with lock:
                     banner_url = await asyncio.to_thread(_put_banner, aid, pp["bytes"], pp["ext"])
+            # no photo: use the pack icon from inside the addon file
+            if not have_img:
+                idata, iext = await asyncio.to_thread(_extract_icon, str(tmp))
+                if idata:
+                    async with lock:
+                        banner_url = await asyncio.to_thread(_put_banner, aid, idata, iext)
+                    have_img = True
             # lookup only without a custom name, and only for the missing parts
             if not custom and (not have_img or not desc):
                 try:
