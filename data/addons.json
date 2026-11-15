@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:45:59Z",
+ "updated": "2026-11-15T18:46:21Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -229,6 +229,19 @@
    "filename": "Actions and Stuff 1.12.mcpack",
    "sha256": "c173ddeb7f987c72416d45924ea400d8dde9e56e3e2c513dce76973572525f9f",
    "added": "2026-11-15T18:45:59Z",
+   "icon": true
+  },
+  {
+   "id": "basic-structure-generation",
+   "name": "Basic Structure Generation",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/basic-structure-generation.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/basic-structure-generation/Basic.Structure.Generation.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 606330,
+   "type": "addon",
+   "filename": "Basic Structure Generation BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "9f4f48746ee5d0aefda962e45ca0f70c2d6dddfefd39cb4876b31c19044dd370",
+   "added": "2026-11-15T18:46:21Z",
    "icon": true
   }
  ]
