@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:26:48Z",
+ "updated": "2026-11-15T19:27:04Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -571,6 +571,19 @@
    "filename": "LUT Add-On FREE MC MARKETPLACE.mcaddon",
    "sha256": "058e7bdb55506185f7b872bd6ef5616ad5b69d72ff66091d83b4b633f5190ba1",
    "added": "2026-11-15T19:26:48Z",
+   "icon": true
+  },
+  {
+   "id": "skyblock-2",
+   "name": "Skyblock 2",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/skyblock-2.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/skyblock-2/Skyblock.2.BY.MARKETPLACE.TRADER.mcworld",
+   "size": 6788800,
+   "type": "world",
+   "filename": "Skyblock 2 BY MARKETPLACE TRADER.mcworld",
+   "sha256": "803105162c06729c1c96da04ad043f5b9bcde059fac58df3b9e6eacbc70c46bb",
+   "added": "2026-11-15T19:27:04Z",
    "icon": true
   }
  ]
