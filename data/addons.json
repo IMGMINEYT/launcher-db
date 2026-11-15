@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:56:13Z",
+ "updated": "2026-11-15T18:56:37Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -697,6 +697,19 @@
    "filename": "Dimension Homes Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "4c0584931bc14f6346b6db0d47f21d23cb9eb967705f6dbfbed45224b097d30c",
    "added": "2026-11-15T18:56:13Z",
+   "icon": true
+  },
+  {
+   "id": "festive-biomes-add-on",
+   "name": "Festive Biomes Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/festive-biomes-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/festive-biomes-add-on/Festive.Biomes.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 10057150,
+   "type": "addon",
+   "filename": "Festive Biomes Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "1ebe29c83f3eb7e5be83d7d62d7643b770043e9700219d0d3599c7bfd4b0ba82",
+   "added": "2026-11-15T18:56:36Z",
    "icon": true
   }
  ]
