@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:55:30Z",
+ "updated": "2026-11-15T18:55:43Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -645,6 +645,19 @@
    "filename": "Feed the Bees BY MARKETPLACE TRADER.mcaddon",
    "sha256": "67d0c899aec0b4ea5104545a3bf6df969a5b2f1ae4ef995856fda7b82f43d43c",
    "added": "2026-11-15T18:55:29Z",
+   "icon": true
+  },
+  {
+   "id": "avatar-legends-add-on",
+   "name": "Avatar Legends Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/avatar-legends-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/avatar-legends-add-on/Avatar.Legends.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 4552906,
+   "type": "addon",
+   "filename": "Avatar Legends Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "bab35d91e204721d168f1f9d357faf7fbbaaed17a816c866f73a9bad3cac192f",
+   "added": "2026-11-15T18:55:42Z",
    "icon": true
   }
  ]
