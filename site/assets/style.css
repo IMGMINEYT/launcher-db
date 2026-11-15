@@ -66,3 +66,6 @@ dialog .row{display:flex;gap:10px;flex-wrap:wrap}
 .page .date{color:var(--mute);font-size:14px;margin-bottom:20px}
 @media(max-width:560px){nav.links{gap:12px;font-size:14px}.hero{padding-top:34px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.banner.icon{background:#14181e}
+.banner.icon img{object-fit:contain;image-rendering:pixelated;width:auto;height:72%;max-width:72%;position:absolute;top:14%;left:50%;transform:translateX(-50%)}
