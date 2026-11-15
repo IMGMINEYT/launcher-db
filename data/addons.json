@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:50:33Z",
+ "updated": "2026-11-15T18:51:28Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -424,6 +424,19 @@
    "filename": "Backpack BY MARKETPLACE TRADER.mcaddon",
    "sha256": "16c0ae4dc5bf09a9d0b620e964b89fb402e96f2ab1523fcde8c9533c31eb63c9",
    "added": "2026-11-15T18:50:33Z",
+   "icon": true
+  },
+  {
+   "id": "animals",
+   "name": "ANIMALS++",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/animals.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/animals/ANIMALS%2B%2B.BY.FREE.MC.MARKATPLACE.mcworld",
+   "size": 53056711,
+   "type": "world",
+   "filename": "ANIMALS++ BY FREE MC MARKATPLACE.mcworld",
+   "sha256": "6526119c208073d572453238cc8d4f582eb7570aff925d7f6c439eeab90fdf9c",
+   "added": "2026-11-15T18:51:28Z",
    "icon": true
   }
  ]
