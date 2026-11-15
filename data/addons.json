@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:40:57Z",
+ "updated": "2026-11-15T18:41:11Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -138,6 +138,19 @@
    "filename": "Vampire Expansion Add-On by FREE MC MARKET PLACE.mcaddon",
    "sha256": "241b8a74ed298ff6beb124a53386eff8df18df72fc21981924982a9944473269",
    "added": "2026-11-15T18:40:57Z",
+   "icon": true
+  },
+  {
+   "id": "more-tnt-add-on",
+   "name": "More TNT! Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/more-tnt-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/more-tnt-add-on/More.TNT.Add-On.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 2658927,
+   "type": "addon",
+   "filename": "More TNT! Add-On by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "c3ee74799617b368697d91ef6cee1867bf9f3a379a9b1d5f840c4933513981d3",
+   "added": "2026-11-15T18:41:11Z",
    "icon": true
   }
  ]
