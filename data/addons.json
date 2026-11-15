@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:04:00Z",
+ "updated": "2026-11-15T19:04:35Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -970,6 +970,19 @@
    "filename": "Mob Pets .mcworld",
    "sha256": "3fc206d0e3f4778d48531ca0e5798aa9441e50d8084fe356da595b55b69cacfe",
    "added": "2026-11-15T19:03:59Z",
+   "icon": true
+  },
+  {
+   "id": "brainrot-weapons",
+   "name": "Brainrot Weapons",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/brainrot-weapons.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/brainrot-weapons/Brainrot.Weapons.mcaddon",
+   "size": 25800323,
+   "type": "addon",
+   "filename": "Brainrot Weapons .mcaddon",
+   "sha256": "75de8ccfd7f71ec2589bd450bd5f67982ad8478ccb1b63a89873e5e14305ec2a",
+   "added": "2026-11-15T19:04:35Z",
    "icon": true
   }
  ]
