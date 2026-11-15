@@ -29,10 +29,25 @@
       b.textContent=t==='all'?'All':t.charAt(0).toUpperCase()+t.slice(1);b.setAttribute('aria-pressed',String(state.type===t));
       b.onclick=function(){state.type=t;state.shown=PAGE;drawChips();render()};chips.appendChild(b)});
   }
+  function nz(t){return String(t||'').toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim()}
+  function lev(a,b,m){var n=a.length,k=b.length;if(Math.abs(n-k)>m)return m+1;var p=[],i,j;for(j=0;j<=k;j++)p[j]=j;
+    for(i=1;i<=n;i++){var c=[i],lo=i;for(j=1;j<=k;j++){var v=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));c[j]=v;if(v<lo)lo=v}
+      if(lo>m)return m+1;p=c}return p[k]}
+  function tokScore(t,txt,name){
+    if(txt.indexOf(t)>-1)return (name?3:1)+(txt.indexOf(t)===0?1:0);
+    if(t.length<4)return 0;var m=t.length>7?2:1,w=txt.split(' ');
+    for(var i=0;i<w.length;i++){if(w[i].length>=3&&lev(t,w[i],m)<=m)return name?2:0.6;
+      if(w[i].length>t.length&&lev(t,w[i].slice(0,t.length),m)<=m)return name?1.6:0.5}
+    return 0}
   function list(){
-    var q=state.q.trim().toLowerCase(),r=state.all.filter(function(a){
-      if(state.type!=='all'&&(a.type||'addon')!==state.type)return false;
-      return !q||(a.name+' '+(a.description||'')).toLowerCase().indexOf(q)>-1});
+    var q=nz(state.q),toks=q?q.split(' '):[],r=[];
+    state.all.forEach(function(a){
+      if(state.type!=='all'&&(a.type||'addon')!==state.type)return;
+      if(!toks.length){a._s=0;r.push(a);return}
+      var n=nz(a.name),d=nz(a.description),sc=0;
+      for(var i=0;i<toks.length;i++){var x=tokScore(toks[i],n,true)||tokScore(toks[i],d,false);if(!x)return;sc+=x}
+      a._s=sc;r.push(a)});
+    if(toks.length){r.sort(function(a,b){return b._s-a._s});return r}
     if(state.sort==='az')r.sort(function(a,b){return a.name.localeCompare(b.name)});
     else if(state.sort==='size')r.sort(function(a,b){return (b.size||0)-(a.size||0)});
     else r.sort(function(a,b){return String(b.added||'').localeCompare(String(a.added||''))});
@@ -78,7 +93,7 @@
       drawChips();render();
     }).catch(function(){grid.textContent='';var e=document.createElement('div');e.className='empty';e.textContent='Could not load the list. Refresh in a moment.';grid.appendChild(e)});
   }
-  var tm;$('q').addEventListener('input',function(e){clearTimeout(tm);tm=setTimeout(function(){state.q=e.target.value;state.shown=PAGE;render()},120)});
+  var tm;$('q').addEventListener('input',function(e){clearTimeout(tm);tm=setTimeout(function(){state.q=e.target.value;state.shown=PAGE;render()},30)});
   $('sort').addEventListener('change',function(e){state.sort=e.target.value;state.shown=PAGE;render()});
   more.addEventListener('click',function(){state.shown+=PAGE;render()});
   dlg.addEventListener('click',function(e){if(e.target===dlg)dlg.close()});
