@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:54:49Z",
+ "updated": "2026-11-15T18:55:08Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -619,6 +619,19 @@
    "filename": "Mob Swords BY MARKETPLACE TRADER.mcaddon",
    "sha256": "9f71481c6ba8d924df32a71439f9a887bb4c5c925fb5e08eebc776fc40d2a482",
    "added": "2026-11-15T18:54:49Z",
+   "icon": true
+  },
+  {
+   "id": "achievements-add-on",
+   "name": "Achievements++ Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/achievements-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/achievements-add-on/Achievements%2B%2B.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 1528914,
+   "type": "addon",
+   "filename": "Achievements++ Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "c02c768cd58ed2c63ffe5211779a3ef4e2fddc3e1530a24889d6955036e97e77",
+   "added": "2026-11-15T18:55:07Z",
    "icon": true
   }
  ]
