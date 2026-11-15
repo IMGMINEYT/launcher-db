@@ -245,6 +245,19 @@ def _mcpedl_lookup(name):
     return None
 
 
+def _clean_name(stem):
+    """File name -> tidy addon name: drop 'by <channel>' promo suffixes and leftover separators."""
+    n = stem.replace("_", " ")
+    if " " not in n.strip():
+        n = n.replace(".", " ")
+    n = re.sub(r"\s+", " ", n).strip()
+    for _ in range(3):
+        n = re.sub(r"[\s\-\u2013\u2014|:~(\[]*\bby\s+[^()\[\]]*[)\]]?\s*$", "", n, flags=re.I)
+        n = re.sub(r"[\s\-\u2013\u2014|:~(\[]*\bfree\s*mc\s*market\s*place\b[)\]]?\s*$", "", n, flags=re.I)
+        n = n.strip(" -\u2013\u2014|:~([_.")
+    return n[:80] or stem[:80]
+
+
 def _extract_icon(path):
     """Find pack_icon.png/jpg inside an addon zip (also inside nested .mcpack/.zip). Returns (bytes, ext) or (None, None)."""
     import io
@@ -400,7 +413,7 @@ def setup(client, owner_id, tmp_dir):
             caption = ""  # forwarded posts carry channel promo captions, not a chosen name
         custom = bool(caption)
         stem = os.path.splitext(fname)[0]
-        name = caption.splitlines()[0][:80] if custom else stem
+        name = caption.splitlines()[0][:80] if custom else _clean_name(stem)
         ext = os.path.splitext(fname)[1].lower()
         typ = {".mcaddon": "addon", ".mcpack": "addon", ".mcworld": "map", ".mctemplate": "map"}.get(ext, "file")
         tmp = Path(tmp_dir) / ("db_%s" % msg.id)
