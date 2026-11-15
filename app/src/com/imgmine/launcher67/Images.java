@@ -77,11 +77,25 @@ final class Images {
         try {
             File f = new File(dir, key(url));
             if (!f.exists() || f.length() == 0) {
-                HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-                c.setConnectTimeout(8000);
-                c.setReadTimeout(12000);
-                if (c.getResponseCode() != 200) return null;
-                byte[] data = Api.readAll(c.getInputStream(), 6 << 20);
+                java.util.List<String> urls = new java.util.ArrayList<>();
+                urls.add(url);
+                if (url.startsWith(Api.RAW)) {
+                    String rest = url.substring(Api.RAW.length());
+                    urls.add("https://github.com/IMGMINEYT/launcher-db/raw/main/" + rest);
+                    urls.add(Api.CDN + rest);
+                }
+                byte[] data = null;
+                for (String u : urls) {
+                    try {
+                        HttpURLConnection c = (HttpURLConnection) new URL(u).openConnection();
+                        c.setConnectTimeout(5000);
+                        c.setReadTimeout(8000);
+                        if (c.getResponseCode() != 200) continue;
+                        data = Api.readAll(c.getInputStream(), 6 << 20);
+                        break;
+                    } catch (Exception ignored) {}
+                }
+                if (data == null) return null;
                 FileOutputStream fo = new FileOutputStream(f);
                 fo.write(data);
                 fo.close();
