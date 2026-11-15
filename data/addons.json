@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:12:02Z",
+ "updated": "2026-11-15T19:12:26Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1268,6 +1268,19 @@
    "filename": "World Builder Add-On (addon) (MDF).mcaddon",
    "sha256": "b3a82e8e3ddd5405d88677c641ab87b405ff3c50909fc54861181c676743794b",
    "added": "2026-11-15T19:12:01Z",
+   "icon": true
+  },
+  {
+   "id": "raft-survival-add-on",
+   "name": "Raft Survival Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/raft-survival-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/raft-survival-add-on/Raft.Survival.Add-On.by.skupka.mcaddon",
+   "size": 16915408,
+   "type": "addon",
+   "filename": "Raft Survival Add-On by skupka.mcaddon",
+   "sha256": "8837a6e95389fa1e88d2accd2bc08b15065f09fcd30a1b6eeed7069dc6cd85cc",
+   "added": "2026-11-15T19:12:26Z",
    "icon": true
   }
  ]
