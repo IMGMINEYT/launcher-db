@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:48:39Z",
+ "updated": "2026-11-15T18:48:55Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -333,6 +333,19 @@
    "filename": "Realism Weapons Add-On.mcaddon",
    "sha256": "d500ae3b7dd39d18cff25d210ce93f12f909ed4786a14015c317907e03c9ae6a",
    "added": "2026-11-15T18:48:39Z",
+   "icon": true
+  },
+  {
+   "id": "farming-pots-add-on",
+   "name": "Farming Pots Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/farming-pots-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/farming-pots-add-on/Farming.Pots.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 2150649,
+   "type": "addon",
+   "filename": "Farming Pots Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "24abe7faaecaf55b17376e3e4f004fa57389d65cb785021850947fd59689ed38",
+   "added": "2026-11-15T18:48:55Z",
    "icon": true
   }
  ]
