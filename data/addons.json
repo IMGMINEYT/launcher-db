@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:07:28Z",
+ "updated": "2026-11-15T19:07:41Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1060,6 +1060,19 @@
    "filename": "Craftable Homes Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "eeab06354bafda30cef5969fde078f5dc3da53c9558a48da0b9290950fcba2a8",
    "added": "2026-11-15T19:07:27Z",
+   "icon": true
+  },
+  {
+   "id": "zombie-world-generator-world-template",
+   "name": "Zombie World Generator (world template)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/zombie-world-generator-world-template.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/zombie-world-generator-world-template/Zombie.World.Generator.world_template.mctemplate",
+   "size": 15405731,
+   "type": "template",
+   "filename": "Zombie World Generator (world_template).mctemplate",
+   "sha256": "0aa6b587820e17c5a513029c7e395a534b769dde2d137f5d0689480a5aecd784",
+   "added": "2026-11-15T19:07:40Z",
    "icon": true
   }
  ]
