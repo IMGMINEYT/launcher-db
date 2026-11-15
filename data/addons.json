@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:53:06Z",
+ "updated": "2026-11-15T18:53:24Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -515,6 +515,19 @@
    "filename": "Holiday Helpers BY MARKETPLACE TRADER.mcaddon",
    "sha256": "5f1f14660e3a3be25d0b96c201b7f4075e3bf9ec04dadf0de174b98ef82d53cc",
    "added": "2026-11-15T18:53:05Z",
+   "icon": true
+  },
+  {
+   "id": "mythical-pets",
+   "name": "Mythical Pets",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/mythical-pets.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/mythical-pets/Mythical.Pets.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 4240848,
+   "type": "addon",
+   "filename": "Mythical Pets BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "1c1c4bcce458f13bf7aafc64b944c963378d2e6e3d42f60e53b69928bd422b56",
+   "added": "2026-11-15T18:53:24Z",
    "icon": true
   }
  ]
