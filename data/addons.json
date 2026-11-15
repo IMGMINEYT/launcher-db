@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:24:26Z",
+ "updated": "2026-11-15T19:24:44Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -493,6 +493,19 @@
    "filename": "Furniture Add-On by FREE MC MARKET PLACE.mcaddon",
    "sha256": "33609bfa45a988e4ade4e9957dd5840d694fad2ba02a022323c645f3f6be8a0e",
    "added": "2026-11-15T19:24:25Z",
+   "icon": true
+  },
+  {
+   "id": "wildlife-add-on-v1-2",
+   "name": "Wildlife Add-On v1.2",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/wildlife-add-on-v1-2.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/wildlife-add-on-v1-2/Wildlife.Add-On.v1.2.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 10117767,
+   "type": "addon",
+   "filename": "Wildlife Add-On v1.2 by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "6269f0b6e5a93d2d398a83509cbf53bd2ca5e90847fdbef3b6d95b24353802d7",
+   "added": "2026-11-15T19:24:44Z",
    "icon": true
   }
  ]
