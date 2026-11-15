@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:00:44Z",
+ "updated": "2026-11-15T19:00:58Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -866,6 +866,19 @@
    "filename": "The Extinct - DINOSAURS Add-On 1.2 BY MARKETPLACE TRADER.mcaddon",
    "sha256": "88c07daada0f4d49eebaf33375573c9d7dfe69ca50d2403bcad7378321061726",
    "added": "2026-11-15T19:00:44Z",
+   "icon": true
+  },
+  {
+   "id": "princesses",
+   "name": "Princesses",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/princesses.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/princesses/Princesses.BY.MARKETPLACE.TRADER.mcworld",
+   "size": 1847878,
+   "type": "world",
+   "filename": "Princesses BY MARKETPLACE TRADER.mcworld",
+   "sha256": "34ad5627f8807618475a4d26d0d2ae628a63f2c4f0bb89343364ceba261550b3",
+   "added": "2026-11-15T19:00:58Z",
    "icon": true
   }
  ]
