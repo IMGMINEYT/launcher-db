@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:08:42Z",
+ "updated": "2026-11-15T19:09:31Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1138,6 +1138,19 @@
    "filename": "spacecraft-addon-v1_1.mcaddon",
    "sha256": "aced476b6748d81a2e120d9a0de12058077fd8358c8079e8cc78fc06a3d1a4fc",
    "added": "2026-11-15T19:08:37Z",
+   "icon": true
+  },
+  {
+   "id": "lunar-moon",
+   "name": "lunar moon",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/lunar-moon.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/lunar-moon/lunar.moon.By.Skupka.mcaddon",
+   "size": 32907410,
+   "type": "addon",
+   "filename": "lunar moon By Skupka.mcaddon",
+   "sha256": "929cb34b2d238861849b31de9591a26081d1991610337c7179dded6c72a5a7d8",
+   "added": "2026-11-15T19:09:30Z",
    "icon": true
   }
  ]
