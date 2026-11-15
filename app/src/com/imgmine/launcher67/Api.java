@@ -17,6 +17,7 @@ final class Api {
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static final java.util.concurrent.ExecutorService IO = java.util.concurrent.Executors.newSingleThreadExecutor();
     static volatile long lastFetch;
+    static volatile List<String[]> promos = new ArrayList<>();
 
     interface CB { void ok(List<Addon> list); void fail(); }
 
@@ -24,6 +25,17 @@ final class Api {
         JSONObject o = new JSONObject(json);
         JSONArray a = o.optJSONArray("addons");
         List<Addon> out = new ArrayList<>();
+        List<String[]> pr = new ArrayList<>();
+        JSONArray pa = o.optJSONArray("promos");
+        for (int k = 0; pa != null && k < pa.length() && pr.size() < 2; k++) {
+            JSONObject p = pa.optJSONObject(k);
+            if (p == null) continue;
+            String im = p.optString("image"), lk = p.optString("link");
+            if (im.startsWith(RAW)) im = CDN + im.substring(RAW.length());
+            if (!im.startsWith("https://")) continue;
+            pr.add(new String[]{im, lk.startsWith("https://") || lk.startsWith("http://") ? lk : ""});
+        }
+        promos = pr;
         if (a == null) return out;
         java.text.SimpleDateFormat f = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
         f.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -47,6 +59,8 @@ final class Api {
             if (d.id.length() == 0) d.id = "a" + i;
             d.lname = Fuzzy.norm(d.name);
             d.ldesc = Fuzzy.norm(d.desc);
+            if (d.desc.trim().length() == 0)
+                d.desc = d.name.trim() + " " + (d.type.equals("map") ? "map" : "addon") + " for Minecraft Bedrock - download and import in one tap.";
             out.add(d);
         }
         Collections.sort(out, new Comparator<Addon>() {
