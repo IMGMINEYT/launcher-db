@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:41:41Z",
+ "updated": "2026-11-15T18:41:56Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -177,6 +177,19 @@
    "filename": "Abyssal Echoes by FREE MC MARKET PLACE.mcaddon",
    "sha256": "f03c31c83caf4be828c20492147ff6fb614baa48863df0313762f8da52bafa86",
    "added": "2026-11-15T18:41:40Z",
+   "icon": true
+  },
+  {
+   "id": "overgrown",
+   "name": "Overgrown",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/overgrown.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/overgrown/Overgrown.by.FREE.MC.MARKET.PLACE.mcpack",
+   "size": 2173846,
+   "type": "pack",
+   "filename": "Overgrown by FREE MC MARKET PLACE.mcpack",
+   "sha256": "aef1898c398fa04cccf7a036c91c6e9b86ec5676a9fb59f55916a30657e79a6d",
+   "added": "2026-11-15T18:41:56Z",
    "icon": true
   }
  ]
