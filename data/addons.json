@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:08:02Z",
+ "updated": "2026-11-15T19:08:13Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1099,6 +1099,19 @@
    "filename": "Supplementaries (addon).mcaddon",
    "sha256": "c020441df173d0d7fe4507da620fffdab7b9d0cd29c306226eb7563923c70bd5",
    "added": "2026-11-15T19:08:02Z",
+   "icon": true
+  },
+  {
+   "id": "civilization-add-on",
+   "name": "Civilization Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/civilization-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/civilization-add-on/Civilization.Add-On.mcaddon",
+   "size": 3835465,
+   "type": "addon",
+   "filename": "Civilization Add-On.mcaddon",
+   "sha256": "4694fa64df74e381a7f36b47873b1ecac1df6e566b2eb1833dc54d194afc1d05",
+   "added": "2026-11-15T19:08:12Z",
    "icon": true
   }
  ]
