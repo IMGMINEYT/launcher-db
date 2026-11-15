@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:29:23Z",
+ "updated": "2026-11-15T19:29:34Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -688,6 +688,19 @@
    "filename": "Markers Pack BY MARKETPLACE TRADER.mcaddon",
    "sha256": "e4746d1a5cf0c02c176f710a6e901c11c5761034a6cba90e3a7ad9a68882f129",
    "added": "2026-11-15T19:29:23Z",
+   "icon": true
+  },
+  {
+   "id": "horror-circus-add-on",
+   "name": "Horror Circus Add-on",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/horror-circus-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/horror-circus-add-on/Horror.Circus.Add-on.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 1864468,
+   "type": "addon",
+   "filename": "Horror Circus Add-on BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "d2e15b2a626a9b4828d5940206fd06f65d58187b951059314305a0babd6b5a59",
+   "added": "2026-11-15T19:29:34Z",
    "icon": true
   }
  ]
