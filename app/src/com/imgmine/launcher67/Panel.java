@@ -101,7 +101,7 @@ final class Panel {
                 return super.dispatchKeyEvent(e);
             }
         };
-        root.setBackgroundColor(0xB3000000);
+        root.setBackgroundColor(Color.TRANSPARENT);
         root.setClickable(true);
         root.setFocusable(true);
         root.setFocusableInTouchMode(true);
@@ -417,8 +417,8 @@ final class Panel {
     // ---------- window ----------
     private void size() {
         DisplayMetrics m = real();
-        cw = Math.min(Ui.dp(480), Math.round(m.widthPixels * 0.94f));
-        ch = Math.min(Ui.dp(440), Math.round(m.heightPixels * 0.9f));
+        cw = Math.min(Ui.dp(400), Math.round(m.widthPixels * 0.84f));
+        ch = Math.min(Ui.dp(360), Math.round(m.heightPixels * 0.78f));
         FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) card.getLayoutParams();
         lp.width = cw;
         lp.height = ch;
