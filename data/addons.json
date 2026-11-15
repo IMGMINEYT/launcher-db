@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:19:45Z",
+ "updated": "2026-11-15T19:20:05Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1475,6 +1475,19 @@
    "filename": "3D Weapons Texture Pack by FREE MC MARKET PLACE.mcpack",
    "sha256": "fda151ff352b6646021882f8ed6beac86739113a4106721cbafa6a82b7f30d3b",
    "added": "2026-11-15T19:19:45Z",
+   "icon": true
+  },
+  {
+   "id": "liminal-dimension-add-on-v1-1",
+   "name": "Liminal Dimension Add-On v1.1",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/liminal-dimension-add-on-v1-1.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/liminal-dimension-add-on-v1-1/Liminal.Dimension.Add-On.v1.1.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 7049225,
+   "type": "addon",
+   "filename": "Liminal Dimension Add-On v1.1 by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "e76928f2a08efb0428493d1a4fc6129fdce0170b912b1c5274dd60f344d18c5a",
+   "added": "2026-11-15T19:20:05Z",
    "icon": true
   }
  ]
