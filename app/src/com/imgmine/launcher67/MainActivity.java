@@ -1,0 +1,148 @@
+package com.imgmine.launcher67;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.provider.Settings;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.*;
+
+public class MainActivity extends Activity {
+    private TextView allow, notif, start, stop, hint;
+
+    private boolean canOverlay() { return Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(this); }
+
+    private TextView label(String t, int sp, int color) {
+        TextView v = new TextView(this);
+        v.setText(t);
+        v.setTypeface(Ui.PX);
+        v.setTextSize(sp);
+        v.setTextColor(color);
+        return v;
+    }
+
+    @Override protected void onCreate(Bundle b) {
+        super.onCreate(b);
+        Ui.init(this);
+        if (Build.VERSION.SDK_INT >= 21) {
+            getWindow().setStatusBarColor(Ui.BG);
+            getWindow().setNavigationBarColor(Ui.BG);
+        }
+        ScrollView sv = new ScrollView(this);
+        sv.setBackgroundColor(Ui.BG);
+        sv.setFillViewport(true);
+        LinearLayout col = new LinearLayout(this);
+        col.setOrientation(LinearLayout.VERTICAL);
+        col.setPadding(Ui.dp(22), Ui.dp(40), Ui.dp(22), Ui.dp(28));
+        sv.addView(col, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        LinearLayout logo = new LinearLayout(this);
+        logo.setGravity(Gravity.CENTER_VERTICAL);
+        TextView mark = label("67", 22, 0xFF0C1A0E);
+        mark.setGravity(Gravity.CENTER);
+        mark.setBackground(new Ui.Bevel(Ui.GREEN, 0xFF8BE592, Ui.GREEN_D, 0xFF000000));
+        logo.addView(mark, new LinearLayout.LayoutParams(Ui.dp(56), Ui.dp(56)));
+        TextView title = label("  LAUNCHER", 30, Ui.INK);
+        logo.addView(title);
+        col.addView(logo);
+
+        TextView sub = label("Addons for Minecraft Bedrock, one tap away over your game.", 14, Ui.MUTE);
+        sub.setTypeface(null);
+        sub.setPadding(0, Ui.dp(12), 0, Ui.dp(26));
+        col.addView(sub);
+
+        col.addView(step("1", "Allow display over other apps", true));
+        allow = Ui.button(this, "ALLOW", Ui.GOLD, 0xFF1B1400);
+        allow.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                Intent i = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
+                startActivity(i);
+            }
+        });
+        col.addView(allow, wrap(0));
+
+        notif = Ui.button(this, "ALLOW NOTIFICATIONS", Ui.CARD, Ui.INK);
+        if (Build.VERSION.SDK_INT >= 33) {
+            col.addView(step("2", "Show the Stop button (optional)", false));
+            notif.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) { requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 7); }
+            });
+            col.addView(notif, wrap(0));
+        }
+
+        col.addView(step(Build.VERSION.SDK_INT >= 33 ? "3" : "2", "Start", false));
+        start = Ui.button(this, "START + OPEN MINECRAFT", Ui.GREEN, 0xFF0C1A0E);
+        start.setTextSize(16);
+        start.setPadding(Ui.dp(14), Ui.dp(14), Ui.dp(14), Ui.dp(16));
+        start.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { go(); } });
+        col.addView(start, wrap(0));
+
+        stop = Ui.button(this, "STOP FLOATING BALL", Ui.CARD, Ui.INK);
+        stop.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { stopService(new Intent(MainActivity.this, OverlayService.class)); refresh(); }
+        });
+        LinearLayout.LayoutParams sl = wrap(0);
+        sl.topMargin = Ui.dp(12);
+        col.addView(stop, sl);
+
+        hint = label("", 13, Ui.MUTE);
+        hint.setTypeface(null);
+        hint.setPadding(0, Ui.dp(18), 0, 0);
+        col.addView(hint);
+        setContentView(sv);
+    }
+
+    private LinearLayout.LayoutParams wrap(int top) {
+        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        p.topMargin = top;
+        return p;
+    }
+
+    private View step(String n, String text, boolean first) {
+        TextView t = label(n + "   " + text, 15, Ui.INK);
+        t.setPadding(0, first ? 0 : Ui.dp(20), 0, Ui.dp(8));
+        return t;
+    }
+
+    private void go() {
+        if (!canOverlay()) {
+            Toast.makeText(this, "First allow display over other apps.", Toast.LENGTH_LONG).show();
+            allow.performClick();
+            return;
+        }
+        Intent s = new Intent(this, OverlayService.class);
+        if (Build.VERSION.SDK_INT >= 26) startForegroundService(s); else startService(s);
+        Intent mc = getPackageManager().getLaunchIntentForPackage(Downloader.MC);
+        if (mc == null) {
+            Toast.makeText(this, "Minecraft is not installed on this phone.", Toast.LENGTH_LONG).show();
+            try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + Downloader.MC))); } catch (Exception ignored) {}
+        } else {
+            startActivity(mc);
+        }
+        refresh();
+    }
+
+    @Override protected void onResume() { super.onResume(); refresh(); }
+
+    private void refresh() {
+        boolean ok = canOverlay();
+        allow.setText(ok ? "ALLOWED" : "ALLOW");
+        allow.setAlpha(ok ? 0.5f : 1f);
+        start.setAlpha(ok ? 1f : 0.5f);
+        stop.setVisibility(OverlayService.running ? View.VISIBLE : View.GONE);
+        if (Build.VERSION.SDK_INT >= 33) {
+            boolean n = checkSelfPermission("android.permission.POST_NOTIFICATIONS") == PackageManager.PERMISSION_GRANTED;
+            notif.setText(n ? "NOTIFICATIONS ON" : "ALLOW NOTIFICATIONS");
+            notif.setAlpha(n ? 0.5f : 1f);
+        }
+        hint.setText(OverlayService.running
+                ? "The small ball is on. Open Minecraft and tap the ball to browse addons."
+                : "After start, a small ball floats over Minecraft. Tap it, pick an addon, and it installs into the game.");
+    }
+}
