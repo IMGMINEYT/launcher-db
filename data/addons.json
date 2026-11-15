@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:46:42Z",
+ "updated": "2026-11-15T18:46:56Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -268,6 +268,19 @@
    "filename": "Cinecam Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "ee4c6b53a7e93fbea75d03039d966583ed028238bb7c193e9a497b7586cb8641",
    "added": "2026-11-15T18:46:42Z",
+   "icon": true
+  },
+  {
+   "id": "tetris-add-on",
+   "name": "Tetris Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/tetris-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/tetris-add-on/Tetris.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 3014712,
+   "type": "addon",
+   "filename": "Tetris Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "172cd090026fbe3fffdc616e2341bf2b2322868954abc0f85ec93f3038d316be",
+   "added": "2026-11-15T18:46:56Z",
    "icon": true
   }
  ]
