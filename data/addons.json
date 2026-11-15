@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:31:17Z",
+ "updated": "2026-11-15T19:31:36Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -791,6 +791,19 @@
    "filename": "Find Your Way BY MARKETPLACE TRADER.mcaddon",
    "sha256": "d164d2c63e907ff3f2a079d2db19fc0bedb191d96994141acceaef96e1220d3a",
    "added": "2026-11-15T19:31:16Z",
+   "icon": true
+  },
+  {
+   "id": "smooth-moves-animations-1-1",
+   "name": "Smooth Moves Animations 1.1",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/smooth-moves-animations-1-1.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/smooth-moves-animations-1-1/Smooth.Moves.Animations.1.1.BY.MARKETPLACE.TRADER.mcpack",
+   "size": 4791521,
+   "type": "pack",
+   "filename": "Smooth Moves Animations 1.1 BY MARKETPLACE TRADER.mcpack",
+   "sha256": "7d6fdd5ce4b7ba3302a1a519f32b7a633be41db7ce131deb0cff1644fb853c58",
+   "added": "2026-11-15T19:31:36Z",
    "icon": true
   }
  ]
