@@ -16,7 +16,7 @@
     return c;
   }
   function banner(a,eager){
-    var b=document.createElement('div');b.className='banner';
+    var b=document.createElement('div');b.className='banner'+(a.icon?' icon':'');
     if(a.banner){var im=new Image();im.alt=a.name;im.decoding='async';if(!eager)im.loading='lazy';im.referrerPolicy='no-referrer';
       im.onerror=function(){b.textContent='';b.appendChild(art(a.name))};im.src=a.banner;b.appendChild(im)}
     else b.appendChild(art(a.name));
