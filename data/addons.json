@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:46:21Z",
+ "updated": "2026-11-15T18:46:31Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -242,6 +242,19 @@
    "filename": "Basic Structure Generation BY MARKETPLACE TRADER.mcaddon",
    "sha256": "9f4f48746ee5d0aefda962e45ca0f70c2d6dddfefd39cb4876b31c19044dd370",
    "added": "2026-11-15T18:46:21Z",
+   "icon": true
+  },
+  {
+   "id": "natural-disasters-add-on",
+   "name": "Natural Disasters Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/natural-disasters-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/natural-disasters-add-on/Natural.Disasters.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 1040139,
+   "type": "addon",
+   "filename": "Natural Disasters Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "69f8222b69f277220b89eb81271c6d6948ae4589566d3d393e100b45089bd84c",
+   "added": "2026-11-15T18:46:31Z",
    "icon": true
   }
  ]
