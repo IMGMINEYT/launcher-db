@@ -177,6 +177,22 @@ def _upload_asset(rel, file_path, asset_name):
     return asset["browser_download_url"], rel["id"], size
 
 
+def _replace_asset(tag, file_path, new_name):
+    """Swap the file of an existing release. Keeps the old asset name (so the link stays
+    identical) when the extension matches. Returns (download_url, size)."""
+    st, rel = _gh("GET", _api("releases/tags/" + urllib.parse.quote(tag)))
+    if st != 200:
+        raise RuntimeError("release missing")
+    old = rel.get("assets", [])
+    name = new_name
+    if old and os.path.splitext(old[0]["name"])[1].lower() == os.path.splitext(new_name)[1].lower():
+        name = old[0]["name"]
+    for a in old:
+        _gh("DELETE", _api("releases/assets/%s" % a["id"]))
+    url, _rid, size = _upload_asset(rel, file_path, name)
+    return url, size
+
+
 def _delete_release(tag):
     st, rel = _gh("GET", _api("releases/tags/" + urllib.parse.quote(tag)))
     if st == 200:
@@ -307,6 +323,15 @@ def setup(client, owner_id, tmp_dir):
     queue = asyncio.Queue()
     lock = asyncio.Lock()
     pending = {"photo": None}      # {"bytes","ext","desc","t"}
+    edit = {"id": None, "t": 0.0}
+    EDIT_TTL = 600
+
+    def edit_active():
+        return bool(GH_TOKEN) and edit["id"] is not None and time.time() - edit["t"] < EDIT_TTL
+
+    def touch_edit():
+        edit["t"] = time.time()
+
     pending_file = {"item": None}  # last added addon that may still get a banner {"id","t","has_banner"}
 
     def is_owner(event):
@@ -333,6 +358,7 @@ def setup(client, owner_id, tmp_dir):
                 "Send /db off to go back to renaming.")
         elif low == "off":
             state["on"] = False
+            edit["id"] = None
             _save_state(state)
             await event.reply("Database mode OFF. Normal renaming is back.")
         elif low.startswith("del "):
@@ -351,6 +377,52 @@ def setup(client, owner_id, tmp_dir):
                 await event.reply("No addon with id: " + target)
             except Exception:
                 await event.reply("Could not remove it. Try again.")
+        elif low.startswith("edit"):
+            what = arg[4:].strip()
+            if what.lower() in ("", "done", "off", "stop"):
+                edit["id"] = None
+                await event.reply("Edit mode closed.")
+            else:
+                try:
+                    doc, _ = await asyncio.to_thread(_read_data)
+                    q = _slug(what)
+                    hits = [a for a in doc["addons"] if a.get("id") == q]
+                    if not hits:
+                        hits = [a for a in doc["addons"] if q in a.get("id", "") or what.lower() in a.get("name", "").lower()]
+                    if not hits:
+                        await event.reply("No addon found for: " + what + "\nUse /db list.")
+                    elif len(hits) > 1:
+                        await event.reply("More than one match, send /db edit <id> with one of: " +
+                                          ", ".join(a["id"] for a in hits[:10]))
+                    else:
+                        edit["id"] = hits[0]["id"]
+                        touch_edit()
+                        await event.reply(
+                            "Editing: %s (%s)\n"
+                            "Send a photo = new banner (photo caption = new description).\n"
+                            "Send a file = replaces the addon file (file caption = new name).\n"
+                            "/db name <text>, /db desc <text> change text. /db edit done to finish." %
+                            (hits[0].get("name"), hits[0]["id"]))
+                except Exception:
+                    await event.reply("Could not open edit mode. Try again.")
+        elif low.startswith("name ") or low.startswith("desc "):
+            if not edit_active():
+                await event.reply("Open an addon first: /db edit <name>")
+            else:
+                field = "name" if low.startswith("name ") else "description"
+                val = arg[5:].strip()[:80 if field == "name" else MAX_DESC]
+                eid = edit["id"]
+                try:
+                    def mut(doc):
+                        for a in doc["addons"]:
+                            if a.get("id") == eid:
+                                a[field] = val
+                    async with lock:
+                        await asyncio.to_thread(_update_data, mut, "Edit %s %s" % (field, eid))
+                    touch_edit()
+                    await event.reply("Updated %s of %s." % (field, eid))
+                except Exception:
+                    await event.reply("Could not save that. Try again.")
         elif low == "list":
             try:
                 doc, _ = await asyncio.to_thread(_read_data)
@@ -366,11 +438,30 @@ def setup(client, owner_id, tmp_dir):
     @client.on(events.NewMessage())
     async def on_photo(event):
         msg = event.message
-        if msg.out or not msg.photo or msg.document or not is_owner(event) or not mode_on():
+        if msg.out or not msg.photo or msg.document or not is_owner(event) or not (mode_on() or edit_active()):
             return
         data = await client.download_media(msg.photo, file=bytes)
         desc = (msg.message or "").strip()[:MAX_DESC]
         now = time.time()
+        if edit_active():
+            eid = edit["id"]
+            try:
+                async with lock:
+                    url = await asyncio.to_thread(_put_banner, eid, data, "jpg")
+
+                    def mut(doc):
+                        for a in doc["addons"]:
+                            if a.get("id") == eid:
+                                a["banner"] = url
+                                a.pop("icon", None)
+                                if desc:
+                                    a["description"] = desc
+                    await asyncio.to_thread(_update_data, mut, "Edit banner " + eid)
+                touch_edit()
+                await event.reply("Banner updated for " + eid)
+            except Exception:
+                await event.reply("Could not update the banner. Send the photo again.")
+            raise events.StopPropagation
         it = pending_file["item"]
         if it and now - it["t"] < PENDING_TTL and not it["has_banner"]:
             # photo arrived after the file: attach to that addon
@@ -398,10 +489,11 @@ def setup(client, owner_id, tmp_dir):
     @client.on(events.NewMessage())
     async def on_file(event):
         msg = event.message
-        if msg.out or not msg.document or not is_owner(event) or not mode_on():
+        if msg.out or not msg.document or not is_owner(event) or not (mode_on() or edit_active()):
             return  # everyone else, and owner with mode off: unchanged renamer path
-        status = await msg.reply("Added to database queue.")
-        await queue.put((msg, status))
+        eid = edit["id"] if edit_active() else None
+        status = await msg.reply("Replacing the file of %s..." % eid if eid else "Added to database queue.")
+        await queue.put((msg, status, eid))
         raise events.StopPropagation
 
     async def add_one(msg, status):
@@ -521,11 +613,64 @@ def setup(client, owner_id, tmp_dir):
             except OSError:
                 pass
 
+    async def edit_file(msg, status, eid):
+        doc = msg.document
+        fname = next((a.file_name for a in doc.attributes if getattr(a, "file_name", None)), "addon")
+        fname = fname.replace("/", "_").replace("\\", "_")
+        caption = "" if getattr(msg, "fwd_from", None) else (msg.message or "").strip()
+        ext = os.path.splitext(fname)[1].lower()
+        typ = {".mcaddon": "addon", ".mcpack": "addon", ".mcworld": "map", ".mctemplate": "map"}.get(ext, "file")
+        tmp = Path(tmp_dir) / ("dbe_%s" % msg.id)
+        try:
+            tmp.parent.mkdir(exist_ok=True)
+            await client.download_file(doc, file=str(tmp), part_size_kb=512, file_size=doc.size or None)
+            async with lock:
+                cur, _ = await asyncio.to_thread(_read_data)
+                entry = next((a for a in cur["addons"] if a.get("id") == eid), None)
+                if entry is None:
+                    raise RuntimeError("entry gone")
+                dl_url, size = await asyncio.to_thread(_replace_asset, eid, str(tmp), fname)
+                banner_url = None
+                if not entry.get("banner") or entry.get("icon"):
+                    idata, iext = await asyncio.to_thread(_extract_icon, str(tmp))
+                    if idata:
+                        banner_url = await asyncio.to_thread(_put_banner, eid, idata, iext)
+
+                def mut(d):
+                    for a in d["addons"]:
+                        if a.get("id") == eid:
+                            a["download"] = dl_url
+                            a["size"] = size
+                            a["filename"] = fname
+                            a["type"] = typ
+                            if caption:
+                                a["name"] = caption.splitlines()[0][:80]
+                            if banner_url:
+                                a["banner"] = banner_url
+                                a["icon"] = True
+                await asyncio.to_thread(_update_data, mut, "Edit file " + eid)
+            touch_edit()
+            await msg.reply("Download link:\n" + dl_url)
+            await status.edit("File replaced for %s. The site updates in about a minute." % eid)
+        except Exception:
+            try:
+                await status.edit("Could not replace the file. The old entry is unchanged or still works. Try again.")
+            except Exception:
+                pass
+        finally:
+            try:
+                tmp.unlink(missing_ok=True)
+            except OSError:
+                pass
+
     async def db_worker():
         while True:
-            msg, status = await queue.get()
+            msg, status, eid = await queue.get()
             try:
-                await add_one(msg, status)
+                if eid:
+                    await edit_file(msg, status, eid)
+                else:
+                    await add_one(msg, status)
             except Exception:
                 pass
 
