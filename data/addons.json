@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:58:48Z",
+ "updated": "2026-11-15T18:59:09Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -762,6 +762,19 @@
    "filename": "Better on Bedrock .mcworld",
    "sha256": "0f3d8a8917ff43f0a141d9ca9a3c6cfdd773344c35edc60653e26eb5e984f92a",
    "added": "2026-11-15T18:58:47Z",
+   "icon": true
+  },
+  {
+   "id": "mini-soldiers-add-on",
+   "name": "Mini Soldiers Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/mini-soldiers-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/mini-soldiers-add-on/Mini.Soldiers.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 7274392,
+   "type": "addon",
+   "filename": "Mini Soldiers Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "4c0d72f0d5ca532c1df0fdd531e2d301748e462872bb9a1c7246e75dd3a769f7",
+   "added": "2026-11-15T18:59:08Z",
    "icon": true
   }
  ]
