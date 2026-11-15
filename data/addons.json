@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:30:31Z",
+ "updated": "2026-11-15T19:30:42Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -752,6 +752,19 @@
    "filename": "More TNT! Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "c3ee74799617b368697d91ef6cee1867bf9f3a379a9b1d5f840c4933513981d3",
    "added": "2026-11-15T19:30:31Z",
+   "icon": true
+  },
+  {
+   "id": "what-is-that-add-on",
+   "name": "What Is That Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/what-is-that-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/what-is-that-add-on/What.Is.That.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 268996,
+   "type": "addon",
+   "filename": "What Is That Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "188f21caa4700ed4d002a72d86a49795e418c40086be0c07ae90c554a6b51a6b",
+   "added": "2026-11-15T19:30:41Z",
    "icon": true
   }
  ]
