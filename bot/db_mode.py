@@ -334,6 +334,12 @@ def setup(client, owner_id, tmp_dir):
 
     pending_file = {"item": None}  # last added addon that may still get a banner {"id","t","has_banner"}
 
+    promo = {"slot": None, "link": "", "t": 0.0}
+    PROMO_TTL = 300
+
+    def promo_active():
+        return bool(GH_TOKEN) and promo["slot"] is not None and time.time() - promo["t"] < PROMO_TTL
+
     def is_owner(event):
         return owner_id is not None and event.sender_id == owner_id
 
@@ -423,6 +429,34 @@ def setup(client, owner_id, tmp_dir):
                     await event.reply("Updated %s of %s." % (field, eid))
                 except Exception:
                     await event.reply("Could not save that. Try again.")
+        elif low.startswith("promo"):
+            rest = arg[5:].strip()
+            m = re.match(r"^del(?:ete)?\s+([12])$", rest, re.I)
+            m2 = re.match(r"^([12])(?:\s+(https?://\S+))?$", rest, re.I)
+            if m:
+                slot = int(m.group(1))
+                try:
+                    def mut(doc):
+                        p = list(doc.get("promos") or [])
+                        while len(p) < 2:
+                            p.append(None)
+                        p[slot - 1] = None
+                        while p and not p[-1]:
+                            p.pop()
+                        doc["promos"] = p
+                    async with lock:
+                        await asyncio.to_thread(_update_data, mut, "Remove promo %d" % slot)
+                    await event.reply("Promo %d removed." % slot)
+                except Exception:
+                    await event.reply("Could not remove the promo. Try again.")
+            elif m2:
+                promo["slot"] = int(m2.group(1))
+                promo["link"] = m2.group(2) or ""
+                promo["t"] = time.time()
+                await event.reply("Promo %d: now send the image as a photo within 5 minutes.%s" %
+                                  (promo["slot"], "" if promo["link"] else " (No link set; add one with /db promo %d <https link>.)" % promo["slot"]))
+            else:
+                await event.reply("Usage: /db promo 1 [https link] then send a photo. /db promo del 1")
         elif low == "list":
             try:
                 doc, _ = await asyncio.to_thread(_read_data)
@@ -431,16 +465,40 @@ def setup(client, owner_id, tmp_dir):
             except Exception:
                 await event.reply("Could not read the database.")
         else:
-            await event.reply("Usage: /db on, /db off, /db list, /db del <id>")
+            await event.reply("Usage: /db on, /db off, /db list, /db del <id>, /db edit <name>, /db promo 1|2, /db promo del 1|2")
         raise events.StopPropagation
 
     # ---- photos (banner) ---------------------------------------------
     @client.on(events.NewMessage())
     async def on_photo(event):
         msg = event.message
-        if msg.out or not msg.photo or msg.document or not is_owner(event) or not (mode_on() or edit_active()):
+        if msg.out or not msg.photo or msg.document or not is_owner(event) or not (mode_on() or edit_active() or promo_active()):
             return
         data = await client.download_media(msg.photo, file=bytes)
+        if promo_active():
+            slot, link = promo["slot"], promo["link"]
+            promo["slot"] = None
+            try:
+                async with lock:
+                    path = "banners/promo-%d-%d.jpg" % (slot, int(time.time()))
+                    st, _ = await asyncio.to_thread(_gh, "PUT", _api("contents/" + path), {
+                        "message": "Promo %d" % slot, "branch": BRANCH,
+                        "content": base64.b64encode(data).decode()})
+                    if st not in (200, 201):
+                        raise RuntimeError("promo img %s" % st)
+                    url = "https://raw.githubusercontent.com/%s/%s/%s" % (GH_REPO, BRANCH, path)
+
+                    def mut(doc):
+                        p = list(doc.get("promos") or [])
+                        while len(p) < 2:
+                            p.append(None)
+                        p[slot - 1] = {"image": url, "link": link} if link else {"image": url}
+                        doc["promos"] = p
+                    await asyncio.to_thread(_update_data, mut, "Set promo %d" % slot)
+                await event.reply("Promo %d set." % slot)
+            except Exception:
+                await event.reply("Could not set the promo. Send /db promo %d again." % slot)
+            raise events.StopPropagation
         desc = (msg.message or "").strip()[:MAX_DESC]
         now = time.time()
         if edit_active():
