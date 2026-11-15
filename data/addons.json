@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:29:43Z",
+ "updated": "2026-11-15T19:29:58Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -714,6 +714,19 @@
    "filename": "Aphmaus Picnic Pals BY MARKETPLACE TRADER.mcpack",
    "sha256": "8a148d6899765d01bfc3f2cf92e6795563eff8784677b1c77882336485b64547",
    "added": "2026-11-15T19:29:43Z"
+  },
+  {
+   "id": "abyssal-echoes",
+   "name": "Abyssal Echoes",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/abyssal-echoes.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/abyssal-echoes/Abyssal.Echoes.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 5278612,
+   "type": "addon",
+   "filename": "Abyssal Echoes BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "f03c31c83caf4be828c20492147ff6fb614baa48863df0313762f8da52bafa86",
+   "added": "2026-11-15T19:29:58Z",
+   "icon": true
   }
  ]
 }
