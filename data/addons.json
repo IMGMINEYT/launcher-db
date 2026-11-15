@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:27:57Z",
+ "updated": "2026-11-15T19:28:28Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -623,6 +623,19 @@
    "filename": "Evolving Mobs 2.0 Add-On by skupka.mcaddon",
    "sha256": "a33308658eb3d753328b333a84d52cfca1f9094d1e84ddda5f9d9136ba6ddc79",
    "added": "2026-11-15T19:27:57Z",
+   "icon": true
+  },
+  {
+   "id": "roads-add-on",
+   "name": "Roads + Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/roads-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/roads-add-on/Roads.%2B.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 3745850,
+   "type": "addon",
+   "filename": "Roads + Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "537184f336fd8d269fff55fdf15c3dcb9d4a8cee450d61df7b2c48621530068e",
+   "added": "2026-11-15T19:28:27Z",
    "icon": true
   }
  ]
