@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:33:04Z",
+ "updated": "2026-11-15T19:33:14Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -882,6 +882,19 @@
    "filename": "Ultimate TNT (addon).mcaddon",
    "sha256": "0f3ae704fb00e65fb92d0e28ce3278798736a96b7cf6e5f0e76e6af9e89879e8",
    "added": "2026-11-15T19:33:04Z",
+   "icon": true
+  },
+  {
+   "id": "more-vehicles-add-on-addon",
+   "name": "More Vehicles Add-On (addon)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/more-vehicles-add-on-addon.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/more-vehicles-add-on-addon/More.Vehicles.Add-On.addon.mcaddon",
+   "size": 6785084,
+   "type": "addon",
+   "filename": "More Vehicles Add-On (addon).mcaddon",
+   "sha256": "f657852994e54b3cb247b24493c4771ff2db7633891b1d10d88ef2f4708224af",
+   "added": "2026-11-15T19:33:14Z",
    "icon": true
   }
  ]
