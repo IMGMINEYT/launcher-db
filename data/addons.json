@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T13:50:18Z",
+ "updated": "2026-11-15T18:39:01Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -47,6 +47,19 @@
    "type": "addon",
    "filename": "SECURITY Add-On BY MARKETPLACE TRADER.mcaddon",
    "added": "2026-11-15T13:50:18Z",
+   "icon": true
+  },
+  {
+   "id": "redstone-plus-add-on-addon",
+   "name": "Redstone Plus Add-On (addon)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/redstone-plus-add-on-addon.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/redstone-plus-add-on-addon/Redstone.Plus.Add-On.addon.mcaddon",
+   "size": 1498102,
+   "type": "addon",
+   "filename": "Redstone Plus Add-On (addon).mcaddon",
+   "sha256": "bb79d79186a0b860ed18b4e0c3022034108485c0eb6f9eb8c307404bd196511a",
+   "added": "2026-11-15T18:39:00Z",
    "icon": true
   }
  ]
