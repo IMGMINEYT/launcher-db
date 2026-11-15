@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:17:31Z",
+ "updated": "2026-11-15T19:18:23Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1410,6 +1410,19 @@
    "filename": "Demon Slayer Weapons BY MARKETPLACE TRADER.mcworld",
    "sha256": "f6436c62a03714ceac64d808d4e5d695665cee1b1fcc82fa429323b5bfc8d457",
    "added": "2026-11-15T19:17:31Z",
+   "icon": true
+  },
+  {
+   "id": "villager-news-1-0-add-on-addon",
+   "name": "Villager News 1.0 Add-On (addon)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/villager-news-1-0-add-on-addon.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/villager-news-1-0-add-on-addon/Villager.News.1.0.Add-On.addon.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 42492716,
+   "type": "addon",
+   "filename": "Villager News 1.0 Add-On (addon) by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "1e1544a5776d9a0a49c7e346957d895ce1bf4e522074ac31f8d513db6599b96d",
+   "added": "2026-11-15T19:18:23Z",
    "icon": true
   }
  ]
