@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:23:27Z",
+ "updated": "2026-11-15T19:23:39Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -441,6 +441,19 @@
    "filename": "Better Jukeboxes Add-On by FREE MC MARKET PLACE.mcaddon",
    "sha256": "78bc897fd1f92b92f822b9336c78f7d0170911eee5672b06807f48bc25fa7465",
    "added": "2026-11-15T19:23:27Z",
+   "icon": true
+  },
+  {
+   "id": "builders-tools-add-on",
+   "name": "Builders Tools Add-on",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/builders-tools-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/builders-tools-add-on/Builders.Tools.Add-on.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 2477276,
+   "type": "addon",
+   "filename": "Builders Tools Add-on by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "350139e93a6e67a0f28027b455db2a19a9bee959d13fb909e8f5993929bc1f8a",
+   "added": "2026-11-15T19:23:39Z",
    "icon": true
   }
  ]
