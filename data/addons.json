@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:53:24Z",
+ "updated": "2026-11-15T18:53:39Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -528,6 +528,19 @@
    "filename": "Mythical Pets BY MARKETPLACE TRADER.mcaddon",
    "sha256": "1c1c4bcce458f13bf7aafc64b944c963378d2e6e3d42f60e53b69928bd422b56",
    "added": "2026-11-15T18:53:24Z",
+   "icon": true
+  },
+  {
+   "id": "vibrant-lights-add-on",
+   "name": "Vibrant Lights Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/vibrant-lights-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/vibrant-lights-add-on/Vibrant.Lights.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 5381664,
+   "type": "addon",
+   "filename": "Vibrant Lights Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "e7ea7a359772bd22c3d0610ee63f48fca91dcb853aaf7df2e4941e28ee19835a",
+   "added": "2026-11-15T18:53:38Z",
    "icon": true
   }
  ]
