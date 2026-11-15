@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:49:32Z",
+ "updated": "2026-11-15T18:49:46Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -372,6 +372,19 @@
    "filename": "Cursed Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "656c83953c8dea3076a925243178350f96c8b73ca7db4a32bc88e600e14908d9",
    "added": "2026-11-15T18:49:31Z",
+   "icon": true
+  },
+  {
+   "id": "security-add-on-by-marketplace-trader-1",
+   "name": "SECURITY Add-On BY MARKETPLACE TRADER (1)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/security-add-on-by-marketplace-trader-1.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/security-add-on-by-marketplace-trader-1/SECURITY.Add-On.BY.MARKETPLACE.TRADER.1.mcaddon",
+   "size": 3316935,
+   "type": "addon",
+   "filename": "SECURITY Add-On BY MARKETPLACE TRADER (1).mcaddon",
+   "sha256": "834dafec792e99c8281018c657190e0f578a7225749189df15d4b1fb4eaf6c51",
+   "added": "2026-11-15T18:49:46Z",
    "icon": true
   }
  ]
