@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:52:37Z",
+ "updated": "2026-11-15T18:52:55Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -489,6 +489,19 @@
    "filename": "Enderman Morph Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "4f34940c963c4592fe439d76d23291e1ea08dbd0807c59830f700edb76e351e3",
    "added": "2026-11-15T18:52:36Z",
+   "icon": true
+  },
+  {
+   "id": "pets-add-on",
+   "name": "PETS Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/pets-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/pets-add-on/PETS.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 3758470,
+   "type": "addon",
+   "filename": "PETS Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "ed96894326878c0e4ed4c6aca697874c8300528fb323a1af38c12331b359ce40",
+   "added": "2026-11-15T18:52:54Z",
    "icon": true
   }
  ]
