@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:28:40Z",
+ "updated": "2026-11-15T19:28:51Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -649,6 +649,19 @@
    "filename": "Vampire Expansion Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "241b8a74ed298ff6beb124a53386eff8df18df72fc21981924982a9944473269",
    "added": "2026-11-15T19:28:39Z",
+   "icon": true
+  },
+  {
+   "id": "paper-pets-add-on",
+   "name": "Paper Pets Add-on",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/paper-pets-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/paper-pets-add-on/Paper.Pets.Add-on.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 2279593,
+   "type": "addon",
+   "filename": "Paper Pets Add-on BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "7a524fc5ef1cf15920910f7bf08dc294e68cdbfd1986929bedebf4ad7ff8b7e9",
+   "added": "2026-11-15T19:28:51Z",
    "icon": true
   }
  ]
