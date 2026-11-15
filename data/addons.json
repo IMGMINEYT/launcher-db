@@ -1,16 +1,5 @@
 {
  "schema": 1,
- "updated": "2026-11-15T12:56:38Z",
- "addons": [
-  {
-   "id": "zz-test",
-   "name": "ZZ Test",
-   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/zz-test/ZZ_Test.file.mcaddon",
-   "size": 300000,
-   "type": "addon",
-   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/zz-test.png",
-   "description": "test",
-   "added": "2026-11-15T00:00:00Z"
-  }
- ]
+ "updated": "",
+ "addons": []
 }
