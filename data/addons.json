@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:52:08Z",
+ "updated": "2026-11-15T18:52:20Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -463,6 +463,19 @@
    "filename": "Factories Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "e9be35b073ea21068fd41cb67129091291fd98fdd97c55061b65ac242d839fa9",
    "added": "2026-11-15T18:52:08Z",
+   "icon": true
+  },
+  {
+   "id": "creaking-weapons",
+   "name": "Creaking Weapons",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/creaking-weapons.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/creaking-weapons/Creaking.Weapons.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 2018695,
+   "type": "addon",
+   "filename": "Creaking Weapons BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "0ad2460b07be903c88ea8941bf5d9d1d567e2a70c138ce5740c2c731804c9162",
+   "added": "2026-11-15T18:52:20Z",
    "icon": true
   }
  ]
