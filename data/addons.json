@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:48:55Z",
+ "updated": "2026-11-15T18:49:12Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -346,6 +346,19 @@
    "filename": "Farming Pots Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "24abe7faaecaf55b17376e3e4f004fa57389d65cb785021850947fd59689ed38",
    "added": "2026-11-15T18:48:55Z",
+   "icon": true
+  },
+  {
+   "id": "horror-creatures-add-on-by-marketplace-trader-1",
+   "name": "Horror Creatures Add-On BY MARKETPLACE TRADER (1)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/horror-creatures-add-on-by-marketplace-trader-1.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/horror-creatures-add-on-by-marketplace-trader-1/Horror.Creatures.Add-On.BY.MARKETPLACE.TRADER.1.mcaddon",
+   "size": 8625213,
+   "type": "addon",
+   "filename": "Horror Creatures Add-On BY MARKETPLACE TRADER (1).mcaddon",
+   "sha256": "6aeec01252bfc965bc859c00ab4a6fcc9134e1b4d9d57927e8e34ae86594e977",
+   "added": "2026-11-15T18:49:12Z",
    "icon": true
   }
  ]
