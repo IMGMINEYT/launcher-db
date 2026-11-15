@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:09:31Z",
+ "updated": "2026-11-15T19:09:42Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1151,6 +1151,19 @@
    "filename": "lunar moon By Skupka.mcaddon",
    "sha256": "929cb34b2d238861849b31de9591a26081d1991610337c7179dded6c72a5a7d8",
    "added": "2026-11-15T19:09:30Z",
+   "icon": true
+  },
+  {
+   "id": "luxury-cars-add-on",
+   "name": "Luxury Cars Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/luxury-cars-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/luxury-cars-add-on/Luxury.Cars.Add-On.mcaddon",
+   "size": 1343079,
+   "type": "addon",
+   "filename": "Luxury Cars Add-On.mcaddon",
+   "sha256": "9aa6d433d8e91cd0a035e4ddf8c7087f72ea66713b32f48e56cdf5b6f2093ab5",
+   "added": "2026-11-15T19:09:41Z",
    "icon": true
   }
  ]
