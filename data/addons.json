@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:57:23Z",
+ "updated": "2026-11-15T18:58:48Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -749,6 +749,19 @@
    "filename": "Herschel Backpack Trials Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "8a4ccd4ab572994f15ec0ed3bc0a543efae857ab0433ccf3fe7d5e35fb431209",
    "added": "2026-11-15T18:57:23Z",
+   "icon": true
+  },
+  {
+   "id": "better-on-bedrock",
+   "name": "Better on Bedrock",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/better-on-bedrock.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/better-on-bedrock/Better.on.Bedrock.mcworld",
+   "size": 78242421,
+   "type": "world",
+   "filename": "Better on Bedrock .mcworld",
+   "sha256": "0f3d8a8917ff43f0a141d9ca9a3c6cfdd773344c35edc60653e26eb5e984f92a",
+   "added": "2026-11-15T18:58:47Z",
    "icon": true
   }
  ]
