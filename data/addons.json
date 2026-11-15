@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:33:37Z",
+ "updated": "2026-11-15T19:33:45Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -922,6 +922,18 @@
    "sha256": "223e5825e3a48498369f030074753a399e0cc65c6c20a4403eb8716c325ea64f",
    "added": "2026-11-15T19:33:36Z",
    "icon": true
+  },
+  {
+   "id": "watchers-skin-pack",
+   "name": "Watchers (skin pack)",
+   "description": "",
+   "banner": null,
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/watchers-skin-pack/Watchers.skin_pack.mcpack",
+   "size": 117808,
+   "type": "pack",
+   "filename": "Watchers (skin_pack).mcpack",
+   "sha256": "a5c635893126cc06d4287d0447e2e68af5eaa9a62703a722b41f1b9c5030644c",
+   "added": "2026-11-15T19:33:44Z"
   }
  ]
 }
