@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:17:07Z",
+ "updated": "2026-11-15T19:17:31Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1398,6 +1398,19 @@
    "filename": "CS2 Dust II(1) by FREE MC MARKET PLACE.mcworld",
    "sha256": "7481ea507789fa29b580b9aa794abe1dc3d02c52246312378a454debeab75ae5",
    "added": "2026-11-15T19:17:06Z"
+  },
+  {
+   "id": "demon-slayer-weapons",
+   "name": "Demon Slayer Weapons",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/demon-slayer-weapons.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/demon-slayer-weapons/Demon.Slayer.Weapons.BY.MARKETPLACE.TRADER.mcworld",
+   "size": 10500997,
+   "type": "world",
+   "filename": "Demon Slayer Weapons BY MARKETPLACE TRADER.mcworld",
+   "sha256": "f6436c62a03714ceac64d808d4e5d695665cee1b1fcc82fa429323b5bfc8d457",
+   "added": "2026-11-15T19:17:31Z",
+   "icon": true
   }
  ]
 }
