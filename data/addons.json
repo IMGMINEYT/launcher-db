@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:16:57Z",
+ "updated": "2026-11-15T19:17:07Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1386,6 +1386,18 @@
    "sha256": "67fe1a0b0f5fbf66fea636c7d9667544d848ede22b3e5b4a49d2d3f0c8549c56",
    "added": "2026-11-15T19:16:57Z",
    "icon": true
+  },
+  {
+   "id": "cs2-dust-ii-1",
+   "name": "CS2 Dust II(1)",
+   "description": "",
+   "banner": null,
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/cs2-dust-ii-1/CS2.Dust.II.1.by.FREE.MC.MARKET.PLACE.mcworld",
+   "size": 713280,
+   "type": "world",
+   "filename": "CS2 Dust II(1) by FREE MC MARKET PLACE.mcworld",
+   "sha256": "7481ea507789fa29b580b9aa794abe1dc3d02c52246312378a454debeab75ae5",
+   "added": "2026-11-15T19:17:06Z"
   }
  ]
 }
