@@ -79,6 +79,16 @@ def _gh(method, url, body=None, raw=None, headers=None, timeout=120):
             return e.code, {}
 
 
+def _purge(path):
+    """Best effort: ask jsDelivr to drop its cached copy so the site shows changes fast."""
+    try:
+        urllib.request.urlopen(urllib.request.Request(
+            "https://purge.jsdelivr.net/gh/%s@%s/%s" % (GH_REPO, BRANCH, path),
+            headers={"User-Agent": "addon-db-bot"}), timeout=15).read()
+    except Exception:
+        pass
+
+
 def _api(path):
     return "https://api.github.com/repos/%s/%s" % (GH_REPO, path)
 
@@ -115,6 +125,7 @@ def _update_data(mutator, msg):
         mutator(doc)
         st = _write_data(doc, sha, msg)
         if st in (200, 201):
+            _purge(DATA_PATH)
             return doc
         if st not in (409, 422):
             raise RuntimeError("write data %s" % st)
@@ -132,6 +143,7 @@ def _put_banner(addon_id, img_bytes, ext):
     st, _ = _gh("PUT", _api("contents/" + path), body=b)
     if st not in (200, 201):
         raise RuntimeError("banner %s" % st)
+    _purge(path)
     return "https://raw.githubusercontent.com/%s/%s/%s" % (GH_REPO, BRANCH, path)
 
 
