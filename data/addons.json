@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:16:35Z",
+ "updated": "2026-11-15T19:16:45Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1359,6 +1359,19 @@
    "filename": "XP Gems Add-On by FREE MC MARKET PLACE.mcaddon",
    "sha256": "2267ecc8e4a47b5ff3bd55eabe8e60b66df6ad7299d8b046bf4cdff0647728b2",
    "added": "2026-11-15T19:16:34Z",
+   "icon": true
+  },
+  {
+   "id": "mega-chest-1-0-add-on",
+   "name": "Mega Chest 1.0 Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/mega-chest-1-0-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/mega-chest-1-0-add-on/Mega.Chest.1.0.Add-On.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 955062,
+   "type": "addon",
+   "filename": "Mega Chest 1.0 Add-On by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "d154da5bdceefcd8c78b7acd1df7172a8531f8d87dd06dacb0590ca878d62ccb",
+   "added": "2026-11-15T19:16:45Z",
    "icon": true
   }
  ]
