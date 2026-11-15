@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T13:05:56Z",
+ "updated": "2026-11-15T13:26:12Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -12,6 +12,18 @@
    "type": "addon",
    "filename": "Weapons FREE MC MARKETPLACE.mcaddon",
    "added": "2026-11-15T13:04:26Z"
+  },
+  {
+   "id": "block-furniture-add-on",
+   "name": "Block Furniture Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/block-furniture-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/block-furniture-add-on/Block.Furniture.Add-On.mcaddon",
+   "size": 9938331,
+   "type": "addon",
+   "filename": "Block Furniture Add-On.mcaddon",
+   "added": "2026-11-15T13:26:12Z",
+   "icon": true
   }
  ]
 }
