@@ -602,7 +602,7 @@ def setup(client, owner_id, tmp_dir):
             # banner / description: the owner's own first
             banner_url = None
             is_icon = False
-            desc = ""
+            desc = caption[:MAX_DESC] if custom else ""
             source = ""
             now = time.time()
             pp = pending["photo"]
@@ -610,7 +610,7 @@ def setup(client, owner_id, tmp_dir):
             if pp and now - pp["t"] < PENDING_TTL:
                 pending["photo"] = None
                 have_img = True
-                desc = pp["desc"]
+                desc = pp["desc"] or desc
                 async with lock:
                     banner_url = await asyncio.to_thread(_put_banner, aid, pp["bytes"], pp["ext"])
             # no photo: use the pack icon from inside the addon file
@@ -622,7 +622,7 @@ def setup(client, owner_id, tmp_dir):
                     have_img = True
                     is_icon = True
             # lookup only without a custom name, and only for the missing parts
-            if not custom and (not have_img or not desc):
+            if not custom and not have_img:
                 try:
                     await status.edit("Database: looking up details")
                 except Exception:
@@ -630,8 +630,6 @@ def setup(client, owner_id, tmp_dir):
                 found = await asyncio.to_thread(_mcpedl_lookup, name)
                 if found:
                     source = found.get("url", "")
-                    if not desc and found.get("description"):
-                        desc = found["description"][:MAX_DESC]
                     if not have_img and found.get("image"):
                         data, iext = await asyncio.to_thread(_fetch_image, found["image"])
                         if data:
@@ -703,6 +701,7 @@ def setup(client, owner_id, tmp_dir):
                             a["type"] = typ
                             if caption:
                                 a["name"] = caption.splitlines()[0][:80]
+                                a["description"] = caption[:MAX_DESC]
                             if banner_url:
                                 a["banner"] = banner_url
                                 a["icon"] = True
