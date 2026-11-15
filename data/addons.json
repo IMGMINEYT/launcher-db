@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T13:50:10Z",
+ "updated": "2026-11-15T13:50:18Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -35,6 +35,18 @@
    "type": "map",
    "filename": "Security Expansion BY MARKETPLACE TRADER.mcworld",
    "added": "2026-11-15T13:50:09Z",
+   "icon": true
+  },
+  {
+   "id": "security-add-on",
+   "name": "SECURITY Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/security-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/security-add-on/SECURITY.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 1194616,
+   "type": "addon",
+   "filename": "SECURITY Add-On BY MARKETPLACE TRADER.mcaddon",
+   "added": "2026-11-15T13:50:18Z",
    "icon": true
   }
  ]
