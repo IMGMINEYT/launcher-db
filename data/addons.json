@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:02:30Z",
+ "updated": "2026-11-15T19:03:07Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -944,6 +944,19 @@
    "filename": "Fantastic Pets BY MARKETPLACE TRADER.mcaddon",
    "sha256": "d481d82db9b9bdc6523006deca0bcbae88d3cef050b967e32fec2c6f07dc5e31",
    "added": "2026-11-15T19:02:30Z",
+   "icon": true
+  },
+  {
+   "id": "alien-dimension-add-on",
+   "name": "Alien Dimension Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/alien-dimension-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/alien-dimension-add-on/Alien.Dimension.Add-On.mcaddon",
+   "size": 22063736,
+   "type": "addon",
+   "filename": "Alien Dimension Add-On.mcaddon",
+   "sha256": "6c7ca79fbd8c4b4a3fd0970f7b58a695c682eabf1322c2d88b59160792401ca8",
+   "added": "2026-11-15T19:03:06Z",
    "icon": true
   }
  ]
