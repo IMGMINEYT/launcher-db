@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:01:51Z",
+ "updated": "2026-11-15T19:02:17Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -918,6 +918,19 @@
    "filename": "Zoo Builder Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "9c998cf2f80ae63204d5b8f9bd1bf05efaf0b82b6bbbab6ee71d87b134f7dbb2",
    "added": "2026-11-15T19:01:51Z",
+   "icon": true
+  },
+  {
+   "id": "one-block-dimension-add-on",
+   "name": "One Block Dimension Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/one-block-dimension-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/one-block-dimension-add-on/One.Block.Dimension.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 12511677,
+   "type": "addon",
+   "filename": "One Block Dimension Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "99c259c4a8f40e65fecc9ac4046005d68354dbc0c0b691cd1743389cf4672486",
+   "added": "2026-11-15T19:02:17Z",
    "icon": true
   }
  ]
