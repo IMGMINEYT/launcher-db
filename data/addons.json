@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:51:28Z",
+ "updated": "2026-11-15T18:51:52Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -437,6 +437,19 @@
    "filename": "ANIMALS++ BY FREE MC MARKATPLACE.mcworld",
    "sha256": "6526119c208073d572453238cc8d4f582eb7570aff925d7f6c439eeab90fdf9c",
    "added": "2026-11-15T18:51:28Z",
+   "icon": true
+  },
+  {
+   "id": "mermaid-life",
+   "name": "Mermaid Life",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/mermaid-life.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/mermaid-life/Mermaid.Life.BY.MARKETPLACE.TRADER.mcworld",
+   "size": 15075320,
+   "type": "world",
+   "filename": "Mermaid Life BY MARKETPLACE TRADER.mcworld",
+   "sha256": "0e08c50ae2339857f02c83baf17281d0dc2c984089de0cf2218a425cd3b80428",
+   "added": "2026-11-15T18:51:52Z",
    "icon": true
   }
  ]
