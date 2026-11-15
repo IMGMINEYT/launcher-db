@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:16:45Z",
+ "updated": "2026-11-15T19:16:57Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1372,6 +1372,19 @@
    "filename": "Mega Chest 1.0 Add-On by FREE MC MARKET PLACE.mcaddon",
    "sha256": "d154da5bdceefcd8c78b7acd1df7172a8531f8d87dd06dacb0590ca878d62ccb",
    "added": "2026-11-15T19:16:45Z",
+   "icon": true
+  },
+  {
+   "id": "fleshandbone-v1-0-1",
+   "name": "FleshAndBone-v1.0.1",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/fleshandbone-v1-0-1.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/fleshandbone-v1-0-1/FleshAndBone-v1.0.1.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 1567484,
+   "type": "addon",
+   "filename": "FleshAndBone-v1.0.1 by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "67fe1a0b0f5fbf66fea636c7d9667544d848ede22b3e5b4a49d2d3f0c8549c56",
+   "added": "2026-11-15T19:16:57Z",
    "icon": true
   }
  ]
