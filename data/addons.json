@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:51:52Z",
+ "updated": "2026-11-15T18:52:08Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -450,6 +450,19 @@
    "filename": "Mermaid Life BY MARKETPLACE TRADER.mcworld",
    "sha256": "0e08c50ae2339857f02c83baf17281d0dc2c984089de0cf2218a425cd3b80428",
    "added": "2026-11-15T18:51:52Z",
+   "icon": true
+  },
+  {
+   "id": "factories-add-on",
+   "name": "Factories Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/factories-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/factories-add-on/Factories.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 2771741,
+   "type": "addon",
+   "filename": "Factories Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "e9be35b073ea21068fd41cb67129091291fd98fdd97c55061b65ac242d839fa9",
+   "added": "2026-11-15T18:52:08Z",
    "icon": true
   }
  ]
