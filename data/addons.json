@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:40:09Z",
+ "updated": "2026-11-15T18:40:30Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -99,6 +99,19 @@
    "filename": "SEASONS Add-On 1.3.5 by FREE MC MARKET PLACE.mcaddon",
    "sha256": "9e53c1bef7f5a90ce8c63b30e572c49b672e536f54898b04d7628ec634b1acc6",
    "added": "2026-11-15T18:40:09Z",
+   "icon": true
+  },
+  {
+   "id": "roads-add-on",
+   "name": "Roads + Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/roads-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/roads-add-on/Roads.%2B.Add-On.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 3745850,
+   "type": "addon",
+   "filename": "Roads + Add-On by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "537184f336fd8d269fff55fdf15c3dcb9d4a8cee450d61df7b2c48621530068e",
+   "added": "2026-11-15T18:40:29Z",
    "icon": true
   }
  ]
