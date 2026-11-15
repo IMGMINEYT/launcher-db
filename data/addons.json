@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:59:58Z",
+ "updated": "2026-11-15T19:00:11Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -827,6 +827,19 @@
    "filename": "Mob Pets Add-On 1.0 BY MARKETPLACE TRADER.mcaddon",
    "sha256": "140cb70e5e7d95120d4d28a7f18ff26494db44c01e0ae53d2e9abaf897d61c38",
    "added": "2026-11-15T18:59:57Z",
+   "icon": true
+  },
+  {
+   "id": "craftable-houses-add-on",
+   "name": "Craftable Houses Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/craftable-houses-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/craftable-houses-add-on/Craftable.Houses.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 4062188,
+   "type": "addon",
+   "filename": "Craftable Houses Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "7152c8375f3367611f18fc5d3cd72e966d65e3998e4cc9713aceba9e792e6e25",
+   "added": "2026-11-15T19:00:11Z",
    "icon": true
   }
  ]
