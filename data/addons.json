@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:53:39Z",
+ "updated": "2026-11-15T18:53:52Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -541,6 +541,19 @@
    "filename": "Vibrant Lights Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "e7ea7a359772bd22c3d0610ee63f48fca91dcb853aaf7df2e4941e28ee19835a",
    "added": "2026-11-15T18:53:38Z",
+   "icon": true
+  },
+  {
+   "id": "golem-mania-add-on",
+   "name": "Golem Mania Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/golem-mania-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/golem-mania-add-on/Golem.Mania.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 4444779,
+   "type": "addon",
+   "filename": "Golem Mania Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "f694d15c63a414be627a7dba19e412b147d049a4ce3f6a53ddb065cffa22ac2d",
+   "added": "2026-11-15T18:53:52Z",
    "icon": true
   }
  ]
