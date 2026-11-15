@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:19:06Z",
+ "updated": "2026-11-15T19:19:45Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1462,6 +1462,19 @@
    "filename": "XRAY! by FREE MC MARKET PLACE.mcworld",
    "sha256": "6358d96da7710a7fe4e829f1952ffe1d1a427e7abe32ba9c3bf1693405345d1f",
    "added": "2026-11-15T19:19:06Z",
+   "icon": true
+  },
+  {
+   "id": "3d-weapons-texture-pack",
+   "name": "3D Weapons Texture Pack",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/3d-weapons-texture-pack.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/3d-weapons-texture-pack/3D.Weapons.Texture.Pack.by.FREE.MC.MARKET.PLACE.mcpack",
+   "size": 31077011,
+   "type": "pack",
+   "filename": "3D Weapons Texture Pack by FREE MC MARKET PLACE.mcpack",
+   "sha256": "fda151ff352b6646021882f8ed6beac86739113a4106721cbafa6a82b7f30d3b",
+   "added": "2026-11-15T19:19:45Z",
    "icon": true
   }
  ]
