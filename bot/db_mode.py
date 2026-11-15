@@ -29,7 +29,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-from telethon import events
+from telethon import events, errors
 
 GH_REPO = os.environ.get("GH_REPO", "IMGMINEYT/launcher-db")
 GH_TOKEN = os.environ.get("GH_TOKEN", "")
@@ -38,6 +38,8 @@ DATA_PATH = "data/addons.json"
 PENDING_TTL = 300          # seconds a lone photo waits for its file (and vice versa)
 MAX_DESC = 700
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"
+
+TYPES = {".mcaddon": "addon", ".mcworld": "world", ".mcpack": "pack", ".mctemplate": "template"}
 
 STATE_PATH = Path(__file__).resolve().parent / "db_state.json"
 
@@ -429,6 +431,20 @@ def setup(client, owner_id, tmp_dir):
                     await event.reply("Updated %s of %s." % (field, eid))
                 except Exception:
                     await event.reply("Could not save that. Try again.")
+        elif low.startswith("channel"):
+            rest = arg[7:].strip().split()
+            if rest and rest[0].lower() in ("on", "off") and len(rest) == 2:
+                try:
+                    ent = await client.get_entity(int(rest[1]) if re.match(r"^-?\d+$", rest[1]) else rest[1])
+                    from telethon import utils as _tu
+                    cid = _tu.get_peer_id(ent)
+                    await _set_channel(cid, rest[0].lower() == "on")
+                    await event.reply("Channel import %s for %s (%s)." % (rest[0].lower(), getattr(ent, "title", "channel"), cid))
+                except Exception:
+                    await event.reply("Could not find that channel. Make sure the bot is an admin there, or post /db channel on inside the channel.")
+            else:
+                await event.reply("Channel import is on for: %s\nUsage: /db channel on <id or @name>, /db channel off <id or @name>. Or post /db channel on inside the channel (bot must be admin)." %
+                                  (", ".join(str(c) for c in state.get("channels") or []) or "none"))
         elif low.startswith("promo"):
             rest = arg[5:].strip()
             m = re.match(r"^del(?:ete)?\s+([12])$", rest, re.I)
@@ -550,22 +566,37 @@ def setup(client, owner_id, tmp_dir):
         if msg.out or not msg.document or not is_owner(event) or not (mode_on() or edit_active()):
             return  # everyone else, and owner with mode off: unchanged renamer path
         eid = edit["id"] if edit_active() else None
-        status = await msg.reply("Replacing the file of %s..." % eid if eid else "Added to database queue.")
-        await queue.put((msg, status, eid))
+        now = time.time()
+        in_batch = (not eid) and (not queue.empty() or now - batch["last"] < 10)
+        batch["last"] = now
+        if in_batch:
+            await queue.put((msg, _Quiet(), None, {"quiet": True, "batch": True}))
+            raise events.StopPropagation
+        try:
+            status = await msg.reply("Replacing the file of %s..." % eid if eid else "Added to database queue.")
+        except errors.FloodWaitError:
+            status = _Quiet()
+        await queue.put((msg, status, eid, {"batch": not eid}))
         raise events.StopPropagation
 
-    async def add_one(msg, status):
+    class _Quiet:
+        async def edit(self, *a, **k):
+            return None
+
+    async def add_one(msg, status, quiet=False, photo=None, ignore_caption=False, result=None):
+        if result is None:
+            result = {}
         doc = msg.document
         fname = next((a.file_name for a in doc.attributes if getattr(a, "file_name", None)), "addon")
         fname = fname.replace("/", "_").replace("\\", "_")
         caption = (msg.message or "").strip()
-        if getattr(msg, "fwd_from", None):
+        if ignore_caption or getattr(msg, "fwd_from", None):
             caption = ""  # forwarded posts carry channel promo captions, not a chosen name
         custom = bool(caption)
         stem = os.path.splitext(fname)[0]
         name = caption.splitlines()[0][:80] if custom else _clean_name(stem)
         ext = os.path.splitext(fname)[1].lower()
-        typ = {".mcaddon": "addon", ".mcpack": "addon", ".mcworld": "map", ".mctemplate": "map"}.get(ext, "file")
+        typ = TYPES.get(ext, "file")
         tmp = Path(tmp_dir) / ("db_%s" % msg.id)
         aid = None
         committed = False
@@ -598,7 +629,8 @@ def setup(client, owner_id, tmp_dir):
                 dl_url, _rid, size = await asyncio.to_thread(
                     _create_release_and_upload, aid, name, str(tmp), fname)
             # 1) link first
-            await msg.reply("Download link:\n" + dl_url)
+            if not quiet:
+                await msg.reply("Download link:\n" + dl_url)
             # banner / description: the owner's own first
             banner_url = None
             is_icon = False
@@ -607,7 +639,11 @@ def setup(client, owner_id, tmp_dir):
             now = time.time()
             pp = pending["photo"]
             have_img = False
-            if pp and now - pp["t"] < PENDING_TTL:
+            if photo:
+                have_img = True
+                async with lock:
+                    banner_url = await asyncio.to_thread(_put_banner, aid, photo[0], photo[1])
+            elif pp and now - pp["t"] < PENDING_TTL:
                 pending["photo"] = None
                 have_img = True
                 desc = pp["desc"] or desc
@@ -652,13 +688,20 @@ def setup(client, owner_id, tmp_dir):
             committed = True
             pending_file["item"] = {"id": aid, "t": time.time(), "has_banner": have_img}
             extra = "" if have_img else "\nNo banner yet: send a photo within 5 minutes to add one."
-            await status.edit("Added to the database: %s\nIt shows on the site in about a minute.%s" % (name, extra))
-        except Exception:
+            result["ok"] = True
+            try:
+                await status.edit("Added to the database: %s\nIt shows on the site in about a minute.%s" % (name, extra))
+            except Exception:
+                pass
+        except Exception as exc:
             if aid and not committed:
                 try:
                     await asyncio.to_thread(_delete_release, aid)
                 except Exception:
                     pass
+            if isinstance(exc, errors.FloodWaitError):
+                raise
+            result["ok"] = False
             try:
                 await status.edit("Could not add this file to the database. Nothing was published. Try again.")
             except Exception:
@@ -675,7 +718,7 @@ def setup(client, owner_id, tmp_dir):
         fname = fname.replace("/", "_").replace("\\", "_")
         caption = "" if getattr(msg, "fwd_from", None) else (msg.message or "").strip()
         ext = os.path.splitext(fname)[1].lower()
-        typ = {".mcaddon": "addon", ".mcpack": "addon", ".mcworld": "map", ".mctemplate": "map"}.get(ext, "file")
+        typ = TYPES.get(ext, "file")
         tmp = Path(tmp_dir) / ("dbe_%s" % msg.id)
         try:
             tmp.parent.mkdir(exist_ok=True)
@@ -720,15 +763,108 @@ def setup(client, owner_id, tmp_dir):
             except OSError:
                 pass
 
+    batch = {"ok": [], "fail": [], "last": 0.0}
+
+    def _label(msg):
+        try:
+            return next((a.file_name for a in msg.document.attributes if getattr(a, "file_name", None)), "file")
+        except Exception:
+            return "file"
+
+    async def _flush_batch():
+        if len(batch["ok"]) + len(batch["fail"]) < 2:
+            batch["ok"].clear(); batch["fail"].clear()
+            return
+        txt = "Batch finished: %d added" % len(batch["ok"])
+        if batch["fail"]:
+            txt += ", %d failed (nothing published for these, send them again):\n- %s" % (
+                len(batch["fail"]), "\n- ".join(batch["fail"][:40]))
+        batch["ok"].clear(); batch["fail"].clear()
+        try:
+            await client.send_message(owner_id, txt)
+        except Exception:
+            pass
+
     async def db_worker():
         while True:
-            msg, status, eid = await queue.get()
+            item = await queue.get()
+            msg, status, eid = item[0], item[1], item[2]
+            opts = item[3] if len(item) > 3 else {}
+            tries = opts.get("tries", 0)
+            res = {}
+            retry = False
             try:
                 if eid:
                     await edit_file(msg, status, eid)
+                    res["ok"] = True
                 else:
-                    await add_one(msg, status)
+                    await add_one(msg, status, quiet=opts.get("quiet", False), photo=opts.get("photo"),
+                                  ignore_caption=opts.get("ignore_caption", False), result=res)
+                    if res.get("ok") and opts.get("notify"):
+                        try:
+                            await client.send_message(owner_id, "Channel import done: " + opts["notify"])
+                        except Exception:
+                            pass
+            except errors.FloodWaitError as e:
+                if tries < 4:
+                    opts["tries"] = tries + 1
+                    retry = True
+                    await asyncio.sleep(min(e.seconds, 900) + 2)
+                    await queue.put((msg, status, eid, opts))
+                else:
+                    res["ok"] = False
+            except Exception:
+                res["ok"] = False
+            if not retry and opts.get("batch"):
+                (batch["ok"] if res.get("ok") else batch["fail"]).append(_label(msg))
+            if opts.get("quiet") or opts.get("batch"):
+                await asyncio.sleep(2)   # gentle pacing for batches and channel imports
+            if queue.empty() and not retry and (batch["ok"] or batch["fail"]):
+                await _flush_batch()
+
+    # ---- channel auto-import ------------------------------------------
+    def chan_on(chat_id):
+        return bool(GH_TOKEN) and chat_id in (state.get("channels") or [])
+
+    @client.on(events.NewMessage(func=lambda e: bool(e.is_channel) and not e.is_group))
+    async def on_channel(event):
+        msg = event.message
+        cid = event.chat_id
+        text = (msg.message or "").strip()
+        m = re.match(r"^/db\s+channel\s+(on|off)\s*$", text, re.I)
+        if m:
+            await _set_channel(cid, m.group(1).lower() == "on")
+            try:
+                await event.reply("Channel import %s for this channel." % m.group(1).lower())
             except Exception:
                 pass
+            raise events.StopPropagation
+        if not msg.document or not chan_on(cid):
+            return
+        photo = None
+        try:
+            if msg.grouped_id:
+                await asyncio.sleep(2)
+                near = await client.get_messages(cid, ids=list(range(max(1, msg.id - 9), msg.id + 10)))
+                for o in near:
+                    if o and o.grouped_id == msg.grouped_id and o.photo and not o.document:
+                        data = await client.download_media(o.photo, file=bytes)
+                        photo = (data, "jpg")
+                        break
+        except Exception:
+            photo = None
+        fname = next((a.file_name for a in msg.document.attributes if getattr(a, "file_name", None)), "addon")
+        await queue.put((msg, _Quiet(), None, {"quiet": True, "photo": photo, "ignore_caption": True,
+                                              "notify": _clean_name(os.path.splitext(fname)[0])}))
+        raise events.StopPropagation
+
+    async def _set_channel(cid, on):
+        chans = list(state.get("channels") or [])
+        if on and cid not in chans:
+            chans.append(cid)
+        if not on and cid in chans:
+            chans.remove(cid)
+        state["channels"] = chans
+        _save_state(state)
 
     client.loop.create_task(db_worker())
