@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:07:17Z",
+ "updated": "2026-11-15T19:07:28Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1047,6 +1047,19 @@
    "filename": "Smooth Moves Animations 1.1 BY MARKETPLACE TRADER.mcpack",
    "sha256": "7d6fdd5ce4b7ba3302a1a519f32b7a633be41db7ce131deb0cff1644fb853c58",
    "added": "2026-11-15T19:07:17Z",
+   "icon": true
+  },
+  {
+   "id": "craftable-homes-add-on",
+   "name": "Craftable Homes Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/craftable-homes-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/craftable-homes-add-on/Craftable.Homes.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 832162,
+   "type": "addon",
+   "filename": "Craftable Homes Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "eeab06354bafda30cef5969fde078f5dc3da53c9558a48da0b9290950fcba2a8",
+   "added": "2026-11-15T19:07:27Z",
    "icon": true
   }
  ]
