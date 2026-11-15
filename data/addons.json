@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:55:08Z",
+ "updated": "2026-11-15T18:55:30Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -632,6 +632,19 @@
    "filename": "Achievements++ Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "c02c768cd58ed2c63ffe5211779a3ef4e2fddc3e1530a24889d6955036e97e77",
    "added": "2026-11-15T18:55:07Z",
+   "icon": true
+  },
+  {
+   "id": "feed-the-bees",
+   "name": "Feed the Bees",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/feed-the-bees.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/feed-the-bees/Feed.the.Bees.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 9931564,
+   "type": "addon",
+   "filename": "Feed the Bees BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "67d0c899aec0b4ea5104545a3bf6df969a5b2f1ae4ef995856fda7b82f43d43c",
+   "added": "2026-11-15T18:55:29Z",
    "icon": true
   }
  ]
