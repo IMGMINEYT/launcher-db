@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:46:56Z",
+ "updated": "2026-11-15T18:47:16Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -281,6 +281,19 @@
    "filename": "Tetris Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "172cd090026fbe3fffdc616e2341bf2b2322868954abc0f85ec93f3038d316be",
    "added": "2026-11-15T18:46:56Z",
+   "icon": true
+  },
+  {
+   "id": "pixelpals-evolved-add-on-1-1",
+   "name": "PixelPals Evolved Add-On 1.1",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/pixelpals-evolved-add-on-1-1.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/pixelpals-evolved-add-on-1-1/PixelPals.Evolved.Add-On.1.1.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 9525130,
+   "type": "addon",
+   "filename": "PixelPals Evolved Add-On 1.1 BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "8a61453d5e0452efb193b437e2496eb64fc6947442eb42d9b7d912ca1fdc7940",
+   "added": "2026-11-15T18:47:16Z",
    "icon": true
   }
  ]
