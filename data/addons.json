@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:06:49Z",
+ "updated": "2026-11-15T19:07:00Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1021,6 +1021,19 @@
    "filename": "Fishing + Add-On 2.0 BY MARKETPLACE TRADER.mcaddon",
    "sha256": "110bc15dac0af09e31b6ac971e38d76520a787f53943815b329c86911689abdc",
    "added": "2026-11-15T19:06:49Z",
+   "icon": true
+  },
+  {
+   "id": "find-your-way",
+   "name": "Find Your Way",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/find-your-way.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/find-your-way/Find.Your.Way.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 160128,
+   "type": "addon",
+   "filename": "Find Your Way BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "d164d2c63e907ff3f2a079d2db19fc0bedb191d96994141acceaef96e1220d3a",
+   "added": "2026-11-15T19:06:59Z",
    "icon": true
   }
  ]
