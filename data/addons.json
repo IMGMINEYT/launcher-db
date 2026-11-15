@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:45:17Z",
+ "updated": "2026-11-15T18:45:59Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -216,6 +216,19 @@
    "filename": "Car Dealership Tycoon BY MARKETPLACE TRADER.mcworld",
    "sha256": "f824e0b08fc12c21ee4ef751853993fc054aa8ce1457e507f83a5219bb00a4e6",
    "added": "2026-11-15T18:45:17Z",
+   "icon": true
+  },
+  {
+   "id": "actions-and-stuff-1-12",
+   "name": "Actions and Stuff 1.12",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/actions-and-stuff-1-12.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/actions-and-stuff-1-12/Actions.and.Stuff.1.12.mcpack",
+   "size": 29333601,
+   "type": "pack",
+   "filename": "Actions and Stuff 1.12.mcpack",
+   "sha256": "c173ddeb7f987c72416d45924ea400d8dde9e56e3e2c513dce76973572525f9f",
+   "added": "2026-11-15T18:45:59Z",
    "icon": true
   }
  ]
