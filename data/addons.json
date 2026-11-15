@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:24:44Z",
+ "updated": "2026-11-15T19:25:04Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -506,6 +506,19 @@
    "filename": "Wildlife Add-On v1.2 by FREE MC MARKET PLACE.mcaddon",
    "sha256": "6269f0b6e5a93d2d398a83509cbf53bd2ca5e90847fdbef3b6d95b24353802d7",
    "added": "2026-11-15T19:24:44Z",
+   "icon": true
+  },
+  {
+   "id": "cute-texture-pack",
+   "name": "Cute Texture Pack",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/cute-texture-pack.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/cute-texture-pack/Cute.Texture.Pack.by.FREE.MC.MARKET.PLACE.mcpack",
+   "size": 4302677,
+   "type": "pack",
+   "filename": "Cute Texture Pack by FREE MC MARKET PLACE.mcpack",
+   "sha256": "739259aa3aa2190bf45120918cfdd45d7f6c00c727a610d2755b899185478b8f",
+   "added": "2026-11-15T19:24:57Z",
    "icon": true
   }
  ]
