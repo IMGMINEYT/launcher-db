@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:07:52Z",
+ "updated": "2026-11-15T19:08:02Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1086,6 +1086,19 @@
    "filename": "Skibidi Toilet Titan Wars.mcaddon",
    "sha256": "8c80afb79c6a70b515862528b174e984b7378d40a961eb577d45d2952e1b5404",
    "added": "2026-11-15T19:07:52Z",
+   "icon": true
+  },
+  {
+   "id": "supplementaries-addon",
+   "name": "Supplementaries (addon)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/supplementaries-addon.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/supplementaries-addon/Supplementaries.addon.mcaddon",
+   "size": 6246072,
+   "type": "addon",
+   "filename": "Supplementaries (addon).mcaddon",
+   "sha256": "c020441df173d0d7fe4507da620fffdab7b9d0cd29c306226eb7563923c70bd5",
+   "added": "2026-11-15T19:08:02Z",
    "icon": true
   }
  ]
