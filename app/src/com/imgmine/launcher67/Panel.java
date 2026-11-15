@@ -470,11 +470,6 @@ final class Panel {
             if (c != null) { all = c; refilter(false); }
         }
         if (all.isEmpty() || System.currentTimeMillis() - Api.lastFetch > 10000) fetch();
-        root.setAlpha(0f);
-        card.setScaleX(0.94f);
-        card.setScaleY(0.94f);
-        root.animate().alpha(1f).setDuration(120).start();
-        card.animate().scaleX(1f).scaleY(1f).setDuration(120).start();
         root.requestFocus();
     }
 
