@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:33:14Z",
+ "updated": "2026-11-15T19:33:26Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -895,6 +895,19 @@
    "filename": "More Vehicles Add-On (addon).mcaddon",
    "sha256": "f657852994e54b3cb247b24493c4771ff2db7633891b1d10d88ef2f4708224af",
    "added": "2026-11-15T19:33:14Z",
+   "icon": true
+  },
+  {
+   "id": "add-on-addon",
+   "name": "Великолепная мебель Add-On (addon)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/add-on-addon.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/add-on-addon/Add-On.addon.mcaddon",
+   "size": 5661924,
+   "type": "addon",
+   "filename": "Великолепная мебель Add-On (addon).mcaddon",
+   "sha256": "2c61bc801d171a86b571beac88202339c36023d49c16e54597ad769a35410a66",
+   "added": "2026-11-15T19:33:25Z",
    "icon": true
   }
  ]
