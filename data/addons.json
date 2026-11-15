@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:29:58Z",
+ "updated": "2026-11-15T19:30:10Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -726,6 +726,19 @@
    "filename": "Abyssal Echoes BY MARKETPLACE TRADER.mcaddon",
    "sha256": "f03c31c83caf4be828c20492147ff6fb614baa48863df0313762f8da52bafa86",
    "added": "2026-11-15T19:29:58Z",
+   "icon": true
+  },
+  {
+   "id": "overgrown",
+   "name": "Overgrown",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/overgrown.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/overgrown/Overgrown.BY.MARKETPLACE.TRADER.mcpack",
+   "size": 2173846,
+   "type": "pack",
+   "filename": "Overgrown BY MARKETPLACE TRADER.mcpack",
+   "sha256": "aef1898c398fa04cccf7a036c91c6e9b86ec5676a9fb59f55916a30657e79a6d",
+   "added": "2026-11-15T19:30:10Z",
    "icon": true
   }
  ]
