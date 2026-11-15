@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:00:21Z",
+ "updated": "2026-11-15T19:00:44Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -853,6 +853,19 @@
    "filename": "More Enchants BY MARKETPLACE TRADER.mcaddon",
    "sha256": "2ab0aca5819d4b91913aaef5a86a04dc966f6dc375b3692ff0587a94a31fe953",
    "added": "2026-11-15T19:00:21Z",
+   "icon": true
+  },
+  {
+   "id": "the-extinct-dinosaurs-add-on-1-2",
+   "name": "The Extinct - DINOSAURS Add-On 1.2",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/the-extinct-dinosaurs-add-on-1-2.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/the-extinct-dinosaurs-add-on-1-2/The.Extinct.-.DINOSAURS.Add-On.1.2.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 11221845,
+   "type": "addon",
+   "filename": "The Extinct - DINOSAURS Add-On 1.2 BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "88c07daada0f4d49eebaf33375573c9d7dfe69ca50d2403bcad7378321061726",
+   "added": "2026-11-15T19:00:44Z",
    "icon": true
   }
  ]
