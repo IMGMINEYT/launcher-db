@@ -1,6 +1,5 @@
 (function(){
-  var SRC=['https://cdn.jsdelivr.net/gh/IMGMINEYT/launcher-db@main/data/addons.json',
-           'https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/data/addons.json'];
+  var SRC=['https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/data/addons.json','https://cdn.jsdelivr.net/gh/IMGMINEYT/launcher-db@main/data/addons.json'];
   var RAW='https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/',CDN='https://cdn.jsdelivr.net/gh/IMGMINEYT/launcher-db@main/';
   var PAGE=24, state={all:[],q:'',type:'all',sort:'new',shown:PAGE};
   var $=function(id){return document.getElementById(id)};
@@ -83,13 +82,13 @@
     if(!r.length){var e=document.createElement('div');e.className='empty';e.textContent=state.all.length?'Nothing matches that search.':'No addons yet. Check back soon.';grid.appendChild(e)}
   }
   function skeleton(){for(var i=0;i<6;i++){var s=document.createElement('div');s.className='skel';grid.appendChild(s)}}
-  function get(i){return fetch(SRC[i]+(i?'?t='+Math.floor(Date.now()/60000):''),{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()})}
+  function get(i){return fetch(SRC[i]+'?t='+Math.floor(Date.now()/60000),{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json()})}
   function load(){
     skeleton();
     var cached=null;try{cached=JSON.parse(sessionStorage.getItem('ad1')||'null')}catch(e){}
     if(cached&&Date.now()-cached.t<120000){state.all=cached.d;drawChips();render();return}
     get(0).catch(function(){return get(1)}).then(function(j){
-      state.all=(j.addons||[]).filter(function(a){return a&&a.name&&a.download&&/^https:\/\//.test(a.download)}).map(function(a){if(a.banner&&a.banner.indexOf(RAW)===0)a.banner=CDN+a.banner.slice(RAW.length);if(a.type==='map')a.type='world';return a});
+      state.all=(j.addons||[]).filter(function(a){return a&&a.name&&a.download&&/^https:\/\//.test(a.download)}).map(function(a){if(a.type==='map')a.type='world';return a});
       try{sessionStorage.setItem('ad1',JSON.stringify({t:Date.now(),d:state.all}))}catch(e){}
       drawChips();render();
     }).catch(function(){grid.textContent='';var e=document.createElement('div');e.className='empty';e.textContent='Could not load the list. Refresh in a moment.';grid.appendChild(e)});
