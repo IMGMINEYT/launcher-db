@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:11:49Z",
+ "updated": "2026-11-15T19:12:02Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1255,6 +1255,19 @@
    "filename": "WITHER APOCALYPSE.mcaddon",
    "sha256": "23b82bd0482e95e3c3e7c65efb39e08d0f62436e7f96714e3c2dad329fe443d1",
    "added": "2026-11-15T19:11:49Z",
+   "icon": true
+  },
+  {
+   "id": "world-builder-add-on-addon-mdf",
+   "name": "World Builder Add-On (addon) (MDF)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/world-builder-add-on-addon-mdf.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/world-builder-add-on-addon-mdf/World.Builder.Add-On.addon.MDF.mcaddon",
+   "size": 2471092,
+   "type": "addon",
+   "filename": "World Builder Add-On (addon) (MDF).mcaddon",
+   "sha256": "b3a82e8e3ddd5405d88677c641ab87b405ff3c50909fc54861181c676743794b",
+   "added": "2026-11-15T19:12:01Z",
    "icon": true
   }
  ]
