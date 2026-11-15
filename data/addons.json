@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:59:09Z",
+ "updated": "2026-11-15T18:59:21Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -775,6 +775,19 @@
    "filename": "Mini Soldiers Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "4c0d72f0d5ca532c1df0fdd531e2d301748e462872bb9a1c7246e75dd3a769f7",
    "added": "2026-11-15T18:59:08Z",
+   "icon": true
+  },
+  {
+   "id": "craftable-builds-add-on",
+   "name": "Craftable Builds Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/craftable-builds-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/craftable-builds-add-on/Craftable.Builds.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 1550418,
+   "type": "addon",
+   "filename": "Craftable Builds Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "ee2c25a8ce37df73ece0e7999f2d33b39724a62d5b7e53684f4f13884cd954e7",
+   "added": "2026-11-15T18:59:20Z",
    "icon": true
   }
  ]
