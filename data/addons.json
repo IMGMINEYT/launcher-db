@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:10:54Z",
+ "updated": "2026-11-15T19:11:05Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -1203,6 +1203,19 @@
    "filename": "Biomes Add-On (MDF).mcaddon",
    "sha256": "6e530e9cc9e68200cb02a2d26699e454abad6959ea700906c3bf55ff8a2231d2",
    "added": "2026-11-15T19:10:53Z",
+   "icon": true
+  },
+  {
+   "id": "world-builder-1-6-1-add-on-addon",
+   "name": "World Builder 1.6.1 Add-On (addon)",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/world-builder-1-6-1-add-on-addon.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/world-builder-1-6-1-add-on-addon/World.Builder.1.6.1.Add-On.addon.mcaddon",
+   "size": 859240,
+   "type": "addon",
+   "filename": "World Builder 1.6.1 Add-On (addon).mcaddon",
+   "sha256": "2bcc1976ee61c224aaa8b1fbcb0e4daf52ffe29c9a76856eed0168c6d09a3355",
+   "added": "2026-11-15T19:11:04Z",
    "icon": true
   }
  ]
