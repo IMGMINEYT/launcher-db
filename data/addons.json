@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T18:54:16Z",
+ "updated": "2026-11-15T18:54:27Z",
  "addons": [
   {
    "id": "explore-all-our-channels",
@@ -580,6 +580,19 @@
    "filename": "BOATS BY MARKETPLACE TRADER.mcaddon",
    "sha256": "b4b5bfc99e51279ca5a39e7ab5427d3017e06c587dac4670fc5785af0b3dac89",
    "added": "2026-11-15T18:54:16Z",
+   "icon": true
+  },
+  {
+   "id": "mob-armor-add-on-1-2",
+   "name": "MOB ARMOR Add-On 1.2",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/mob-armor-add-on-1-2.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/mob-armor-add-on-1-2/MOB.ARMOR.Add-On.1.2.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 1068711,
+   "type": "addon",
+   "filename": "MOB ARMOR Add-On 1.2 BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "12d52817b6f96158ceedb71263b2e95e777a86b48e03c99cc20e2dbebfd7cf51",
+   "added": "2026-11-15T18:54:26Z",
    "icon": true
   }
  ]
