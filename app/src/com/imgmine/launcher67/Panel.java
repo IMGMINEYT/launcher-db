@@ -26,8 +26,8 @@ final class Panel {
     private ListView list;
     private TextView state, count, clear;
     private EditText search;
-    private TextView[] chips = new TextView[5];
-    private static final String[] KEYS = {"", "addon", "world", "pack", "template"};
+    private TextView[] chips = new TextView[6];
+    private static final String[] KEYS = {"", "addon", "world", "pack", "template", "texture"};
     private boolean shown;
     private int cw, ch, typeFilter;
     private List<Addon> all = new ArrayList<>(), view = new ArrayList<>();
@@ -84,7 +84,7 @@ final class Panel {
 
     private TextView text(String t, int sp, int color) {
         TextView v = new TextView(ctx);
-        v.setText(t);
+        v.setText(Ui.fix(t));
         v.setTypeface(Ui.PX);
         v.setTextSize(sp);
         v.setTextColor(color);
@@ -168,7 +168,7 @@ final class Panel {
         search.addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int a, int b, int c) {}
             public void onTextChanged(CharSequence s, int a, int b, int c) {}
-            public void afterTextChanged(Editable e) { clear.setVisibility(e.length() > 0 ? View.VISIBLE : View.INVISIBLE); refilter(true); }
+            public void afterTextChanged(Editable e) { clear.setVisibility(e.length() > 0 ? View.VISIBLE : View.INVISIBLE); refilter(true); cfSearch(); }
         });
         search.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             public boolean onEditorAction(TextView v, int a, KeyEvent e) { hideKeys(); return true; }
@@ -185,8 +185,8 @@ final class Panel {
 
         // type chips
         LinearLayout cr = new LinearLayout(ctx);
-        String[] names = {"ALL", "ADDONS", "WORLDS", "PACKS", "TEMPLATES"};
-        for (int i = 0; i < 5; i++) {
+        String[] names = {"ALL", "ADDONS", "WORLDS", "PACKS", "TEMPLATES", "TEXTURES"};
+        for (int i = 0; i < 6; i++) {
             final int k = i;
             TextView c = text(names[i], 12, Ui.MUTE);
             c.setGravity(Gravity.CENTER);
@@ -231,7 +231,7 @@ final class Panel {
     }
 
     private void chipStyle() {
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 6; i++) {
             boolean on = i == typeFilter;
             chips[i].setTextColor(on ? Ui.GREEN : Ui.MUTE);
             chips[i].setBackground(new Ui.Bevel(on ? 0xFF1E2B22 : Ui.CARD, on ? Ui.GREEN_D : Ui.shade(Ui.CARD, 1.2f), Ui.shade(on ? 0xFF1E2B22 : Ui.CARD, 0.7f), 0xFF000000));
@@ -263,16 +263,64 @@ final class Panel {
         state.setVisibility(s.length() == 0 ? View.GONE : View.VISIBLE);
     }
 
+    private List<Addon> cfAll = new ArrayList<>();
+    private int cfGen;
+    private final Runnable cfRun = new Runnable() { public void run() { cfNow(); } };
+
+    private void cfSearch() {
+        search.removeCallbacks(cfRun);
+                if (search.getText().toString().trim().length() < 2) {
+            if (!cfAll.isEmpty()) { cfAll = new ArrayList<>(); refilter(false); }
+            return;
+        }
+        search.postDelayed(cfRun, 600);
+    }
+
+    private void cfNow() {
+        final String q = search.getText().toString();
+        final int gen = ++cfGen;
+        new Thread(new Runnable() {
+            public void run() {
+                final List<Addon> r = Mc.search(q);
+                search.post(new Runnable() { public void run() {
+                    if (gen != cfGen || r == null) return;
+                    cfAll = r;
+                    refilter(false);
+                } });
+            }
+        }).start();
+    }
+
+    private Addon header(String t) {
+        Addon h = new Addon();
+        h.type = "hdr";
+        h.id = "hdr" + t;
+        h.name = t;
+        return h;
+    }
+
     private void refilter(boolean toTop) {
         List<Addon> typed = new ArrayList<>();
         for (Addon a : all) {
             if (typeFilter > 0 && !KEYS[typeFilter].equals(a.type)) continue;
             typed.add(a);
         }
-        view = Fuzzy.search(typed, search == null ? "" : search.getText().toString());
-        count.setText(all.isEmpty() ? "" : view.size() + (view.size() == 1 ? " addon" : " addons"));
+        String qs = search == null ? "" : search.getText().toString();
+        List<Addon> db = Fuzzy.search(typed, qs);
+        List<Addon> cf = new ArrayList<>();
+        if (qs.trim().length() >= 2) {
+            for (Addon a : cfAll) if (typeFilter == 0 || KEYS[typeFilter].equals(a.type)) cf.add(a);
+        }
+        view = new ArrayList<>();
+        if (!cf.isEmpty()) {
+            if (!db.isEmpty()) { view.add(header("67 DATABASE")); view.addAll(db); }
+            view.add(header("MCPEDL"));
+            view.addAll(cf);
+        } else view.addAll(db);
+        int n = db.size() + cf.size();
+        count.setText(Ui.fix(all.isEmpty() && cf.isEmpty() ? "" : n + (n == 1 ? " addon" : " addons")));
         if (view.isEmpty() && !all.isEmpty()) {
-            String q = search.getText().toString().trim();
+            String q = qs.trim();
             setState(q.length() > 0 ? "Nothing found for\n\"" + q + "\"" : "Nothing in this tab yet.");
         } else if (view.isEmpty()) {
             if (!loading) setState("No addons yet.\nCheck back soon.");
@@ -286,7 +334,16 @@ final class Panel {
         public int getCount() { return view.size(); }
         public Object getItem(int i) { return view.get(i); }
         public long getItemId(int i) { return i; }
+        public int getViewTypeCount() { return 2; }
+        public int getItemViewType(int i) { return view.get(i).type.equals("hdr") ? 1 : 0; }
+        public boolean isEnabled(int i) { return false; }
         public View getView(int i, View cv, ViewGroup p) {
+            if (view.get(i).type.equals("hdr")) {
+                TextView t = cv instanceof TextView ? (TextView) cv : text("", 12, Ui.GREEN);
+                t.setText(view.get(i).name);
+                t.setPadding(Ui.dp(4), Ui.dp(6), 0, Ui.dp(8));
+                return t;
+            }
             Holder h;
             if (cv == null) { h = newHolder(); cv = h.row; cv.setTag(R.id.holder, h); } else h = (Holder) cv.getTag(R.id.holder);
             bind(h, view.get(i));
@@ -363,9 +420,9 @@ final class Panel {
 
     private void bind(Holder h, Addon a) {
         h.a = a;
-        h.name.setText(a.name);
+        h.name.setText(Ui.fix(a.name));
         String sz = a.sizeText();
-        h.meta.setText(a.typeLabel() + (sz.length() > 0 ? "  -  " + sz : ""));
+        h.meta.setText(Ui.fix((a.cf ? "MCPEDL  " : "") + a.typeLabel() + (sz.length() > 0 ? "  -  " + sz : "") + (a.cf && a.author.length() > 0 ? "\nby " + a.author : "")));
         h.img.setTag(null);
         h.img.setScaleType(ImageView.ScaleType.CENTER_CROP);
         h.img.setImageDrawable(Images.art(a.name, ctx.getResources()));
@@ -384,7 +441,7 @@ final class Panel {
         Integer p = prog.get(a.id);
         if (p != null) {
             b.pct = Math.max(0, p);
-            b.setText(p >= 0 ? p + "%" : "...");
+            b.setText(Ui.fix(p >= 0 ? p + "%" : "..."));
             b.setAlpha(1f);
         } else {
             b.pct = -1;
@@ -400,8 +457,34 @@ final class Panel {
         }
     }
 
+    private void openPage(Addon a) {
+        try {
+            android.content.Intent it = new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(a.page));
+            it.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+            ctx.startActivity(it);
+            hide();
+        } catch (Exception ignored) {}
+    }
+
     private void download(final Addon a) {
         if (a == null || prog.containsKey(a.id)) return;
+        if (a.cf && a.download.length() == 0) {
+            if (done.contains(a.id) || Downloader.have(ctx, a)) { Downloader.install(ctx, a.safeFile()); hide(); return; }
+            prog.put(a.id, -1);
+            refreshRow(a.id);
+            final Addon fa = a;
+            new Thread(new Runnable() { public void run() {
+                final String[] f = Mc.fileFor(fa);
+                search.post(new Runnable() { public void run() {
+                    prog.remove(fa.id);
+                    if (f == null) { refreshRow(fa.id); openPage(fa); return; }
+                    fa.download = f[0];
+                    fa.filename = f[1];
+                    download(fa);
+                } });
+            } }).start();
+            return;
+        }
         if (done.contains(a.id) || Downloader.have(ctx, a)) {
             Downloader.install(ctx, a.safeFile());
             hide();
@@ -414,6 +497,7 @@ final class Panel {
             public void done(boolean ok) {
                 prog.remove(a.id);
                 if (ok) done.add(a.id);
+                else if (a.cf) { a.download = ""; openPage(a); }
                 refreshRow(a.id);
                 if (ok && shown) hide();
             }

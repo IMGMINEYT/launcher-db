@@ -21,7 +21,7 @@ public class MainActivity extends Activity {
 
     private TextView label(String t, int sp, int color) {
         TextView v = new TextView(this);
-        v.setText(t);
+        v.setText(Ui.fix(t));
         v.setTypeface(Ui.PX);
         v.setTextSize(sp);
         v.setTextColor(color);

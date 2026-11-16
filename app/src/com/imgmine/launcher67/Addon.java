@@ -3,7 +3,8 @@ package com.imgmine.launcher67;
 final class Addon {
     String id = "", name = "", desc = "", banner, download = "", type = "file", filename = "", source;
     long size, added;
-    boolean icon;
+    boolean icon, cf;
+    String page = "", author = "";
     String lname = "", ldesc = "";
 
     String safeFile() {
@@ -25,5 +26,5 @@ final class Addon {
         return Math.max(1, size / 1024) + " KB";
     }
 
-    String typeLabel() { return type.equals("world") ? "WORLD" : type.equals("addon") ? "ADDON" : type.equals("pack") ? "PACK" : type.equals("template") ? "TEMPLATE" : "FILE"; }
+    String typeLabel() { if (type.equals("texture")) return "TEXTURES"; if (type.equals("hdr")) return ""; return type.equals("world") ? "WORLD" : type.equals("addon") ? "ADDON" : type.equals("pack") ? "PACK" : type.equals("template") ? "TEMPLATE" : "FILE"; }
 }

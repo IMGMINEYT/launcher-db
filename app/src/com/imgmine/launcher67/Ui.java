@@ -62,7 +62,7 @@ final class Ui {
 
     static TextView button(Context c, String text, int fill, int ink) {
         TextView t = new TextView(c);
-        t.setText(text);
+        t.setText(fix(text));
         t.setTypeface(PX);
         t.setTextSize(14);
         t.setTextColor(ink);
@@ -71,5 +71,24 @@ final class Ui {
         t.setPadding(dp(14), dp(8), dp(14), dp(10));
         t.setClickable(true);
         return t;
+    }
+
+    static class DigitSpan extends android.text.style.MetricAffectingSpan {
+        @Override public void updateDrawState(android.text.TextPaint p) { p.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)); }
+        @Override public void updateMeasureState(android.text.TextPaint p) { p.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)); }
+    }
+
+    /** Pixelify Sans draws 5 like S, so digits use a plain bold face. */
+    static CharSequence fix(CharSequence s) {
+        if (s == null) return "";
+        android.text.SpannableString o = null;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c >= '0' && c <= '9') {
+                if (o == null) o = new android.text.SpannableString(s);
+                o.setSpan(new DigitSpan(), i, i + 1, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+        }
+        return o == null ? s : o;
     }
 }
