@@ -49,6 +49,7 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     private View sendBtn;
     private TextView titleView, statusView;
     private AgentLoop loop;
+    private final org.json.JSONArray mem = new org.json.JSONArray(); // session memory across instructions
     private final List<String> transcript = new ArrayList<>();
     private OrientationEventListener orient;
     private BroadcastReceiver screenOff;
@@ -242,9 +243,10 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         statusView.setText(statusText); statusView.setTextColor(DIM); statusView.setTextSize(11);
         texts.addView(titleView); texts.addView(statusView);
         header.addView(texts, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        Button clr = smallBtn("CLR", 0xFF37414C);
         Button off = smallBtn("OFF", RED);
         Button x = smallBtn("X", 0xFF37414C);
-        header.addView(off); header.addView(x);
+        header.addView(clr); header.addView(off); header.addView(x);
         root.addView(header);
         attachChatDrag(header);
 
@@ -275,6 +277,7 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         rowLp.setMargins(0, dp(6), 0, 0);
         root.addView(row, rowLp);
 
+        clr.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { clearChat(); } });
         off.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { shutdownNow(); } });
         x.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { hideKeyboard(); hideChat(true); } });
         sendBtn.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { sendInput(); } });
@@ -383,7 +386,7 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         input.setText("");
         if (loop != null && loop.isAlive()) { systemMessage("AI abhi kaam kar raha hai - OFF dabao ya wait karo."); return; }
         userMessage(text);
-        loop = new AgentLoop(this, this, text);
+        loop = new AgentLoop(this, this, text, mem);
         loop.start();
     }
 
@@ -478,6 +481,14 @@ public class OverlayService extends Service implements AgentLoop.Ui {
             int who = Integer.parseInt(line.substring(0, sep));
             bubble(line.substring(sep + 1), who);
         }
+    }
+
+    /** CLR: wipe bubbles, transcript and session memory. Agent keeps running if active. */
+    private void clearChat() {
+        transcript.clear();
+        while (mem.length() > 0) mem.remove(0);
+        if (msgBox != null) msgBox.removeAllViews();
+        systemMessage("Chat clear ho gayi - naya session.");
     }
 
     // ---------- shutdown ----------

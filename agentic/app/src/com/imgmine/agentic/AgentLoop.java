@@ -30,12 +30,70 @@ public class AgentLoop extends Thread {
     private final boolean moneyMode;
     public volatile boolean stopped = false;
     private static String cachedApps;
+    private final JSONArray mem; // cross-instruction session memory (owned by OverlayService)
+    private String lastAiText = "";
 
-    public AgentLoop(Context ctx, Ui ui, String instruction) {
+    public AgentLoop(Context ctx, Ui ui, String instruction, JSONArray mem) {
         this.ctx = ctx.getApplicationContext();
         this.ui = ui;
         this.instruction = instruction;
         this.moneyMode = MONEY.matcher(instruction).find();
+        this.mem = mem;
+    }
+
+    // ---- context/token management ----
+    private static int estTokens(JSONArray msgs) {
+        int chars = 0;
+        for (int i = 0; i < msgs.length(); i++) {
+            JSONObject o = msgs.optJSONObject(i);
+            if (o != null) chars += o.optString("content").length();
+        }
+        return chars / 4 + msgs.length() * 4;
+    }
+
+    private static final int TOKEN_BUDGET = 5000;
+
+    /** Drop oldest turns (after system) until under budget; leaves a marker so the model knows. */
+    private static void ensureBudget(JSONArray msgs) throws Exception {
+        if (estTokens(msgs) <= TOKEN_BUDGET) return;
+        if (msgs.length() > 2)
+            msgs.put(1, new JSONObject().put("role", "user").put("content", "[purani conversation memory limit ke liye compress ho gayi]"));
+        while (msgs.length() > 2 && estTokens(msgs) > TOKEN_BUDGET) msgs.remove(2);
+    }
+
+    /** Hard compress after a provider context-length error: keep system + last 4. */
+    private static void compressHard(JSONArray msgs) {
+        while (msgs.length() > 5) msgs.remove(1);
+    }
+
+    /** Chat call with key rotation on rate-limit and compression on context overflow. */
+    private String callWithRetry(String root, String model, JSONArray msgs) throws Exception {
+        int keys = Math.max(1, SecureStore.keyCount(ctx));
+        int compressions = 0;
+        for (int attempt = 0; attempt <= keys; attempt++) {
+            String key = SecureStore.currentKey(ctx);
+            try {
+                return Api.chat(root, key, model, msgs, new Api.Progress() {
+                    @Override public void onChars(int n) { ui.thinkingProgress(n); }
+                });
+            } catch (Api.ContextTooLong c) {
+                if (++compressions > 3)
+                    throw new Api.ApiError("Model ka context bahut chhota hai - CLR dabake naya session shuru karo");
+                compressHard(msgs);
+                ui.systemMessage("Model memory full - history compress karke continue...");
+                attempt--; // same key, retry compressed
+            } catch (Api.RateLimited r) {
+                if (keys > 1 && attempt < keys - 1) {
+                    SecureStore.rotateKey(ctx);
+                    ui.systemMessage("Key rate-limited - agli key se continue...");
+                } else {
+                    throw new Api.ApiError(keys > 1
+                        ? "Saari keys abhi rate-limited hain - 1-2 min baad try karo"
+                        : r.getMessage() + (SecureStore.keyCount(ctx) <= 1 ? " (tip: app me doosri key add karo, auto-switch ho jayega)" : ""));
+                }
+            }
+        }
+        throw new Api.ApiError("Saari keys abhi rate-limited hain - 1-2 min baad try karo");
     }
 
     private static String systemPrompt() {
@@ -96,9 +154,10 @@ public class AgentLoop extends Thread {
         if (svc == null) { ui.systemMessage("Accessibility service is off - enable it first, then try again."); ui.loopEnded(); return; }
         if (moneyMode) ui.systemMessage("Payment-related task: I will confirm every step with you.");
         try {
-            String root = SecureStore.baseUrl(ctx), model = SecureStore.model(ctx), key;
+            String root = SecureStore.baseUrl(ctx), model = SecureStore.model(ctx);
+            String key;
             try {
-                key = SecureStore.apiKey(ctx);
+                key = SecureStore.currentKey(ctx);
             } catch (Exception e) {
                 ui.systemMessage("Saved key read nahi ho payi - app kholo, 'Change API / model' se key dobara daalo.");
                 ui.loopEnded();
@@ -111,6 +170,7 @@ public class AgentLoop extends Thread {
             }
             JSONArray msgs = new JSONArray();
             msgs.put(new JSONObject().put("role", "system").put("content", systemPrompt()));
+            for (int i = 0; i < mem.length(); i++) msgs.put(mem.get(i)); // session memory
             StringBuilder task = new StringBuilder("TASK: ").append(instruction).append("\n\n").append(installedApps());
             int steps = 0, retries = 0;
             String lastResult = "(start)";
@@ -121,13 +181,11 @@ public class AgentLoop extends Thread {
                         (moneyMode ? "\nREMINDER: money-related - confirm steps with the user via ask." : "");
                 task.setLength(0);
                 msgs.put(new JSONObject().put("role", "user").put("content", userMsg));
-                trim(msgs);
+                ensureBudget(msgs);
                 ui.thinking(true);
                 String reply;
                 try {
-                    reply = Api.chat(root, key, model, msgs, new Api.Progress() {
-                        @Override public void onChars(int n) { ui.thinkingProgress(n); }
-                    });
+                    reply = callWithRetry(root, model, msgs);
                 } finally { ui.thinking(false); }
                 if (stopped) break;
                 msgs.put(new JSONObject().put("role", "assistant").put("content", reply));
@@ -136,7 +194,7 @@ public class AgentLoop extends Thread {
                 String thought = a.optString("thought", "");
                 if (thought.length() > 0) ui.systemMessage(thought);
                 String act = a.optString("action");
-                if ("done".equals(act)) { ui.aiMessage(a.optString("text", "Done.")); break; }
+                if ("done".equals(act)) { lastAiText = a.optString("text", "Done."); ui.aiMessage(lastAiText); break; }
                 if ("plan".equals(act)) {
                     String plan = a.optString("plan", "");
                     if (plan.length() > 0) ui.aiMessage("Plan:\n" + plan);
@@ -144,7 +202,8 @@ public class AgentLoop extends Thread {
                     continue;
                 }
                 if ("ask".equals(act)) {
-                    ui.aiMessage(a.optString("text", "The AI is asking:"));
+                    lastAiText = a.optString("text", "The AI is asking:");
+                    ui.aiMessage(lastAiText);
                     break; // user's next chat message resumes as a new instruction
                 }
                 if ("open_app".equals(act)) {
@@ -177,6 +236,7 @@ public class AgentLoop extends Thread {
         } catch (Throwable e) {
             ui.systemMessage("Agent me error aaya - agent rok diya gaya, ball/window chalte rahenge. Dobara try karo.");
         } finally {
+            remember();
             ui.loopEnded();
         }
     }
@@ -210,8 +270,14 @@ public class AgentLoop extends Thread {
         return out[0];
     }
 
-    private static void trim(JSONArray msgs) {
-        while (msgs.length() > 10) msgs.remove(2);
+    /** Persist this instruction + outcome into session memory (bounded). */
+    private void remember() {
+        try {
+            if (lastAiText.isEmpty()) return;
+            mem.put(new JSONObject().put("role", "user").put("content", instruction));
+            mem.put(new JSONObject().put("role", "assistant").put("content", lastAiText));
+            while (mem.length() > 12) mem.remove(0);
+        } catch (Exception ignored) {}
     }
 
     private static JSONObject parse(String reply) {

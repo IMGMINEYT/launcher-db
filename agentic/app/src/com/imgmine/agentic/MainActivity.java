@@ -225,6 +225,13 @@ public class MainActivity extends Activity {
         TextView m = desc("Model: " + SecureStore.model(this));
         m.setPadding(0, dp(3), 0, dp(4));
         c.addView(m);
+        TextView keys = new TextView(this);
+        int kc = SecureStore.keyCount(this);
+        keys.setText("API keys: " + kc + (kc > 1 ? " (rate-limit pe auto-switch)" : " - tap to add more (auto-switch on rate limit)"));
+        keys.setTextColor(TEAL); keys.setTextSize(13);
+        keys.setPadding(0, dp(6), 0, 0);
+        keys.setOnClickListener(v -> manageKeys());
+        c.addView(keys);
         TextView change = new TextView(this);
         change.setText("Change API / model"); change.setTextColor(TEAL); change.setTextSize(13);
         change.setPadding(0, dp(6), 0, 0);
@@ -249,5 +256,69 @@ public class MainActivity extends Activity {
         tips.setText("Tap the ball to chat. Long-press it 5s to hide. Red OFF stops everything instantly.");
         tips.setTextColor(DIM); tips.setTextSize(12); tips.setLineSpacing(0, 1.15f);
         root.addView(tips);
+    }
+
+    private void manageKeys() {
+        String[] labels = SecureStore.keyLabels(this);
+        String[] items = new String[labels.length + 1];
+        System.arraycopy(labels, 0, items, 0, labels.length);
+        items[labels.length] = "+ Add another key";
+        new AlertDialog.Builder(this)
+            .setTitle("API keys")
+            .setItems(items, (d, which) -> {
+                if (which == labels.length) { stepAddKey(); return; }
+                if (labels.length <= 1) { return; } // keep at least one
+                final int idx = which;
+                new AlertDialog.Builder(this)
+                    .setTitle("Remove " + labels[idx] + "?")
+                    .setPositiveButton("Remove", (dd, w2) -> {
+                        try { SecureStore.removeKey(this, idx); } catch (Exception ignored) {}
+                        render();
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+            })
+            .setNegativeButton("Close", null)
+            .show();
+    }
+
+    private void stepAddKey() {
+        root.removeAllViews();
+        TextView h = new TextView(this);
+        h.setText("Add API key"); h.setTypeface(BOLD); h.setTextSize(24); h.setTextColor(Color.WHITE);
+        root.addView(h);
+        TextView sub = new TextView(this);
+        sub.setText("Same provider (" + SecureStore.baseUrl(this) + "). Rate-limit pe keys auto-switch hongi.");
+        sub.setTextColor(DIM); sub.setTextSize(13); sub.setPadding(0, dp(4), 0, dp(20));
+        root.addView(sub);
+        LinearLayout c = card();
+        c.addView(label("New key"));
+        EditText key = field("API key", true);
+        c.addView(key);
+        Button add = btn("Verify & add", ACCENT, 0xFF0B0F13);
+        c.addView(add);
+        TextView err = new TextView(this);
+        err.setTextColor(0xFFE57373); err.setTextSize(12); err.setPadding(0, dp(6), 0, 0);
+        c.addView(err);
+        root.addView(c);
+        TextView back = new TextView(this);
+        back.setText("< Back"); back.setTextColor(TEAL); back.setTextSize(13);
+        back.setOnClickListener(v -> render());
+        root.addView(back);
+        add.setOnClickListener(v -> {
+            String k = key.getText().toString().trim();
+            if (k.isEmpty()) { err.setText("Key daalo"); return; }
+            err.setText(""); add.setEnabled(false);
+            new Thread(() -> {
+                try {
+                    Api.fetchModels(SecureStore.baseUrl(this), k); // verify only
+                    SecureStore.addKey(this, k);
+                    runOnUiThread(() -> render());
+                } catch (Exception e) {
+                    String m2 = e.getMessage() != null ? e.getMessage() : "Key verify nahi hui";
+                    runOnUiThread(() -> { add.setEnabled(true); err.setText(m2); });
+                }
+            }).start();
+        });
     }
 }

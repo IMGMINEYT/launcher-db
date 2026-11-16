@@ -116,15 +116,24 @@ public class AgentService extends AccessibilityService {
                 case "tap_id": {
                     AccessibilityNodeInfo n = nodes.get(a.getInt("id"));
                     if (n == null) return "error: no such element id (screen changed)";
-                    return n.performAction(AccessibilityNodeInfo.ACTION_CLICK) ? "ok: tapped #" + a.getInt("id") : tapCenter(n);
+                    return clickNode(n, a.getInt("id"));
                 }
                 case "type": {
                     AccessibilityNodeInfo n = nodes.get(a.getInt("id"));
                     if (n == null) return "error: no such element id (screen changed)";
+                    String text = a.getString("text");
                     Bundle b = new Bundle();
-                    b.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, a.getString("text"));
+                    b.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text);
                     n.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
-                    return n.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, b) ? "ok: typed into #" + a.getInt("id") : "error: could not set text";
+                    if (n.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, b)) return "ok: typed into #" + a.getInt("id");
+                    // fallback: clipboard paste (WebViews and fields that reject SET_TEXT)
+                    try {
+                        android.content.ClipboardManager cm = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                        cm.setPrimaryClip(android.content.ClipData.newPlainText("agentic", text));
+                        n.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
+                        if (n.performAction(AccessibilityNodeInfo.ACTION_PASTE)) return "ok: pasted into #" + a.getInt("id");
+                    } catch (Exception ignored) {}
+                    return "error: could not set text (field blocked both methods)";
                 }
                 case "swipe": return swipe(a.getInt("x1"), a.getInt("y1"), a.getInt("x2"), a.getInt("y2"), a.optInt("ms", 350));
                 case "back": return performGlobalAction(GLOBAL_ACTION_BACK) ? "ok: back" : "error: back failed";
@@ -145,7 +154,9 @@ public class AgentService extends AccessibilityService {
                         int cy = sz[1] / 2;
                         return "left".equals(dir) ? swipe(sz[0] * 4 / 5, cy, sz[0] / 5, cy, 300) : swipe(sz[0] / 5, cy, sz[0] * 4 / 5, cy, 300);
                     }
-                    for (AccessibilityNodeInfo n : nodes.values()) {
+                    java.util.List<AccessibilityNodeInfo> list = new java.util.ArrayList<>(nodes.values());
+                    for (int i = list.size() - 1; i >= 0; i--) {
+                        AccessibilityNodeInfo n = list.get(i);
                         if (n != null && n.isScrollable() && n.isVisibleToUser() && n.performAction(nodeAction))
                             return "ok: scrolled " + dir;
                     }
@@ -202,6 +213,7 @@ public class AgentService extends AccessibilityService {
     }
 
     private String longPress(int x, int y) {
+        x = clampX(x); y = clampY(y);
         Path p = new Path(); p.moveTo(x, y);
         GestureDescription g = new GestureDescription.Builder()
                 .addStroke(new GestureDescription.StrokeDescription(p, 0, 700)).build();
@@ -216,7 +228,24 @@ public class AgentService extends AccessibilityService {
         } catch (Exception e) { return "error: " + e.getMessage(); }
     }
 
+    private int clampX(int x) { return Math.max(0, Math.min(x, screenSize()[0] - 1)); }
+    private int clampY(int y) { return Math.max(0, Math.min(y, screenSize()[1] - 1)); }
+
+    /** Node click with clickable-ancestor climb, then gesture fallback. Works in apps that block direct clicks. */
+    private String clickNode(AccessibilityNodeInfo n, int id) {
+        AccessibilityNodeInfo cur = n;
+        for (int up = 0; cur != null && up < 6; up++) {
+            if (cur.isClickable() && cur.performAction(AccessibilityNodeInfo.ACTION_CLICK))
+                return "ok: tapped #" + id;
+            AccessibilityNodeInfo parent = cur.getParent();
+            if (cur != n) cur.recycle();
+            cur = parent;
+        }
+        return tapCenter(n);
+    }
+
     private String tap(int x, int y) {
+        x = clampX(x); y = clampY(y);
         Path p = new Path(); p.moveTo(x, y);
         GestureDescription g = new GestureDescription.Builder()
                 .addStroke(new GestureDescription.StrokeDescription(p, 0, 80)).build();
@@ -224,6 +253,7 @@ public class AgentService extends AccessibilityService {
     }
 
     private String swipe(int x1, int y1, int x2, int y2, int ms) {
+        x1 = clampX(x1); y1 = clampY(y1); x2 = clampX(x2); y2 = clampY(y2);
         Path p = new Path(); p.moveTo(x1, y1); p.lineTo(x2, y2);
         GestureDescription g = new GestureDescription.Builder()
                 .addStroke(new GestureDescription.StrokeDescription(p, 0, Math.max(50, ms))).build();

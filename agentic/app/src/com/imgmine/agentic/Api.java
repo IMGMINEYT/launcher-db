@@ -16,6 +16,18 @@ import java.util.List;
 public final class Api {
 
     public static class ApiError extends Exception { ApiError(String m){ super(m); } }
+    public static class RateLimited extends ApiError { RateLimited(String m){ super(m); } }
+    public static class ContextTooLong extends ApiError { ContextTooLong(String m){ super(m); } }
+
+    static ApiError classify(int code, String raw) {
+        String l = raw == null ? "" : raw.toLowerCase();
+        if (code == 429 || l.contains("rate limit") || l.contains("rate_limit") || l.contains("quota") || l.contains("insufficient"))
+            return new RateLimited(friendly(code));
+        if ((l.contains("context") && (l.contains("length") || l.contains("window"))) || l.contains("maximum context")
+                || l.contains("too many tokens") || l.contains("max_tokens") || l.contains("reduce the length"))
+            return new ContextTooLong("Model ki memory full ho gayi - history compress karke continue");
+        return new ApiError(friendly(code));
+    }
 
     private static void checkUrl(String u) throws ApiError {
         String l = u.toLowerCase();
@@ -53,7 +65,7 @@ public final class Api {
         try (BufferedReader r = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String line; while ((line = r.readLine()) != null) sb.append(line);
         }
-        if (code >= 400) throw new ApiError(friendly(code));
+        if (code >= 400) throw classify(code, sb.toString());
         return sb.toString();
     }
 
@@ -130,7 +142,7 @@ public final class Api {
             if (es != null) try (BufferedReader r = new BufferedReader(new InputStreamReader(es, StandardCharsets.UTF_8))) {
                 String line; while ((line = r.readLine()) != null) sb.append(line);
             }
-            throw new ApiError(friendly(code));
+            throw classify(code, sb.toString());
         }
         if (!stream) {
             JSONObject resp = new JSONObject(body(h));
