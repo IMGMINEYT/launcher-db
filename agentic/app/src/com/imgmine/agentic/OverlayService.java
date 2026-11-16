@@ -49,6 +49,8 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     private View sendBtn;
     private TextView titleView, statusView;
     private AgentLoop loop;
+    private final java.util.List<String> pendingUser = new java.util.ArrayList<>(); // messages sent while busy
+    private boolean busyNoted = false;
     private final org.json.JSONArray mem = new org.json.JSONArray(); // session memory across instructions
     private final List<String> transcript = new ArrayList<>();
     private OrientationEventListener orient;
@@ -384,7 +386,13 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         String text = input.getText().toString().trim();
         if (text.isEmpty()) return;
         input.setText("");
-        if (loop != null && loop.isAlive()) { systemMessage("AI abhi kaam kar raha hai - OFF dabao ya wait karo."); return; }
+        if (loop != null && loop.isAlive()) {
+            synchronized (pendingUser) { pendingUser.add(text); }
+            userMessage(text);
+            if (!busyNoted) { busyNoted = true; systemMessage("Message queue ho gaya - AI agle step me ise padh lega."); }
+            return;
+        }
+        busyNoted = false;
         userMessage(text);
         loop = new AgentLoop(this, this, text, mem);
         loop.start();
@@ -471,7 +479,28 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         }});
     }
 
-    @Override public void loopEnded() { ui.post(new Runnable() { @Override public void run() { setStatus("online"); } }); }
+    @Override public void loopEnded() { ui.post(new Runnable() { @Override public void run() {
+        setStatus("online");
+        busyNoted = false;
+        loop = null;
+        String next = drainPending();
+        if (next != null) {
+            loop = new AgentLoop(OverlayService.this, OverlayService.this, next, mem);
+            loop.start();
+        }
+    } }); }
+
+    private String drainPending() {
+        synchronized (pendingUser) {
+            if (pendingUser.isEmpty()) return null;
+            StringBuilder sb = new StringBuilder();
+            for (String m : pendingUser) { if (sb.length() > 0) sb.append(" | "); sb.append(m); }
+            pendingUser.clear();
+            return sb.toString();
+        }
+    }
+
+    @Override public String pollPending() { return drainPending(); }
 
     private void replayTranscript() {
         List<String> copy = new ArrayList<>(transcript);

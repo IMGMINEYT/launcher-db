@@ -17,6 +17,8 @@ public class AgentLoop extends Thread {
         void thinkingProgress(int chars);
         void askUser(String question, YesNo cb);
         void loopEnded();
+        /** Queued user messages sent while busy; null when none. */
+        String pollPending();
     }
     public interface YesNo { void answer(boolean yes); }
 
@@ -127,7 +129,10 @@ public class AgentLoop extends Thread {
         "4. ids come from the LATEST dump only; they change every screen.\n" +
         "5. After typing into an INPUT, the submit/send button is usually a nearby BTN - tap it to confirm.\n" +
         "6. Never confirm purchases/payments yourself; use ask for every such step.\n" +
-        "7. Keep acting until the task is truly done, then reply done with a summary.\n\n" +
+        "7. Keep acting until the task is truly done, then reply done with a summary.\n" +
+        "8. The dump NEVER shows Agentic's own chat window, ball, or YES/NO dialogs - they are invisible to you. Never try to tap OFF/CLR/X/YES/NO; those belong to Agentic, not the target app.\n" +
+        "9. If a NOTE says the app you opened is now in the foreground, that open step succeeded - continue the plan, or reply done if the task was only to open it.\n" +
+        "10. If a VERIFY note says the screen did not change, your last action had no effect - never repeat the identical tap; try another element, coordinates, scroll or wait.\n\n" +
         "EXAMPLE (task: whatsapp pe Rahul ko 'hello' bhejo; dump shows App: com.whatsapp, #7 [INPUT] \"Message\" @300,2200, #9 [BTN] \"Send\" @1000,2200):\n" +
         "Turn 1: {\"thought\":\"Rahul ki chat khuli hai; pehle message type karta hu.\",\"action\":\"type\",\"id\":7,\"text\":\"hello\"}\n" +
         "Turn 2: {\"thought\":\"Message type ho gaya; ab Send dabata hu.\",\"action\":\"tap_id\",\"id\":9}\n" +
@@ -174,10 +179,39 @@ public class AgentLoop extends Thread {
             StringBuilder task = new StringBuilder("TASK: ").append(instruction).append("\n\n").append(installedApps());
             int steps = 0, retries = 0;
             String lastResult = "(start)";
+            String prevSig = null, pendingOpenPkg = null, lastAction = "";
+            int sameCount = 0;
             while (!stopped && steps < MAX_STEPS) {
                 steps++;
+                String pending = ui.pollPending();
+                if (pending != null)
+                    msgs.put(new JSONObject().put("role", "user").put("content",
+                        "NEW MESSAGE FROM USER (steer the current task with it): " + pending));
                 String screen = svc.dump();
-                String userMsg = task.toString() + "\n\nSCREEN:\n" + screen + "\nLAST RESULT: " + lastResult +
+                String sig = Integer.toHexString(screen.hashCode());
+                String fg = foregroundOf(screen);
+                StringBuilder note = new StringBuilder();
+                if (pendingOpenPkg != null) {
+                    if (pendingOpenPkg.equals(fg)) {
+                        note.append("\nNOTE: ").append(pendingOpenPkg).append(" is now open in the foreground - the open step succeeded.");
+                        lastResult += " | verified foreground: " + fg;
+                    } else {
+                        note.append("\nNOTE: ").append(pendingOpenPkg).append(" is NOT in the foreground yet (current foreground: ").append(fg).append(").");
+                    }
+                    pendingOpenPkg = null;
+                }
+                if (sig.equals(prevSig)) {
+                    sameCount++;
+                    note.append("\nVERIFY: the screen did NOT change after your last action (").append(lastAction)
+                        .append(") - it had no visible effect; change approach, do not repeat it.");
+                } else sameCount = 0;
+                prevSig = sig;
+                if (sameCount >= 2) {
+                    lastAiText = "Main loop me phas gaya hoon - screen badal hi nahi rahi. Naya instruction bhejo ya OFF dabao.";
+                    ui.aiMessage(lastAiText);
+                    break;
+                }
+                String userMsg = task.toString() + "\n\nSCREEN:\n" + screen + "\nLAST RESULT: " + lastResult + note +
                         (moneyMode ? "\nREMINDER: money-related - confirm steps with the user via ask." : "");
                 task.setLength(0);
                 msgs.put(new JSONObject().put("role", "user").put("content", userMsg));
@@ -194,6 +228,7 @@ public class AgentLoop extends Thread {
                 String thought = a.optString("thought", "");
                 if (thought.length() > 0) ui.systemMessage(thought);
                 String act = a.optString("action");
+                String openedPkg = null;
                 if ("done".equals(act)) { lastAiText = a.optString("text", "Done."); ui.aiMessage(lastAiText); break; }
                 if ("plan".equals(act)) {
                     String plan = a.optString("plan", "");
@@ -214,6 +249,7 @@ public class AgentLoop extends Thread {
                         if (ok == null || !ok) { lastResult = "user DENIED opening " + pkg + ". Do not retry; report back with done or ask."; continue; }
                         SecureStore.approveApp(ctx, pkg);
                     }
+                    openedPkg = pkg;
                 }
                 if (moneyMode) {
                     Boolean ok = askSync("Step " + steps + " allow kare?\n" + describe(a));
@@ -223,6 +259,8 @@ public class AgentLoop extends Thread {
                 ui.thinking(true);
                 try { lastResult = svc.execBlocking(a); }
                 finally { ui.thinking(false); }
+                lastAction = describe(a);
+                if (openedPkg != null && !lastResult.startsWith("error")) pendingOpenPkg = openedPkg;
                 if (lastResult.startsWith("error")) {
                     retries++;
                     if (retries >= 4) { lastResult += " | hint: try a different approach (scroll, coordinates, or ask the user)."; }
@@ -239,6 +277,14 @@ public class AgentLoop extends Thread {
             remember();
             ui.loopEnded();
         }
+    }
+
+    private static String foregroundOf(String screen) {
+        if (screen != null && screen.startsWith("App: ")) {
+            int nl = screen.indexOf('\n');
+            return (nl > 5 ? screen.substring(5, nl) : screen.substring(5)).trim();
+        }
+        return "";
     }
 
     private static String describe(JSONObject a) {

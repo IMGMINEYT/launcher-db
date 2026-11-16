@@ -1,6 +1,7 @@
 package com.imgmine.agentic;
 
 import android.accessibilityservice.AccessibilityService;
+import android.view.accessibility.AccessibilityWindowInfo;
 import android.accessibilityservice.GestureDescription;
 import android.content.Context;
 import android.content.Intent;
@@ -17,6 +18,7 @@ import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +46,7 @@ public class AgentService extends AccessibilityService {
     public synchronized String dump() {
         try {
             nodes.clear();
-            AccessibilityNodeInfo root = getRootInActiveWindow();
+            AccessibilityNodeInfo root = pickRoot();
             if (root == null) return "(screen unavailable)";
             StringBuilder sb = new StringBuilder();
             int[] sz = screenSize();
@@ -59,8 +61,35 @@ public class AgentService extends AccessibilityService {
         }
     }
 
+    /** Best foreground root, excluding our own windows so the agent never sees its own UI. */
+    private AccessibilityNodeInfo pickRoot() {
+        String self = getPackageName();
+        try {
+            List<AccessibilityWindowInfo> wins = getWindows();
+            AccessibilityNodeInfo appFallback = null, anyFallback = null;
+            for (AccessibilityWindowInfo w : wins) {
+                if (w.getType() == AccessibilityWindowInfo.TYPE_ACCESSIBILITY_OVERLAY) continue;
+                AccessibilityNodeInfo r = w.getRoot();
+                if (r == null) continue;
+                CharSequence p = r.getPackageName();
+                if (p != null && self.contentEquals(p)) continue;
+                boolean app = w.getType() == AccessibilityWindowInfo.TYPE_APPLICATION;
+                if (app && (w.isActive() || w.isFocused())) return r;
+                if (app && appFallback == null) appFallback = r;
+                if (anyFallback == null) anyFallback = r;
+            }
+            if (appFallback != null) return appFallback;
+            if (anyFallback != null) return anyFallback;
+        } catch (Throwable ignored) {}
+        AccessibilityNodeInfo r = getRootInActiveWindow();
+        if (r != null && r.getPackageName() != null && self.contentEquals(r.getPackageName())) return null;
+        return r;
+    }
+
     private void walk(AccessibilityNodeInfo n, StringBuilder sb, int[] count, int depth) {
         if (n == null || count[0] >= 100 || depth > 25) return;
+        CharSequence pk = n.getPackageName();
+        if (pk != null && getPackageName().contentEquals(pk)) return; // never expose our own UI
         CharSequence t = n.getText(), d = n.getContentDescription();
         boolean clickable = n.isClickable(), editable = n.isEditable(), scrollable = n.isScrollable();
         if ((clickable || editable || scrollable || (t != null && t.length() > 0) || (d != null && d.length() > 0)) && n.isVisibleToUser()) {
