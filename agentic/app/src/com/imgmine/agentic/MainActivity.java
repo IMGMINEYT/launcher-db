@@ -151,6 +151,11 @@ public class MainActivity extends Activity {
         LinearLayout c = card();
         c.addView(label("API connection"));
         c.addView(desc("Works with any OpenAI-compatible API - OpenAI, OpenRouter, Groq, etc."));
+        TextView other = new TextView(this);
+        other.setText("Anthropic ya Gemini? Tap here"); other.setTextColor(TEAL); other.setTextSize(12);
+        other.setPadding(0, dp(6), 0, 0);
+        other.setOnClickListener(v -> stepAddProvider());
+        c.addView(other);
         EditText base = field("Base URL - e.g. https://api.openai.com", false);
         EditText key = field("API key", true);
         c.addView(base); c.addView(key);
@@ -225,8 +230,13 @@ public class MainActivity extends Activity {
         status.setText("Step 3 of 3 - Ready");
         LinearLayout c = card();
         c.addView(label("Connected"));
+        SecureStore.Prov act = SecureStore.active(this);
+        TextView pv = desc("Provider: " + (act != null ? act.name + " (" + act.type + ")" : "?")
+            + (SecureStore.fallback(this) != null ? "  +backup: " + SecureStore.fallback(this).name : ""));
+        pv.setPadding(0, dp(3), 0, 0);
+        c.addView(pv);
         TextView m = desc("Model: " + SecureStore.model(this));
-        m.setPadding(0, dp(3), 0, dp(4));
+        m.setPadding(0, 0, 0, dp(4));
         c.addView(m);
         TextView keys = new TextView(this);
         int kc = SecureStore.keyCount(this);
@@ -247,9 +257,9 @@ public class MainActivity extends Activity {
             .show());
         c.addView(memRow);
         TextView change = new TextView(this);
-        change.setText("Change API / model"); change.setTextColor(TEAL); change.setTextSize(13);
+        change.setText("Providers manage karo (add / backup / change)"); change.setTextColor(TEAL); change.setTextSize(13);
         change.setPadding(0, dp(6), 0, 0);
-        change.setOnClickListener(v -> { SecureStore.clear(this); render(); });
+        change.setOnClickListener(v -> manageProviders());
         c.addView(change);
         root.addView(c);
 
@@ -270,6 +280,148 @@ public class MainActivity extends Activity {
         tips.setText("Tap the ball to chat. Long-press it 5s to hide. Red OFF stops everything instantly.");
         tips.setTextColor(DIM); tips.setTextSize(12); tips.setLineSpacing(0, 1.15f);
         root.addView(tips);
+    }
+
+    private void manageProviders() {
+        int n = SecureStore.providerCount(this);
+        int act = SecureStore.activeIndex(this), fb = SecureStore.fallbackIndex(this);
+        String[] items = new String[n + 1];
+        for (int i = 0; i < n; i++) {
+            SecureStore.Prov pv = SecureStore.providerAt(this, i);
+            items[i] = pv.name + " (" + pv.type + ") - " + pv.model + " [keys: " + pv.keyCount() + "]"
+                + (i == act ? "  *ACTIVE*" : "") + (i == fb ? "  *BACKUP*" : "");
+        }
+        items[n] = "+ Add provider";
+        new AlertDialog.Builder(this)
+            .setTitle("AI providers")
+            .setItems(items, (d, which) -> {
+                if (which == n) { stepAddProvider(); return; }
+                final int idx = which;
+                String[] ops = idx == act
+                    ? new String[]{"Change model", "Set as backup", "Remove provider"}
+                    : new String[]{"Set active", "Set as backup", "Change model", "Remove provider"};
+                new AlertDialog.Builder(this)
+                    .setTitle(items[idx])
+                    .setItems(ops, (dd, op) -> {
+                        String choice = ops[op];
+                        if ("Set active".equals(choice)) SecureStore.setActive(this, idx);
+                        else if ("Set as backup".equals(choice))
+                            SecureStore.setFallback(this, SecureStore.fallbackIndex(this) == idx ? -1 : idx);
+                        else if ("Change model".equals(choice)) changeModel(idx);
+                        else if ("Remove provider".equals(choice)) {
+                            if (n <= 1) return; // keep at least one
+                            new AlertDialog.Builder(this)
+                                .setTitle("Remove provider?")
+                                .setMessage("Is provider ki keys bhi delete ho jayengi.")
+                                .setPositiveButton("Remove", (d3, w) -> { SecureStore.removeProvider(this, idx); render(); })
+                                .setNegativeButton("Cancel", null)
+                                .show();
+                            return;
+                        }
+                        render();
+                    })
+                    .setNegativeButton("Close", null)
+                    .show();
+            })
+            .setNegativeButton("Close", null)
+            .show();
+    }
+
+    private void changeModel(int idx) {
+        SecureStore.Prov pv = SecureStore.providerAt(this, idx);
+        if (pv == null) return;
+        new Thread(() -> {
+            try {
+                String key = pv.currentKey();
+                String[] res = Api.fetchModels(pv.base, key, pv.type);
+                final String[] models = new String[res.length - 1];
+                System.arraycopy(res, 1, models, 0, models.length);
+                final String[] display = new String[models.length];
+                for (int i = 0; i < models.length; i++)
+                    display[i] = models[i] + (AgentLoop.isVisionModel(models[i]) ? "   [vision]" : "");
+                runOnUiThread(() -> new AlertDialog.Builder(this)
+                    .setTitle("Select model - [vision] = photos/samajh sakta hai")
+                    .setItems(display, (d, w) -> { SecureStore.setModel(this, pv, models[w]); render(); })
+                    .setNegativeButton("Cancel", null)
+                    .show());
+            } catch (Exception e) {
+                String m2 = e.getMessage() != null ? e.getMessage() : "Models fetch nahi hue";
+                runOnUiThread(() -> new AlertDialog.Builder(this).setTitle("Error").setMessage(m2).setPositiveButton("OK", null).show());
+            }
+        }).start();
+    }
+
+    private static final String[][] PROVIDER_TYPES = {
+        {"OpenAI-compatible (OpenAI, OpenRouter, Groq...)", "openai", "https://api.openai.com"},
+        {"Anthropic Claude", "anthropic", "https://api.anthropic.com"},
+        {"Google Gemini", "gemini", "https://generativelanguage.googleapis.com"},
+    };
+
+    private void stepAddProvider() {
+        String[] names = new String[PROVIDER_TYPES.length];
+        for (int i = 0; i < PROVIDER_TYPES.length; i++) names[i] = PROVIDER_TYPES[i][0];
+        new AlertDialog.Builder(this)
+            .setTitle("Kaunsa provider?")
+            .setItems(names, (d, which) -> addProviderForm(PROVIDER_TYPES[which][1], PROVIDER_TYPES[which][0], PROVIDER_TYPES[which][2]))
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void addProviderForm(String type, String label, String defBase) {
+        root.removeAllViews();
+        TextView h = new TextView(this);
+        h.setText("Add provider"); h.setTypeface(BOLD); h.setTextSize(24); h.setTextColor(Color.WHITE);
+        root.addView(h);
+        TextView sub = new TextView(this);
+        sub.setText(label);
+        sub.setTextColor(DIM); sub.setTextSize(13); sub.setPadding(0, dp(4), 0, dp(20));
+        root.addView(sub);
+        LinearLayout c = card();
+        c.addView(label("Connection"));
+        EditText base = field("Base URL", false);
+        base.setText(defBase);
+        EditText key = field("API key", true);
+        c.addView(base); c.addView(key);
+        Button add = btn("Verify & add", ACCENT, 0xFF0B0F13);
+        c.addView(add);
+        TextView err = new TextView(this);
+        err.setTextColor(0xFFE57373); err.setTextSize(12); err.setPadding(0, dp(6), 0, 0);
+        c.addView(err);
+        root.addView(c);
+        TextView back = new TextView(this);
+        back.setText("< Back"); back.setTextColor(TEAL); back.setTextSize(13);
+        back.setOnClickListener(v -> render());
+        root.addView(back);
+        add.setOnClickListener(v -> {
+            String b = base.getText().toString().trim(), k = key.getText().toString().trim();
+            if (b.isEmpty() || k.isEmpty()) { err.setText("Base URL aur key dono daalo"); return; }
+            err.setText(""); add.setEnabled(false);
+            new Thread(() -> {
+                try {
+                    String[] res = Api.fetchModels(b, k, type);
+                    final String root0 = res[0];
+                    final String[] models = new String[res.length - 1];
+                    System.arraycopy(res, 1, models, 0, models.length);
+                    final String[] display = new String[models.length];
+                    for (int i = 0; i < models.length; i++)
+                        display[i] = models[i] + (AgentLoop.isVisionModel(models[i]) ? "   [vision]" : "");
+                    runOnUiThread(() -> new AlertDialog.Builder(this)
+                        .setTitle("Select model - [vision] = photos/samajh sakta hai")
+                        .setItems(display, (d2, w) -> {
+                            try {
+                                int i = SecureStore.addProvider(this, label.split(" ")[0], type, root0, k, models[w]);
+                                if (SecureStore.providerCount(this) == 1) SecureStore.setActive(this, i);
+                                render();
+                            } catch (Exception e) { err.setText("Save nahi hua - dobara try karo"); }
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show());
+                } catch (Exception e) {
+                    String m2 = e.getMessage() != null ? e.getMessage() : "Connect nahi hua";
+                    runOnUiThread(() -> { add.setEnabled(true); err.setText(m2); });
+                }
+            }).start();
+        });
     }
 
     private void manageKeys() {
@@ -325,7 +477,8 @@ public class MainActivity extends Activity {
             err.setText(""); add.setEnabled(false);
             new Thread(() -> {
                 try {
-                    Api.fetchModels(SecureStore.baseUrl(this), k); // verify only
+                    SecureStore.Prov pv2 = SecureStore.active(this);
+                    Api.fetchModels(SecureStore.baseUrl(this), k, pv2 != null ? pv2.type : "openai"); // verify only
                     SecureStore.addKey(this, k);
                     runOnUiThread(() -> render());
                 } catch (Exception e) {

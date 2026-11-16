@@ -76,57 +76,140 @@ public final class SecureStore {
     }
     private static void saveRing(Context c, JSONArray r) { p(c).edit().putString("keys", r.toString()).apply(); }
 
-    /** First-time connect: replaces everything with one key. */
-    public static void saveConfig(Context c, String baseUrl, String apiKey, String model) throws Exception {
+    // ---- provider ecosystem: multiple providers, each with its own encrypted key ring ----
+    public static final class Prov {
+        public final Context c;
+        public final int index;
+        public String name, type, base, model;
+        JSONArray keys;
+        int idx;
+        Prov(Context c, int i, JSONObject o) {
+            this.c = c; this.index = i;
+            name = o.optString("name", "Provider");
+            type = o.optString("type", "openai");
+            base = o.optString("base", null);
+            model = o.optString("model", null);
+            keys = o.optJSONArray("keys");
+            if (keys == null) keys = new JSONArray();
+            idx = o.optInt("idx", 0);
+        }
+        public int keyCount() { return keys.length(); }
+        public String currentKey() throws KeyReadException {
+            try {
+                if (keys.length() == 0) return null;
+                return dec(keys.getJSONObject(idx % keys.length()).getString("v"));
+            } catch (KeyReadException e) { throw e; }
+              catch (Exception e) { throw new KeyReadException(e.getClass().getSimpleName()); }
+        }
+        public String[] keyLabels() {
+            String[] out = new String[keys.length()];
+            for (int i = 0; i < keys.length(); i++) out[i] = keys.optJSONObject(i).optString("label", "Key " + (i + 1));
+            return out;
+        }
+        public void rotate() { if (keys.length() > 1) { idx = (idx + 1) % keys.length(); save(); } }
+        JSONObject json() {
+            try {
+                return new JSONObject().put("name", name).put("type", type).put("base", base)
+                    .put("model", model).put("keys", keys).put("idx", idx);
+            } catch (Exception e) { return new JSONObject(); }
+        }
+        void save() {
+            try {
+                JSONArray a = providers(c);
+                if (index < a.length()) { a.put(index, json()); saveProviders(c, a); }
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private static JSONArray providers(Context c) {
+        try {
+            String s = p(c).getString("providers", null);
+            if (s != null) return new JSONArray(s);
+        } catch (Exception ignored) {}
+        // migrate legacy single-provider config
+        JSONArray a = new JSONArray();
+        try {
+            JSONArray r = ring(c);
+            String b = p(c).getString("base_url", null), m = p(c).getString("model", null);
+            if (b != null || r.length() > 0) {
+                a.put(new JSONObject().put("name", "Default").put("type", "openai").put("base", b)
+                    .put("model", m).put("keys", r).put("idx", p(c).getInt("key_idx", 0)));
+                saveProviders(c, a);
+                p(c).edit().remove("keys").remove("base_url").remove("model").remove("key_idx").apply();
+            }
+        } catch (Exception ignored) {}
+        return a;
+    }
+    private static void saveProviders(Context c, JSONArray a) { p(c).edit().putString("providers", a.toString()).apply(); }
+
+    public static int providerCount(Context c) { return providers(c).length(); }
+    public static Prov providerAt(Context c, int i) {
+        JSONArray a = providers(c);
+        if (i < 0 || i >= a.length()) return null;
+        try { return new Prov(c, i, a.getJSONObject(i)); } catch (Exception e) { return null; }
+    }
+    public static Prov active(Context c) { return providerAt(c, p(c).getInt("active_provider", 0)); }
+    public static Prov fallback(Context c) { return providerAt(c, p(c).getInt("fallback_provider", -1)); }
+    public static int activeIndex(Context c) { return p(c).getInt("active_provider", 0); }
+    public static int fallbackIndex(Context c) { return p(c).getInt("fallback_provider", -1); }
+    public static void setActive(Context c, int i) { p(c).edit().putInt("active_provider", i).apply(); }
+    public static void setFallback(Context c, int i) { p(c).edit().putInt("fallback_provider", i).apply(); }
+
+    public static int addProvider(Context c, String name, String type, String base, String apiKey, String model) throws Exception {
+        JSONArray a = providers(c);
         JSONArray r = new JSONArray();
         r.put(new JSONObject().put("label", "Key 1").put("v", enc(apiKey)));
-        saveRing(c, r);
-        p(c).edit().putString("base_url", baseUrl).putString("model", model).putInt("key_idx", 0).apply();
+        a.put(new JSONObject().put("name", name).put("type", type).put("base", base)
+            .put("model", model).put("keys", r).put("idx", 0));
+        saveProviders(c, a);
+        return a.length() - 1;
     }
 
+    public static void removeProvider(Context c, int i) {
+        JSONArray a = providers(c), n = new JSONArray();
+        for (int j = 0; j < a.length(); j++) if (j != i) n.put(a.optJSONObject(j));
+        saveProviders(c, n);
+        int act = activeIndex(c), fb = fallbackIndex(c);
+        if (act == i) p(c).edit().putInt("active_provider", 0).apply();
+        else if (act > i) p(c).edit().putInt("active_provider", act - 1).apply();
+        if (fb == i) p(c).edit().putInt("fallback_provider", -1).apply();
+        else if (fb > i) p(c).edit().putInt("fallback_provider", fb - 1).apply();
+    }
+
+    public static void setModel(Context c, Prov pv, String model) { pv.model = model; pv.save(); }
+
+    /** First-time connect (OpenAI-compatible flow). */
+    public static void saveConfig(Context c, String baseUrl, String apiKey, String model) throws Exception {
+        int i = addProvider(c, "Default", "openai", baseUrl, apiKey, model);
+        setActive(c, i);
+    }
+
+    // legacy delegates -> active provider (keeps the agent loop and key UI unchanged)
     public static void addKey(Context c, String apiKey) throws Exception {
-        JSONArray r = ring(c);
-        r.put(new JSONObject().put("label", "Key " + (r.length() + 1)).put("v", enc(apiKey)));
-        saveRing(c, r);
+        Prov pv = active(c);
+        if (pv == null) return;
+        pv.keys.put(new JSONObject().put("label", "Key " + (pv.keys.length() + 1)).put("v", enc(apiKey)));
+        pv.save();
     }
-
     public static void removeKey(Context c, int index) throws Exception {
-        JSONArray r = ring(c), n = new JSONArray();
-        for (int j = 0; j < r.length(); j++) if (j != index) n.put(r.getJSONObject(j));
+        Prov pv = active(c);
+        if (pv == null) return;
+        JSONArray n = new JSONArray();
+        for (int j = 0; j < pv.keys.length(); j++) if (j != index) n.put(pv.keys.getJSONObject(j));
         for (int j = 0; j < n.length(); j++) n.getJSONObject(j).put("label", "Key " + (j + 1));
-        saveRing(c, n);
-        if (p(c).getInt("key_idx", 0) >= Math.max(1, n.length())) p(c).edit().putInt("key_idx", 0).apply();
+        pv.keys = n;
+        if (pv.idx >= Math.max(1, n.length())) pv.idx = 0;
+        pv.save();
     }
-
-    public static int keyCount(Context c) { try { return ring(c).length(); } catch (Exception e) { return 0; } }
-    public static String[] keyLabels(Context c) {
-        try {
-            JSONArray r = ring(c);
-            String[] out = new String[r.length()];
-            for (int i = 0; i < r.length(); i++) out[i] = r.getJSONObject(i).optString("label", "Key " + (i + 1));
-            return out;
-        } catch (Exception e) { return new String[0]; }
-    }
-
-    public static String currentKey(Context c) throws KeyReadException {
-        try {
-            JSONArray r = ring(c);
-            if (r.length() == 0) return null;
-            int idx = p(c).getInt("key_idx", 0) % r.length();
-            return dec(r.getJSONObject(idx).getString("v"));
-        } catch (KeyReadException e) { throw e; }
-          catch (Exception e) { throw new KeyReadException(e.getClass().getSimpleName()); }
-    }
-
-    public static void rotateKey(Context c) {
-        int n = keyCount(c);
-        if (n > 1) p(c).edit().putInt("key_idx", (p(c).getInt("key_idx", 0) + 1) % n).apply();
-    }
-
-    public static String baseUrl(Context c){ return p(c).getString("base_url", null); }
-    public static String model(Context c){ return p(c).getString("model", null); }
-    public static boolean configured(Context c){ return baseUrl(c) != null && model(c) != null && keyCount(c) > 0; }
-    public static void clear(Context c){ p(c).edit().clear().apply(); }
+    public static int keyCount(Context c) { Prov pv = active(c); return pv == null ? 0 : pv.keyCount(); }
+    public static String[] keyLabels(Context c) { Prov pv = active(c); return pv == null ? new String[0] : pv.keyLabels(); }
+    public static String currentKey(Context c) throws KeyReadException { Prov pv = active(c); return pv == null ? null : pv.currentKey(); }
+    public static void rotateKey(Context c) { Prov pv = active(c); if (pv != null) pv.rotate(); }
+    public static String baseUrl(Context c) { Prov pv = active(c); return pv == null ? null : pv.base; }
+    public static String model(Context c) { Prov pv = active(c); return pv == null ? null : pv.model; }
+    public static boolean configured(Context c) { Prov pv = active(c); return pv != null && pv.base != null && pv.model != null && pv.keyCount() > 0; }
+    /** Reset providers only - memory and app approvals survive. */
+    public static void clear(Context c) { p(c).edit().remove("providers").remove("active_provider").remove("fallback_provider").apply(); }
 
     // ---- long-term memory (encrypted, compact) ----
     private static final int MEM_MAX = 15;

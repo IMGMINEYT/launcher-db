@@ -116,13 +116,13 @@ public class AgentLoop extends Thread {
     }
 
     /** Chat call with key rotation on rate-limit and compression on context overflow. */
-    private String callWithRetry(String root, String model, JSONArray msgs) throws Exception {
-        int keys = Math.max(1, SecureStore.keyCount(ctx));
+    private String callWithRetry(SecureStore.Prov pv, JSONArray msgs) throws Exception {
+        int keys = Math.max(1, pv.keyCount());
         int compressions = 0;
         for (int attempt = 0; attempt <= keys; attempt++) {
-            String key = SecureStore.currentKey(ctx);
+            String key = pv.currentKey();
             try {
-                return Api.chat(root, key, model, msgs, new Api.Progress() {
+                return Api.chat(pv.base, key, pv.model, msgs, new Api.Progress() {
                     private boolean thoughtPosted = false;
                     @Override public void onPartial(String soFar) {
                         if (thoughtPosted) return;
@@ -146,12 +146,12 @@ public class AgentLoop extends Thread {
                 attempt--; // same key, retry compressed
             } catch (Api.RateLimited r) {
                 if (keys > 1 && attempt < keys - 1) {
-                    SecureStore.rotateKey(ctx);
+                    pv.rotate();
                     ui.systemMessage("Ek key busy hai - doosri key se continue...");
                 } else {
                     throw new Api.ApiError(keys > 1
                         ? "Saari keys abhi busy hain - 1-2 min baad try karo"
-                        : r.getMessage() + (SecureStore.keyCount(ctx) <= 1 ? " (tip: app me doosri key add karo - busy hone par khud switch ho jayega)" : ""));
+                        : r.getMessage() + (pv.keyCount() <= 1 ? " (tip: app me doosri key add karo - busy hone par khud switch ho jayega)" : ""));
                 }
             }
         }
@@ -223,21 +223,20 @@ public class AgentLoop extends Thread {
         svc.agentActive = true;
         if (moneyMode) ui.notice("Payment-related task: main har step pehle aapse confirm karunga.");
         try {
-            String root = SecureStore.baseUrl(ctx), model = SecureStore.model(ctx);
-            String key;
-            try {
-                key = SecureStore.currentKey(ctx);
-            } catch (Exception e) {
-                ui.notice("Saved key read nahi ho payi - app kholo, 'Change API / model' se key dobara daalo.");
-                ui.loopEnded();
-                return;
-            }
-            if (root == null || key == null || model == null) {
+            SecureStore.Prov prov = SecureStore.active(ctx);
+            if (prov == null || prov.base == null || prov.model == null || prov.keyCount() == 0) {
                 ui.notice("API setup missing - open the Agentic app and connect your API first.");
                 ui.loopEnded();
                 return;
             }
-            boolean visionOn = isVisionModel(model);
+            try {
+                if (prov.currentKey() == null) throw new Exception();
+            } catch (Exception e) {
+                ui.notice("Saved key read nahi ho payi - app kholo, provider ki key dobara daalo.");
+                ui.loopEnded();
+                return;
+            }
+            boolean visionOn = isVisionModel(prov.model);
             StringBuilder sys = new StringBuilder(systemPrompt());
             java.util.List<String> longMem = SecureStore.loadMemory(ctx);
             if (!longMem.isEmpty()) {
@@ -319,14 +318,22 @@ public class AgentLoop extends Thread {
                 String reply;
                 try {
                     try {
-                        reply = callWithRetry(root, model, msgs);
+                        reply = callWithRetry(prov, msgs);
                     } catch (Api.VisionRejected vr) {
                         visionOn = false;
                         ui.systemMessage("Ye model photos nahi dekh sakta - text se kaam continue...");
                         JSONObject last = msgs.getJSONObject(msgs.length() - 1);
                         last.put("content", userMsg); // resend text-only
-                        reply = callWithRetry(root, model, msgs);
+                        reply = callWithRetry(prov, msgs);
                     }
+                } catch (Api.ApiError primary) {
+                    SecureStore.Prov fb = SecureStore.fallback(ctx);
+                    if (fb != null && fb.index != prov.index && fb.keyCount() > 0 && fb.model != null && fb.base != null) {
+                        ui.systemMessage("Primary provider fail hua - backup (" + fb.name + ") se continue...");
+                        prov = fb; // task state (msgs) carries over - nothing is lost
+                        visionOn = isVisionModel(fb.model);
+                        reply = callWithRetry(fb, msgs);
+                    } else throw primary;
                 } finally { ui.thinking(false); }
                 if (stopped) break;
                 msgs.put(new JSONObject().put("role", "assistant").put("content", reply));
