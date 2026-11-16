@@ -1,4 +1,5 @@
-"""Group guard: the bot does nothing for any group or supergroup message.
+"""Group guard: in groups and supergroups the bot does nothing, except the owner-only /db
+database flow (db_mode handlers on_db / on_photo / on_file), which replies privately.
 
 install(client) wraps every handler registered on the client so it returns
 immediately when the event comes from a group or supergroup. Private chats and
@@ -28,6 +29,10 @@ async def _in_group(event):
         return True
 
 
+# Only the database flow may run in groups (owner-only checks live inside the handlers).
+_GROUP_OK = {"on_db", "on_photo", "on_file"}
+
+
 def install(client):
     orig = client.add_event_handler
 
@@ -35,6 +40,8 @@ def install(client):
         @functools.wraps(callback)
         async def wrapper(e):
             if await _in_group(e):
+                if getattr(callback, "__module__", "") == "db_mode" and getattr(callback, "__name__", "") in _GROUP_OK:
+                    return await callback(e)
                 return None
             return await callback(e)
         return orig(wrapper, event)
