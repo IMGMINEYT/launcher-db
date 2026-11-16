@@ -153,6 +153,8 @@ public final class Api {
         req.put("model", model);
         req.put("messages", messages);
         req.put("stream", stream);
+        req.put("temperature", 0); // deterministic action JSON
+        req.put("max_tokens", 700); // action replies are short; cap runaway generation time
         HttpURLConnection h = open(root + "/chat/completions", key, "POST");
         byte[] bytes = req.toString().getBytes(StandardCharsets.UTF_8);
         try (OutputStream os = h.getOutputStream()) { os.write(bytes); }
@@ -238,7 +240,8 @@ public final class Api {
         }
         JSONObject req = new JSONObject();
         req.put("model", model);
-        req.put("max_tokens", 4096);
+        req.put("max_tokens", 800);
+        req.put("temperature", 0);
         if (sys.length() > 0) req.put("system", sys.toString());
         req.put("messages", msgs);
         HttpURLConnection h = openH(b + "/v1/messages", "POST");
@@ -302,6 +305,7 @@ public final class Api {
         }
         JSONObject req = new JSONObject();
         req.put("contents", contents);
+        req.put("generationConfig", new JSONObject().put("temperature", 0).put("maxOutputTokens", 800));
         if (sys.length() > 0) req.put("systemInstruction", new JSONObject().put("parts",
             new JSONArray().put(new JSONObject().put("text", sys.toString()))));
         String url = b + "/v1beta/models/" + model + ":generateContent?key=" + key;

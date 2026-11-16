@@ -59,16 +59,16 @@ public final class Ocr {
         return sb.toString();
     }
 
-    /** Downscale to max 720px and encode JPEG (q55) as base64. */
+    /** Downscale to max 512px and encode JPEG (q50) as base64 - smaller payload, faster models. */
     public static String jpeg64(Bitmap src) {
         try {
-            int w = src.getWidth(), h = src.getHeight(), max = 720;
+            int w = src.getWidth(), h = src.getHeight(), max = 512;
             if (Math.max(w, h) > max) {
                 float sc = max / (float) Math.max(w, h);
                 src = Bitmap.createScaledBitmap(src, Math.round(w * sc), Math.round(h * sc), true);
             }
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            src.compress(Bitmap.CompressFormat.JPEG, 55, bos);
+            src.compress(Bitmap.CompressFormat.JPEG, 50, bos);
             return Base64.encodeToString(bos.toByteArray(), Base64.NO_WRAP);
         } catch (Throwable t) { return null; }
     }

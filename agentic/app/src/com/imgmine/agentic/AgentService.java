@@ -181,7 +181,7 @@ public class AgentService extends AccessibilityService {
             if (t != null && t.length() > 0) sb.append(" \"").append(cut(t.toString(), 40)).append('"');
             if (d != null && d.length() > 0) sb.append(" (").append(cut(d.toString(), 30)).append(')');
             if (hint != null && hint.length() > 0) sb.append(" hint:").append(cut(hint.toString(), 30));
-            if (rid != null && rid.length() > 0) sb.append(" id:").append(cut(rid, 20));
+            // resource ids omitted from the prompt: rarely actionable, real tokens saved per element
             sb.append(" @").append(r.centerX()).append(',').append(r.centerY());
             if (n.isFocused()) sb.append(" focused");
             if (n.isSelected()) sb.append(" selected");

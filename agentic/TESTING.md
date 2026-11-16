@@ -79,3 +79,10 @@ Do not treat the earlier milestone labels as full completion of the correspondin
 - SpeechRecognizer (system); on many devices recognition needs internet. Hinglish via free-form language model.
 - NOT device-tested: recognition availability varies by device/Android build. This is the riskiest overnight change.
 - Not included: text-to-speech replies (remaining work).
+
+# v1.8 maximum-speed pass
+- API decoding: temperature 0 + max_tokens caps (OpenAI 700, Anthropic/Gemini 800) - shorter, deterministic action replies.
+- Screen dump: resource ids dropped (~20 chars/element saved); vision JPEGs now 512px/q50.
+- Multi-action batch replies: AI can return up to 4 obvious low-risk actions in one call (e.g. tap_id then type); every action still passes the same gates (app-open approval, payment every-step, HIGH always-confirm, MEDIUM once-per-task), batch stops on error/denial/pause, single re-read after.
+- Evaluated and rejected: parallel screenshot (image must precede the call - negligible gain), early-execute from stream (truncated-JSON risk).
+- Compile/signature verified; batch behavior not device-tested.

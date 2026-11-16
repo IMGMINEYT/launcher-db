@@ -219,6 +219,7 @@ public class AgentLoop extends Thread {
         "{\"thought\":\"...\",\"action\":\"drag\",\"x1\":A,\"y1\":B,\"x2\":C,\"y2\":D} - press-hold then move (reorder/sliders)\n" +
         "{\"thought\":\"...\",\"action\":\"pinch\",\"mode\":\"in|out\",\"x\":X,\"y\":Y} - zoom (x,y = center; omit for screen center)\n" +
         "{\"thought\":\"...\",\"action\":\"clear\",\"id\":N} - empty an INPUT field\n" +
+        "{\"thought\":\"...\",\"actions\":[{...},{...}]} - BATCH up to 4 obvious LOW-risk steps in ONE reply (e.g. tap_id then type) - FEWER CALLS = FASTER. Only when you do NOT need the screen between steps. NEVER batch send/pay/delete/submit taps, open_app, or done/ask/plan/look.\n" +
         "{\"thought\":\"...\",\"action\":\"notifications\"} / {\"action\":\"quick_settings\"} - pull down shade / quick tiles\n" +
         "{\"thought\":\"...\",\"action\":\"volume_up\"} / {\"action\":\"volume_down\"}\n" +
         "{\"thought\":\"...\",\"action\":\"rotate\",\"mode\":\"auto|portrait|landscape|portrait_reverse|landscape_reverse\"} - rotate the screen\n" +
@@ -505,6 +506,37 @@ public class AgentLoop extends Thread {
                     ui.aiMessage(lastAiText);
                     break; // user's next chat message resumes as a new instruction
                 }
+                if (a.has("actions")) { // BATCH: up to 4 obvious low-risk actions, one API call saved
+                    JSONArray batch = a.optJSONArray("actions");
+                    if (batch == null || batch.length() == 0) { lastResult = "error: empty actions[]."; continue; }
+                    StringBuilder br = new StringBuilder();
+                    int limit = Math.min(batch.length(), 4);
+                    for (int bi = 0; bi < limit; bi++) {
+                        JSONObject sub = batch.optJSONObject(bi);
+                        if (sub == null) { br.append("bad element; "); continue; }
+                        String sact = sub.optString("action");
+                        if ("done".equals(sact) || "ask".equals(sact) || "plan".equals(sact) || "look".equals(sact)) {
+                            br.append(sact).append(" not allowed inside actions[] - send it as its own reply; ");
+                            break;
+                        }
+                        if (paused || MainActivity.foreground || observedPauseEpoch != pauseEpoch) {
+                            awaitResume();
+                            if (stopped) break;
+                            br.append("user paused - batch stopped; ");
+                            break;
+                        }
+                        String r = gateAndExec(sub, fg, svc, steps, taskId);
+                        if (stopped) break;
+                        br.append(sact).append(": ").append(r).append("; ");
+                        if ("open_app".equals(sact) && r.startsWith("ok") && !sub.optString("package", "").isEmpty())
+                            pendingOpenPkg = sub.optString("package");
+                        if (r.startsWith("error") || r.startsWith("user DENIED")) break;
+                        try { Thread.sleep(120); } catch (InterruptedException ie) { break; }
+                    }
+                    lastAction = "batch";
+                    lastResult = "batch results: " + br;
+                    continue;
+                }
                 if ("open_app".equals(act)) {
                     String pkg = a.optString("package", "");
                     if (!SecureStore.appApproved(ctx, pkg)) {
@@ -515,38 +547,16 @@ public class AgentLoop extends Thread {
                     }
                     openedPkg = pkg;
                 }
-                if (moneyMode || paymentApp(fg)) {
-                    Boolean ok = askSync("Step " + steps + " allow kare?\n" + describe(a));
-                    if (stopped) break;
-                    if (ok == null || !ok) { lastResult = "user DENIED this step. Use ask or done now."; continue; }
-                } else {
-                    int risk = actionRisk(a, svc, taskRisk);
-                    if (risk == 2) {
-                        Boolean ok = askSync("SAVDHAN - AI ye karna chahta hai:\n" + describe(a) + "\nAllow? (har baar poochhunga)");
-                        if (stopped) break;
-                        if (ok == null || !ok) { lastResult = "user DENIED this action (" + describe(a) + "). Do NOT retry it - use ask or done."; continue; }
-                    } else if (risk == 1 && !mediumApproved) {
-                        Boolean ok = askSync("Is task me AI likhne/bhejne jaisa kaam karega - pehla step:\n" + describe(a) + "\nAllow? (is task ke liye ek baar)");
-                        if (stopped) break;
-                        if (ok == null || !ok) { lastResult = "user DENIED this kind of action. Use ask or done now."; continue; }
-                        mediumApproved = true;
-                    }
-                }
                 if (paused || MainActivity.foreground || observedPauseEpoch != pauseEpoch) {
                     awaitResume();
                     if (stopped) break;
                     lastResult = "User paused. Re-observe before acting.";
                     continue;
                 }
-                String actLine = actionLine(a);
-                if (actLine != null) ui.systemMessage(actLine); // visible BEFORE the action executes
-                ui.thinking(true);
-                long tExec = System.currentTimeMillis();
-                try { lastResult = svc.execBlocking(a); }
-                finally { ui.thinking(false); }
-                LogStore.log(ctx, taskId, steps, describe(a), lastResult, System.currentTimeMillis() - tExec);
+                lastResult = gateAndExec(a, fg, svc, steps, taskId);
+                if (stopped) break;
                 lastAction = describe(a);
-                if (openedPkg != null && !lastResult.startsWith("error")) pendingOpenPkg = openedPkg;
+                if (openedPkg != null && !lastResult.startsWith("error") && !lastResult.startsWith("user DENIED")) pendingOpenPkg = openedPkg;
                 if (lastResult.startsWith("error")) {
                     retries++;
                     if (retries >= 4) { lastResult += " | hint: try a different approach (scroll, coordinates, or ask the user)."; }
@@ -618,6 +628,46 @@ public class AgentLoop extends Thread {
             case "pinch": return "Pinch " + a.optString("mode", "in");
             default: return act;
         }
+    }
+
+    /** Gates (app-open approval, payment every-step, risk classes) + execution + logging for one action. */
+    private String gateAndExec(JSONObject a, String fg, AgentService svc, int steps, long taskId) {
+        String act = a.optString("action");
+        if ("open_app".equals(act)) {
+            String pkg = a.optString("package", "");
+            if (!SecureStore.appApproved(ctx, pkg)) {
+                Boolean ok = askSync("AI nayi app kholna chahta hai: " + pkg + "\nAllow?");
+                if (stopped) return "STOPPED";
+                if (ok == null || !ok) return "user DENIED opening " + pkg + ". Do not retry; report back with done or ask.";
+                SecureStore.approveApp(ctx, pkg);
+            }
+        }
+        if (moneyMode || paymentApp(fg)) {
+            Boolean ok = askSync("Step " + steps + " allow kare?\n" + describe(a));
+            if (stopped) return "STOPPED";
+            if (ok == null || !ok) return "user DENIED this step. Use ask or done now.";
+        } else {
+            int risk = actionRisk(a, svc, taskRisk);
+            if (risk == 2) {
+                Boolean ok = askSync("SAVDHAN - AI ye karna chahta hai:\n" + describe(a) + "\nAllow? (har baar poochhunga)");
+                if (stopped) return "STOPPED";
+                if (ok == null || !ok) return "user DENIED this action (" + describe(a) + "). Do NOT retry it - use ask or done.";
+            } else if (risk == 1 && !mediumApproved) {
+                Boolean ok = askSync("Is task me AI likhne/bhejne jaisa kaam karega - pehla step:\n" + describe(a) + "\nAllow? (is task ke liye ek baar)");
+                if (stopped) return "STOPPED";
+                if (ok == null || !ok) return "user DENIED this kind of action. Use ask or done now.";
+                mediumApproved = true;
+            }
+        }
+        String actLine = actionLine(a);
+        if (actLine != null) ui.systemMessage(actLine); // visible BEFORE the action executes
+        ui.thinking(true);
+        long tExec = System.currentTimeMillis();
+        String res;
+        try { res = svc.execBlocking(a); }
+        finally { ui.thinking(false); }
+        LogStore.log(ctx, taskId, steps, describe(a), res, System.currentTimeMillis() - tExec);
+        return res;
     }
 
     /** Task-level risk from the instruction text. Payments are already covered by moneyMode (every-step). */
