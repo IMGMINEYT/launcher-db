@@ -155,6 +155,7 @@ public class AgentService extends AccessibilityService {
         CharSequence pk = n.getPackageName();
         if (pk != null && getPackageName().contentEquals(pk)) return; // never expose our own UI
         CharSequence t = n.getText(), d = n.getContentDescription();
+        if (t != null && n.isPassword()) t = "\u2022\u2022\u2022"; // never expose typed secrets
         CharSequence hint = Build.VERSION.SDK_INT >= 26 ? n.getHintText() : null;
         String rid = null;
         try {
@@ -244,6 +245,28 @@ public class AgentService extends AccessibilityService {
                 case "home": return performGlobalAction(GLOBAL_ACTION_HOME) ? "ok: home" : "error: home failed";
                 case "recents": return performGlobalAction(GLOBAL_ACTION_RECENTS) ? "ok: recents" : "error: recents failed";
                 case "wait": return "ok: waited";
+                case "double_tap": return doubleTap(a.getInt("x"), a.getInt("y"));
+                case "double_tap_id": {
+                    AccessibilityNodeInfo n = nodes.get(a.getInt("id"));
+                    if (n == null) return "error: no such element id (screen changed)";
+                    Rect r = new Rect(); n.getBoundsInScreen(r);
+                    return doubleTap(r.centerX(), r.centerY());
+                }
+                case "drag": return drag(a.getInt("x1"), a.getInt("y1"), a.getInt("x2"), a.getInt("y2"));
+                case "pinch": {
+                    int[] sz = screenSize();
+                    return pinch("out".equals(a.optString("mode", "in")),
+                        a.has("x") ? a.getInt("x") : sz[0] / 2, a.has("y") ? a.getInt("y") : sz[1] / 2);
+                }
+                case "clear": {
+                    AccessibilityNodeInfo n = nodes.get(a.getInt("id"));
+                    if (n == null) return "error: no such element id (screen changed)";
+                    Bundle b = new Bundle();
+                    b.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, "");
+                    n.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
+                    return n.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, b)
+                        ? "ok: cleared #" + a.getInt("id") : "error: could not clear field";
+                }
                 case "long_press_id": {
                     AccessibilityNodeInfo n = nodes.get(a.getInt("id"));
                     if (n == null) return "error: no such element id (screen changed)";
@@ -330,6 +353,40 @@ public class AgentService extends AccessibilityService {
             am.adjustStreamVolume(AudioManager.STREAM_MUSIC, dir, AudioManager.FLAG_SHOW_UI);
             return "ok: volume " + (dir == AudioManager.ADJUST_RAISE ? "up" : "down");
         } catch (Exception e) { return "error: " + e.getMessage(); }
+    }
+
+    private String doubleTap(int x, int y) {
+        x = clampX(x); y = clampY(y);
+        Path p = new Path(); p.moveTo(x, y);
+        GestureDescription.StrokeDescription s1 = new GestureDescription.StrokeDescription(p, 0, 60);
+        GestureDescription g = new GestureDescription.Builder()
+                .addStroke(s1).addStroke(s1.continueStroke(p, 90, 60, false)).build();
+        return dispatchGesture(g, null, null) ? "ok: double-tapped " + x + "," + y : "error: double-tap rejected";
+    }
+
+    /** Press-hold (500ms) then move - for reorder handles and sliders. */
+    private String drag(int x1, int y1, int x2, int y2) {
+        x1 = clampX(x1); y1 = clampY(y1); x2 = clampX(x2); y2 = clampY(y2);
+        Path hold = new Path(); hold.moveTo(x1, y1);
+        GestureDescription.StrokeDescription s1 = new GestureDescription.StrokeDescription(hold, 0, 500, true);
+        Path move = new Path(); move.moveTo(x1, y1); move.lineTo(x2, y2);
+        GestureDescription g = new GestureDescription.Builder()
+                .addStroke(s1.continueStroke(move, 0, 600, false)).build();
+        return dispatchGesture(g, null, null) ? "ok: dragged to " + x2 + "," + y2 : "error: drag rejected";
+    }
+
+    /** Two-finger pinch centered at (x,y). zoomIn=true spreads fingers apart. */
+    private String pinch(boolean zoomIn, int x, int y) {
+        int[] sz = screenSize();
+        x = clampX(x); y = clampY(y);
+        int near = Math.min(sz[0], sz[1]) / 10, far = Math.min(sz[0], sz[1]) / 3;
+        Path l = new Path(), r = new Path();
+        if (zoomIn) { l.moveTo(x - near, y); l.lineTo(x - far, y); r.moveTo(x + near, y); r.lineTo(x + far, y); }
+        else { l.moveTo(x - far, y); l.lineTo(x - near, y); r.moveTo(x + far, y); r.lineTo(x + near, y); }
+        GestureDescription g = new GestureDescription.Builder()
+                .addStroke(new GestureDescription.StrokeDescription(l, 0, 350))
+                .addStroke(new GestureDescription.StrokeDescription(r, 0, 350)).build();
+        return dispatchGesture(g, null, null) ? "ok: pinch " + (zoomIn ? "spread" : "close") : "error: pinch rejected";
     }
 
     private int clampX(int x) { return Math.max(0, Math.min(x, screenSize()[0] - 1)); }

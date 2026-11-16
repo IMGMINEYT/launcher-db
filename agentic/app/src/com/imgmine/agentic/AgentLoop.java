@@ -178,6 +178,17 @@ public class AgentLoop extends Thread {
         "Screen WxH\n" +
         "#id [TYPE] \"text\" (description) @cx,cy flags\n" +
         "TYPE: BTN (clickable), INPUT (editable field - type here), LIST (scrollable area), TXT (static text), IMG (image). flags: focused/selected. @cx,cy is the element center in pixels.\n\n" +
+        "ANDROID CONTROL ESSENTIALS:\n" +
+        "- Gestures: tap_id/tap (single), double_tap (like/open/zoom), long_press (menus/select), swipe (fast flick), drag (move items, slow), scroll (lists/feeds; chain for long lists), pinch (zoom).\n" +
+        "- Swipe physics: short+fast = fling (may overshoot); long+slower = controlled scroll. To see content BELOW, swipe up (start low, end high).\n" +
+        "- Lists load more as you scroll - after scrolling, new elements have new ids from the fresh dump.\n" +
+        "- Text input: type replaces the field text (clear first to empty); after typing, submit via the app's nearby BTN (send arrow/search).\n" +
+        "- Popups/ads/dialogs/permission prompts: handle FIRST - look for X, Close, Skip, Not now. Never Allow things the user did not ask for; use ask when unsure.\n" +
+        "- Spinners/dropdowns: tap to open, then tap the option. Tabs: bottom bar = main sections, top tabs = sub-sections.\n" +
+        "- Toasts are temporary hints, not buttons - ignore them.\n" +
+        "- WebView/image/game screens may expose few ids: use look, then tap coordinates from the photo.\n" +
+        "- Empty dump = image/video/game screen: look + coordinates, or scroll.\n" +
+        "- Coordinates change on rotation/layout shift: always use ids from the LATEST dump. Use back/home/recents actions instead of tapping the system nav bar.\n\n" +
         "ACTIONS (exactly one per reply):\n" +
         "{\"thought\":\"...\",\"action\":\"plan\",\"plan\":\"1) ... 2) ... 3) ...\"} - first reply for tasks with 3+ steps (skip for trivial ones)\n" +
         "{\"thought\":\"...\",\"action\":\"tap_id\",\"id\":N} - tap element N (ALWAYS prefer over coordinates)\n" +
@@ -189,6 +200,10 @@ public class AgentLoop extends Thread {
         "{\"thought\":\"...\",\"action\":\"wait\",\"ms\":N} - wait for loading (1000-3000 after open_app or big taps)\n" +
         "{\"thought\":\"...\",\"action\":\"scroll\",\"direction\":\"up|down|left|right\"} - scroll a list/feed\n" +
         "{\"thought\":\"...\",\"action\":\"long_press_id\",\"id\":N} / {\"action\":\"long_press\",\"x\":X,\"y\":Y} - long-press (context menus)\n" +
+        "{\"thought\":\"...\",\"action\":\"double_tap\",\"x\":X,\"y\":Y} / {\"action\":\"double_tap_id\",\"id\":N} - double-tap (likes, zoom)\n" +
+        "{\"thought\":\"...\",\"action\":\"drag\",\"x1\":A,\"y1\":B,\"x2\":C,\"y2\":D} - press-hold then move (reorder/sliders)\n" +
+        "{\"thought\":\"...\",\"action\":\"pinch\",\"mode\":\"in|out\",\"x\":X,\"y\":Y} - zoom (x,y = center; omit for screen center)\n" +
+        "{\"thought\":\"...\",\"action\":\"clear\",\"id\":N} - empty an INPUT field\n" +
         "{\"thought\":\"...\",\"action\":\"notifications\"} / {\"action\":\"quick_settings\"} - pull down shade / quick tiles\n" +
         "{\"thought\":\"...\",\"action\":\"volume_up\"} / {\"action\":\"volume_down\"}\n" +
         "{\"thought\":\"...\",\"action\":\"rotate\",\"mode\":\"auto|portrait|landscape|portrait_reverse|landscape_reverse\"} - rotate the screen\n" +
@@ -514,6 +529,10 @@ public class AgentLoop extends Thread {
             case "open_app": return "App khol raha hoon…";
             case "tap": case "tap_id": return "Tap kar raha hoon…";
             case "long_press": case "long_press_id": return "Long-press kar raha hoon…";
+            case "double_tap": case "double_tap_id": return "Double-tap kar raha hoon…";
+            case "drag": return "Drag kar raha hoon…";
+            case "pinch": return "Zoom kar raha hoon…";
+            case "clear": return "Field saaf kar raha hoon…";
             case "type": return "Likh raha hoon…";
             case "swipe": case "scroll": return "Scroll kar raha hoon…";
             case "back": return "Back ja raha hoon…";
@@ -539,6 +558,9 @@ public class AgentLoop extends Thread {
             case "type": return "Type \"" + a.optString("text") + "\" into element #" + a.optInt("id");
             case "swipe": return "Swipe " + a.optInt("x1") + "," + a.optInt("y1") + " -> " + a.optInt("x2") + "," + a.optInt("y2");
             case "open_app": return "Open app " + a.optString("package");
+            case "double_tap_id": return "Double-tap element #" + a.optInt("id");
+            case "clear": return "Clear field #" + a.optInt("id");
+            case "pinch": return "Pinch " + a.optString("mode", "in");
             default: return act;
         }
     }

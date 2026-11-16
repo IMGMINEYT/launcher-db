@@ -44,3 +44,10 @@ Do not treat the earlier milestone labels as full completion of the correspondin
 - LocalAssist: rule-based instant commands (back/home/recents/scroll/volume/lock/shade) with NO API call and zero tokens; conservative exact-phrase matching only, everything else goes to the AI unchanged. Works even before API setup.
 - Tap gets one adjacent-coordinate retry on gesture rejection; swipe durations clamped.
 - Caveat: LocalAssist is rules, not a trained mini-AI. Compile/signature verified; not device-tested.
+
+# v1.3 Android-control knowledge + gesture vocabulary
+- Always-on ANDROID CONTROL ESSENTIALS block: gesture vocabulary, swipe physics, list/loading behavior, dialogs/ads handling, spinners, tabs, toasts, WebView fallback, rotation. ~450 tokens per call.
+- 24 per-app playbooks (WhatsApp, Telegram, YouTube, Instagram, Chrome, Settings, Gmail, Maps, Spotify, X, Facebook, Photos, Play Store, Phone/Contacts, Messages, Camera, Discord, Calculator, Files, Clock, Snapchat, UPI payment apps) - injected ONLY when that app is foreground (token-budgeted).
+- New actions: double_tap(_id), drag (press-hold-move), pinch (two-finger zoom), clear (empty input field).
+- Security: password fields now redacted (***) in every screen dump.
+- Compile/signature verified; gestures not device-tested (pinch/drag semantics may need tuning on real apps).
