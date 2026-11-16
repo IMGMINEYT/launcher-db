@@ -33,10 +33,24 @@ public final class SecureStore {
         return g.generateKey();
     }
 
+    public static class KeyReadException extends Exception { KeyReadException(String m){ super(m); } }
+
+    private static void deleteKey() {
+        try {
+            KeyStore ks = KeyStore.getInstance("AndroidKeyStore"); ks.load(null);
+            ks.deleteEntry(KEY_ALIAS);
+        } catch (Exception ignored) {}
+    }
+
     public static void saveConfig(Context c, String baseUrl, String apiKey, String model) throws Exception {
-        byte[] iv = new byte[12]; new SecureRandom().nextBytes(iv);
         Cipher cp = Cipher.getInstance("AES/GCM/NoPadding");
-        cp.init(Cipher.ENCRYPT_MODE, key());
+        try {
+            cp.init(Cipher.ENCRYPT_MODE, key());
+        } catch (Exception e) {
+            deleteKey(); // key invalidated (lockscreen change etc.) - re-provision once
+            cp.init(Cipher.ENCRYPT_MODE, key());
+        }
+        byte[] iv = cp.getIV(); // provider-generated IV: the one actually used
         byte[] enc = cp.doFinal(apiKey.getBytes(StandardCharsets.UTF_8));
         p(c).edit()
           .putString("base_url", baseUrl)
@@ -46,12 +60,16 @@ public final class SecureStore {
           .apply();
     }
 
-    public static String apiKey(Context c) throws Exception {
+    public static String apiKey(Context c) throws KeyReadException {
         String ivs = p(c).getString("key_iv", null), enc = p(c).getString("key_enc", null);
         if (ivs == null || enc == null) return null;
-        Cipher cp = Cipher.getInstance("AES/GCM/NoPadding");
-        cp.init(Cipher.DECRYPT_MODE, key(), new GCMParameterSpec(128, Base64.decode(ivs, Base64.NO_WRAP)));
-        return new String(cp.doFinal(Base64.decode(enc, Base64.NO_WRAP)), StandardCharsets.UTF_8);
+        try {
+            Cipher cp = Cipher.getInstance("AES/GCM/NoPadding");
+            cp.init(Cipher.DECRYPT_MODE, key(), new GCMParameterSpec(128, Base64.decode(ivs, Base64.NO_WRAP)));
+            return new String(cp.doFinal(Base64.decode(enc, Base64.NO_WRAP)), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new KeyReadException(e.getClass().getSimpleName());
+        }
     }
 
     public static String baseUrl(Context c){ return p(c).getString("base_url", null); }

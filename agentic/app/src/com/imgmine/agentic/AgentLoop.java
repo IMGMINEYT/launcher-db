@@ -73,7 +73,19 @@ public class AgentLoop extends Thread {
         if (svc == null) { ui.systemMessage("Accessibility service is off - enable it first, then try again."); ui.loopEnded(); return; }
         if (moneyMode) ui.systemMessage("Payment-related task: I will confirm every step with you.");
         try {
-            String root = SecureStore.baseUrl(ctx), key = SecureStore.apiKey(ctx), model = SecureStore.model(ctx);
+            String root = SecureStore.baseUrl(ctx), model = SecureStore.model(ctx), key;
+            try {
+                key = SecureStore.apiKey(ctx);
+            } catch (Exception e) {
+                ui.systemMessage("Saved API key unreadable (" + e.getMessage() + ") - open the Agentic app, tap 'change API / model' and re-enter your key.");
+                ui.loopEnded();
+                return;
+            }
+            if (root == null || key == null || model == null) {
+                ui.systemMessage("API setup missing - open the Agentic app and connect your API first.");
+                ui.loopEnded();
+                return;
+            }
             JSONArray msgs = new JSONArray();
             msgs.put(new JSONObject().put("role", "system").put("content", systemPrompt()));
             for (int i = 0; i < history.length(); i++) msgs.put(history.get(i));
