@@ -1,0 +1,34 @@
+# v1.1 test candidate
+
+## Checks executed
+- Clean Java compilation and Android resource linking, SDK 34, min SDK 24 / target 33.
+- DEX generation, APK alignment and cryptographic signature verification.
+- Package/version metadata inspection: com.imgmine.agentic, version 1.1 / 12.
+- Release signer compared with v1.0 so the update can use the same app identity.
+- Source audit of shared instruction routing, pause boundaries, screen-preview retention and service shutdown.
+
+## Not executed
+No Android device/emulator is attached. The following remain unverified:
+- Actual UI pixels, clipping, keyboard behavior, contrast and landscape layout.
+- Installation and startup on a device, including ML Kit component initialization.
+- Live accessibility screenshot capture and preview rendering.
+- Pause/resume during requests, confirmation dialogs and gestures.
+- End-to-end calls to OpenAI-compatible, Gemini or Anthropic providers.
+- Android background-service restrictions and screen-off behavior.
+
+This is a test candidate, not a production-ready or fully tested release.
+
+## Expected behavior for device QA
+1. Existing permissions and encrypted API settings remain in place after update.
+2. Home, Live, History and Settings navigate without changing the floating ball/chat.
+3. A Home instruction enters the same chat/task path, then backgrounds the app.
+4. While the app dashboard is foreground, new automation actions wait. An already-dispatched Android gesture may finish. Continue on phone backgrounds the app and resumes observation.
+5. Pause task holds at action boundaries. Resume re-observes instead of using a pre-pause target. Emergency stop uses the existing OFF path.
+6. Preview is the last captured screen, not live video. It uses accessibility screenshots on Android 11+, stays in RAM only, and clears on OFF/screen-off/service destruction.
+7. History persists the latest 50 tasks; clear-memory does not clear API keys.
+8. First-time app-open and payment confirmations still apply.
+
+## Scope still incomplete against the full master prompt
+This milestone is only incremental UI/control work. Separate Tasks navigation, task priorities/real queue/duplicate detection, full provider editing and manual-model/configuration controls, editable/disableable memory, voice, risk-classified confirmations, encrypted structured task history, usage reporting and comprehensive diagnostics are not all implemented. The current history store is app-private SharedPreferences JSON, not an encrypted Room database.
+
+Do not treat the earlier milestone labels as full completion of the corresponding master-prompt sections.

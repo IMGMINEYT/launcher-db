@@ -48,7 +48,7 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     private EditText input;
     private View sendBtn;
     private TextView titleView, statusView;
-    private AgentLoop loop;
+    private volatile AgentLoop loop;
     private LinearLayout detailBox;
     private TextView stepsRow;
     private boolean detailOpen = false, replaying = false;
@@ -124,7 +124,12 @@ public class OverlayService extends Service implements AgentLoop.Ui {
                 .setSmallIcon(R.drawable.ic_stat).build();
         startForeground(NOTIF_ID, n);
         if (ball == null && chat == null) showBall();
-        return START_STICKY;
+        if (i != null && i.hasExtra("instruction")) {
+            String text = i.getStringExtra("instruction");
+            i.removeExtra("instruction");
+            externalInput(text);
+        }
+        return START_NOT_STICKY;
     }
 
     private int[] size() {
@@ -405,6 +410,10 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         String text = input.getText().toString().trim();
         if (text.isEmpty()) return;
         input.setText("");
+        acceptInstruction(text);
+    }
+
+    private void acceptInstruction(String text) {
         if (loop != null && loop.isAlive()) {
             synchronized (pendingUser) { pendingUser.add(text); }
             userMessage(text);
@@ -591,6 +600,20 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         refreshStepsRow();
     }
 
+    // ---- external control bridge (MainActivity Live tab) ----
+    public boolean agentRunning() { return loop != null && loop.isAlive(); }
+    public boolean agentPaused() { return agentRunning() && loop.paused; }
+    public void pauseAgent(boolean p) { if (loop != null) loop.setPaused(p); }
+    public String latestStep() {
+        synchronized (stepsLog) { return stepsLog.isEmpty() ? "" : stepsLog.get(stepsLog.size() - 1); }
+    }
+    /** Entry point for instructions typed in the app UI. */
+    public void externalInput(String text) {
+        if (text == null || text.trim().isEmpty()) return;
+        // Service and activity callbacks already run on the main thread.
+        acceptInstruction(text.trim());
+    }
+
     /** Hide/show ball+chat during screenshots so the AI never sees its own UI in captures. */
     public void setUiVisible(final boolean vis) {
         ui.post(new Runnable() { @Override public void run() {
@@ -619,8 +642,11 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     }
 
     /** Red OFF / screen off / fatal glitch: halt AI mid-action, remove ball+window. */
-    private void shutdownNow() {
+    public void shutdownNow() {
         stopAgent();
+        if (instance == this) instance = null;
+        AgentService a = AgentService.instance;
+        if (a != null) a.clearPreview();
         ui.post(new Runnable() { @Override public void run() {
             hideChat(false);
             hideBall();
@@ -632,6 +658,9 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     private void shutdownKeepConfig() { shutdownNow(); }
 
     @Override public void onDestroy() {
+        if (instance == this) instance = null;
+        AgentService a = AgentService.instance;
+        if (a != null) a.clearPreview();
         stopAgent();
         try { unregisterReceiver(screenOff); } catch (Exception ignored) {}
         if (orient != null) orient.disable();

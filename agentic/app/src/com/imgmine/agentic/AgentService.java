@@ -32,6 +32,7 @@ public class AgentService extends AccessibilityService {
     private Map<Integer, AccessibilityNodeInfo> nodes = new HashMap<>();
     public volatile long lastEventAt = 0;
     public volatile boolean agentActive = false;
+    public volatile android.graphics.Bitmap lastShot; // last agent-step screenshot (for Live preview)
 
     @Override public void onServiceConnected() { instance = this; }
     // ---- live screen state: refreshed on accessibility events (debounced), invisible to user ----
@@ -55,6 +56,21 @@ public class AgentService extends AccessibilityService {
         ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRealMetrics(m);
         return new int[]{ m.widthPixels, m.heightPixels };
     }
+
+    public String currentApp() {
+        // Do not rebuild the node-id map while a pending action may use it.
+        AccessibilityNodeInfo r = pickRoot();
+        return r != null && r.getPackageName() != null ? r.getPackageName().toString() : "";
+    }
+    public volatile long lastShotAt;
+    public void updatePreview(Bitmap shot) {
+        if (shot == null) return;
+        int w = Math.min(480, shot.getWidth());
+        int h = Math.max(1, Math.round(shot.getHeight() * (w / (float)shot.getWidth())));
+        lastShot = Bitmap.createScaledBitmap(shot, w, h, true).copy(Bitmap.Config.RGB_565, false);
+        lastShotAt = System.currentTimeMillis();
+    }
+    public void clearPreview() { lastShot = null; lastShotAt = 0; }
 
     /** Live dump: fresh build while the agent runs (change detection + valid ids need it), cached when idle. */
     public String dump() {

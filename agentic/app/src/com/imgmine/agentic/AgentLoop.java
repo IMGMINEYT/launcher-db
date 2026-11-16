@@ -34,6 +34,19 @@ public class AgentLoop extends Thread {
     private final String instruction;
     private final boolean moneyMode;
     public volatile boolean stopped = false;
+    public volatile boolean paused = false;
+    private volatile int pauseEpoch;
+    private volatile long activeTaskId;
+    public void setPaused(boolean value) {
+        if (stopped || !isAlive()) return;
+        paused = value;
+        if (value) pauseEpoch++;
+        if (activeTaskId != 0) TaskStore.update(ctx, activeTaskId,
+            value ? TaskStore.PAUSED : TaskStore.RUNNING, value ? "User paused" : "Resumed");
+    }
+    private void awaitResume() throws InterruptedException {
+        while ((paused || MainActivity.foreground) && !stopped) Thread.sleep(150);
+    }
     private static String cachedApps;
     private static long cachedAppsAt;
     private final JSONArray mem; // cross-instruction session memory (owned by OverlayService)
@@ -223,6 +236,7 @@ public class AgentLoop extends Thread {
         svc.agentActive = true;
         if (moneyMode) ui.notice("Payment-related task: main har step pehle aapse confirm karunga.");
         long taskId = TaskStore.begin(ctx, instruction);
+        activeTaskId = taskId;
         String taskState = TaskStore.RUNNING, taskNote = null;
         try {
             SecureStore.Prov prov = SecureStore.active(ctx);
@@ -254,6 +268,9 @@ public class AgentLoop extends Thread {
             String prevSig = null, pendingOpenPkg = null, lastAction = "";
             int sameCount = 0;
             while (!stopped && steps < MAX_STEPS) {
+                awaitResume();
+                if (stopped) break;
+                int observedPauseEpoch = pauseEpoch;
                 steps++;
                 String pending = ui.pollPending();
                 if (pending != null)
@@ -261,6 +278,7 @@ public class AgentLoop extends Thread {
                         "NEW MESSAGE FROM USER (steer the current task with it): " + pending));
                 String screen = svc.dump();
                 Bitmap shot = svc.screenshotBitmap();
+                if (shot != null) { try { svc.updatePreview(shot); } catch (RuntimeException previewError) { svc.clearPreview(); } }
                 if (shot != null) {
                     String ocr = Ocr.recognize(shot);
                     if (ocr != null && ocr.length() > 0)
@@ -308,6 +326,7 @@ public class AgentLoop extends Thread {
                 task.setLength(0);
                 JSONObject um = new JSONObject().put("role", "user");
                 String shot64 = (visionOn && shot != null) ? Ocr.jpeg64(shot) : null;
+                if (shot != null) shot.recycle();
                 if (shot64 != null) {
                     JSONArray parts = new JSONArray();
                     parts.put(new JSONObject().put("type", "text").put("text", userMsg));
@@ -339,6 +358,13 @@ public class AgentLoop extends Thread {
                     } else throw primary;
                 } finally { ui.thinking(false); }
                 if (stopped) break;
+                if (paused || MainActivity.foreground || observedPauseEpoch != pauseEpoch) {
+                    awaitResume();
+                    if (stopped) break;
+                    // Re-observe after a user pause, never execute a pre-pause target.
+                    lastResult = "User paused and resumed. Observe the current screen again.";
+                    continue;
+                }
                 msgs.put(new JSONObject().put("role", "assistant").put("content", reply));
                 JSONObject a = parse(reply);
                 if (a == null) { lastResult = "error: reply was not one JSON action. Reply with exactly one raw JSON object."; continue; }
@@ -377,6 +403,12 @@ public class AgentLoop extends Thread {
                     if (stopped) break;
                     if (ok == null || !ok) { lastResult = "user DENIED this step. Use ask or done now."; continue; }
                 }
+                if (paused || MainActivity.foreground || observedPauseEpoch != pauseEpoch) {
+                    awaitResume();
+                    if (stopped) break;
+                    lastResult = "User paused. Re-observe before acting.";
+                    continue;
+                }
                 String actLine = actionLine(a);
                 if (actLine != null) ui.systemMessage(actLine); // visible BEFORE the action executes
                 ui.thinking(true);
@@ -395,6 +427,8 @@ public class AgentLoop extends Thread {
                 taskState = TaskStore.PAUSED; taskNote = "step limit";
                 ui.aiMessage("Bahut lamba task hai - ruk gaya hoon beech me. 'continue' bolo to wahi se aage badhunga, ya naya instruction do.");
             }
+        } catch (InterruptedException e) {
+            taskState = TaskStore.CANCELLED; taskNote = "Stopped";
         } catch (Api.ApiError e) {
             taskState = TaskStore.FAILED; taskNote = e.getMessage();
             ui.notice(e.getMessage());
@@ -402,7 +436,7 @@ public class AgentLoop extends Thread {
             taskState = TaskStore.FAILED; taskNote = "error";
             ui.notice("Agent me error aaya - agent rok diya gaya, ball/window chalte rahenge. Dobara try karo.");
         } finally {
-            if (stopped && TaskStore.RUNNING.equals(taskState)) { taskState = TaskStore.CANCELLED; taskNote = "OFF"; }
+            if (stopped) { taskState = TaskStore.CANCELLED; taskNote = "OFF"; }
             TaskStore.update(ctx, taskId, taskState, taskNote);
             svc.agentActive = false;
             remember();
