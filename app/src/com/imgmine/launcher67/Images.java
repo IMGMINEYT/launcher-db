@@ -16,7 +16,12 @@ import java.util.concurrent.*;
 
 final class Images {
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
-    private static final ExecutorService POOL = Executors.newFixedThreadPool(3);
+    // newest request first: rows the user is looking at now load before rows already scrolled past
+    private static final ThreadPoolExecutor POOL = new ThreadPoolExecutor(6, 6, 30, TimeUnit.SECONDS, new LinkedBlockingDeque<Runnable>() {
+        @Override public boolean offer(Runnable r) { return offerFirst(r); }
+        @Override public boolean add(Runnable r) { addFirst(r); return true; }
+    });
+    static { POOL.allowCoreThreadTimeOut(true); }
     private static final LruCache<String, Bitmap> MEM = new LruCache<String, Bitmap>(
             (int) Math.min(24L << 20, Runtime.getRuntime().maxMemory() / 10)) {
         @Override protected int sizeOf(String k, Bitmap b) { return b.getByteCount(); }
@@ -49,12 +54,23 @@ final class Images {
         if (m != null) { set(v, m, icon); return; }
         POOL.execute(new Runnable() {
             public void run() {
-                final Bitmap b = fetch(url);
+                if (!url.equals(v.getTag())) return;   // row was recycled or scrolled away before we started
+                Bitmap have = MEM.get(url);
+                final Bitmap b = have != null ? have : fetch(url);
                 if (b == null) return;
                 MEM.put(url, b);
                 MAIN.post(new Runnable() { public void run() { if (url.equals(v.getTag())) set(v, b, icon); } });
             }
         });
+    }
+
+    /** Warms the disk cache for the first rows so they appear instantly. */
+    static void prefetch(final java.util.List<Addon> list, int n) {
+        for (int k = Math.min(n, list.size()) - 1; k >= 0; k--) {
+            final String u = list.get(k).banner;
+            if (u == null || MEM.get(u) != null) continue;
+            POOL.execute(new Runnable() { public void run() { if (MEM.get(u) == null) { Bitmap b = fetch(u); if (b != null) MEM.put(u, b); } } });
+        }
     }
 
     private static void set(ImageView v, Bitmap b, boolean icon) {
@@ -88,8 +104,9 @@ final class Images {
                 for (String u : urls) {
                     try {
                         HttpURLConnection c = (HttpURLConnection) new URL(u).openConnection();
-                        c.setConnectTimeout(5000);
-                        c.setReadTimeout(8000);
+                        c.setConnectTimeout(4000);
+                        c.setReadTimeout(6000);
+                        c.setRequestProperty("User-Agent", "67Launcher/1.8");
                         if (c.getResponseCode() != 200) continue;
                         data = Api.readAll(c.getInputStream(), 6 << 20);
                         break;

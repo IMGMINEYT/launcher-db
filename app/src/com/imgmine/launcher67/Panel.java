@@ -26,8 +26,8 @@ final class Panel {
     private ListView list;
     private TextView state, count, clear;
     private EditText search;
-    private TextView[] chips = new TextView[6];
-    private static final String[] KEYS = {"", "addon", "world", "pack", "template", "texture"};
+    private TextView[] chips = new TextView[7];
+    private static final String[] KEYS = {"", "addon", "world", "pack", "template", "texture", "skin"};
     private boolean shown;
     private int cw, ch, typeFilter;
     private List<Addon> all = new ArrayList<>(), view = new ArrayList<>();
@@ -185,13 +185,13 @@ final class Panel {
 
         // type chips
         LinearLayout cr = new LinearLayout(ctx);
-        String[] names = {"ALL", "ADDONS", "WORLDS", "PACKS", "TEMPLATES", "TEXTURES"};
-        for (int i = 0; i < 6; i++) {
+        String[] names = {"ALL", "ADDONS", "WORLDS", "PACKS", "TEMPLATES", "TEXTURES", "SKINS"};
+        for (int i = 0; i < 7; i++) {
             final int k = i;
             TextView c = text(names[i], 12, Ui.MUTE);
             c.setGravity(Gravity.CENTER);
             c.setPadding(Ui.dp(9), Ui.dp(5), Ui.dp(9), Ui.dp(7));
-            c.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { typeFilter = k; chipStyle(); refilter(true); } });
+            c.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { typeFilter = k; chipStyle(); cfAll = new ArrayList<>(); cfGen++; refilter(true); cfSearch(); } });
             chips[i] = c;
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             lp.rightMargin = Ui.dp(5);
@@ -231,7 +231,7 @@ final class Panel {
     }
 
     private void chipStyle() {
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 7; i++) {
             boolean on = i == typeFilter;
             chips[i].setTextColor(on ? Ui.GREEN : Ui.MUTE);
             chips[i].setBackground(new Ui.Bevel(on ? 0xFF1E2B22 : Ui.CARD, on ? Ui.GREEN_D : Ui.shade(Ui.CARD, 1.2f), Ui.shade(on ? 0xFF1E2B22 : Ui.CARD, 0.7f), 0xFF000000));
@@ -250,7 +250,7 @@ final class Panel {
         loading = true;
         if (all.isEmpty()) setState("Loading addons...");
         Api.fetch(ctx.getApplicationContext(), new Api.CB() {
-            public void ok(List<Addon> l) { loading = false; all = l; refilter(false); }
+            public void ok(List<Addon> l) { loading = false; all = l; refilter(false); Images.prefetch(all, 24); }
             public void fail() {
                 loading = false;
                 if (all.isEmpty()) setState("Cannot load addons.\nCheck internet, tap to retry.");
@@ -269,7 +269,7 @@ final class Panel {
 
     private void cfSearch() {
         search.removeCallbacks(cfRun);
-                if (search.getText().toString().trim().length() < 2) {
+                if (search.getText().toString().trim().length() < 2 && typeFilter != 6) {
             if (!cfAll.isEmpty()) { cfAll = new ArrayList<>(); refilter(false); }
             return;
         }
@@ -279,13 +279,15 @@ final class Panel {
     private void cfNow() {
         final String q = search.getText().toString();
         final int gen = ++cfGen;
+        final boolean sk = typeFilter == 6;
         new Thread(new Runnable() {
             public void run() {
-                final List<Addon> r = Mc.search(q);
+                final List<Addon> r = Mc.search(q, sk);
                 search.post(new Runnable() { public void run() {
                     if (gen != cfGen || r == null) return;
                     cfAll = r;
                     refilter(false);
+                    Images.prefetch(r, 16);
                 } });
             }
         }).start();
@@ -308,8 +310,8 @@ final class Panel {
         String qs = search == null ? "" : search.getText().toString();
         List<Addon> db = Fuzzy.search(typed, qs);
         List<Addon> cf = new ArrayList<>();
-        if (qs.trim().length() >= 2) {
-            for (Addon a : cfAll) if (typeFilter == 0 || KEYS[typeFilter].equals(a.type)) cf.add(a);
+        if (qs.trim().length() >= 2 || typeFilter == 6) {
+            for (Addon a : cfAll) if (a.type.equals("skin") == (typeFilter == 6) && (typeFilter == 0 || KEYS[typeFilter].equals(a.type))) cf.add(a);
         }
         view = new ArrayList<>();
         if (!cf.isEmpty()) {
@@ -551,7 +553,7 @@ final class Panel {
         shown = true;
         if (all.isEmpty()) {
             List<Addon> c = Api.cached(ctx);
-            if (c != null) { all = c; refilter(false); }
+            if (c != null) { all = c; refilter(false); Images.prefetch(all, 24); }
         }
         if (all.isEmpty() || System.currentTimeMillis() - Api.lastFetch > 10000) fetch();
         root.requestFocus();

@@ -26,5 +26,5 @@ final class Addon {
         return Math.max(1, size / 1024) + " KB";
     }
 
-    String typeLabel() { if (type.equals("texture")) return "TEXTURES"; if (type.equals("hdr")) return ""; return type.equals("world") ? "WORLD" : type.equals("addon") ? "ADDON" : type.equals("pack") ? "PACK" : type.equals("template") ? "TEMPLATE" : "FILE"; }
+    String typeLabel() { if (type.equals("texture")) return "TEXTURES"; if (type.equals("hdr")) return ""; if (type.equals("skin")) return "SKIN PACK"; return type.equals("world") ? "WORLD" : type.equals("addon") ? "ADDON" : type.equals("pack") ? "PACK" : type.equals("template") ? "TEMPLATE" : "FILE"; }
 }
