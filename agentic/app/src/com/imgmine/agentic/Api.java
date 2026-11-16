@@ -53,8 +53,28 @@ public final class Api {
         try (BufferedReader r = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String line; while ((line = r.readLine()) != null) sb.append(line);
         }
-        if (code >= 400) throw new ApiError("HTTP " + code + ": " + (sb.length() > 300 ? sb.substring(0, 300) : sb.toString()));
+        if (code >= 400) throw new ApiError(friendly(code));
         return sb.toString();
+    }
+
+    static String friendly(int code) {
+        switch (code) {
+            case 400: return "Request reject hua (400) - model ya base URL check karo";
+            case 401: case 403: return "API key invalid ya expired (" + code + ") - key dobara check karo";
+            case 404: return "Base URL sahi nahi lag raha (404) - URL check karo";
+            case 429: return "AI abhi busy hai / rate limit (429) - 1-2 min baad try karo";
+            case 500: case 502: case 503: case 504:
+                return "AI provider ka server down hai (" + code + ") - thodi der baad try karo";
+            default: return "AI provider ne error diya (HTTP " + code + ")";
+        }
+    }
+
+    static String friendlyNet(Exception e) {
+        if (e instanceof java.net.SocketTimeoutException) return "AI ne reply me bahut time lagaya (timeout) - dobara try karo";
+        if (e instanceof java.net.UnknownHostException) return "Base URL ka host nahi mila - URL ya internet check karo";
+        if (e instanceof javax.net.ssl.SSLException) return "Secure connection nahi ban payi - https base URL check karo";
+        if (e instanceof java.net.ConnectException) return "Server se connect nahi ho paya - URL ya internet check karo";
+        return "Network error - internet check karke dobara try karo";
     }
 
     /** Fetch model ids. Returns [resolvedRoot, models...] - element 0 is the working root. */
@@ -73,7 +93,7 @@ public final class Api {
                 for (int i = 0; i < ids.size(); i++) out[i + 1] = ids.get(i);
                 return out;
             } catch (ApiError e) { last = e; }
-              catch (Exception e) { last = new ApiError(e.getMessage() != null ? e.getMessage() : e.toString()); }
+              catch (Exception e) { last = new ApiError(friendlyNet(e)); }
         }
         throw last != null ? last : new ApiError("Could not fetch models");
     }
@@ -85,8 +105,13 @@ public final class Api {
         checkUrl(root);
         try {
             return chatOnce(root, key, model, messages, true, p);
-        } catch (Exception first) {
-            return chatOnce(root, key, model, messages, false, null); // fallback: plain
+        } catch (ApiError ae) {
+            throw ae; // deterministic HTTP/provider error - no retry
+        } catch (Exception net) {
+            try {
+                return chatOnce(root, key, model, messages, false, null); // fallback: plain
+            } catch (ApiError ae) { throw ae; }
+            catch (Exception e2) { throw new ApiError(friendlyNet(e2)); }
         }
     }
 
@@ -105,7 +130,7 @@ public final class Api {
             if (es != null) try (BufferedReader r = new BufferedReader(new InputStreamReader(es, StandardCharsets.UTF_8))) {
                 String line; while ((line = r.readLine()) != null) sb.append(line);
             }
-            throw new ApiError("HTTP " + code + ": " + (sb.length() > 300 ? sb.substring(0, 300) : sb.toString()));
+            throw new ApiError(friendly(code));
         }
         if (!stream) {
             JSONObject resp = new JSONObject(body(h));
@@ -132,7 +157,7 @@ public final class Api {
                 } catch (Exception ignored) {}
             }
         }
-        if (sb.length() == 0) throw new ApiError("empty stream");
+        if (sb.length() == 0) throw new IllegalStateException("empty stream");
         return sb.toString();
     }
 }

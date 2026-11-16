@@ -64,7 +64,7 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     @Override public void onCreate() {
         super.onCreate();
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
-        pixel = Typeface.createFromAsset(getAssets(), "pixelify.ttf");
+        pixel = Typeface.create("sans-serif-medium", Typeface.NORMAL);
         final Thread mainThread = Looper.getMainLooper().getThread();
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override public void uncaughtException(Thread t, Throwable e) {
@@ -79,7 +79,7 @@ public class OverlayService extends Service implements AgentLoop.Ui {
                     // Background error: stop the agent, keep ball/window alive.
                     try { stopAgent(); } catch (Throwable ignored) {}
                     ui.post(new Runnable() { @Override public void run() {
-                        systemMessage("Agent error (" + e.getClass().getSimpleName() + ") - agent rok diya, ball/window chalte rahenge.");
+                        systemMessage("Agent me error aaya - agent rok diya, ball/window chalte rahenge. Dobara try karo.");
                     }});
                 }
             }
@@ -220,7 +220,7 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     private void openChat() {
         if (chat != null) return;
         int[] s = size();
-        int w = Math.min((int) (s[0] * 0.88), dp(340));
+        int w = Math.min((int) (s[0] * 0.92), dp(380));
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         GradientDrawable bgd = new GradientDrawable();
@@ -237,9 +237,9 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         String model = SecureStore.model(this);
         titleView = new TextView(this);
         titleView.setText(model != null ? model : "Agentic");
-        titleView.setTextColor(TEAL); titleView.setTextSize(14); titleView.setTypeface(pixel);
+        titleView.setTextColor(Color.WHITE); titleView.setTextSize(15); titleView.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         statusView = new TextView(this);
-        statusView.setText(statusText); statusView.setTextColor(DIM); statusView.setTextSize(10);
+        statusView.setText(statusText); statusView.setTextColor(DIM); statusView.setTextSize(11);
         texts.addView(titleView); texts.addView(statusView);
         header.addView(texts, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         Button off = smallBtn("OFF", RED);
@@ -264,7 +264,7 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         row.setBackground(rowBg);
         row.setPadding(dp(12), 0, dp(4), 0);
         input = new EditText(this);
-        input.setHint("Type instruction..."); input.setHintTextColor(0xFF5A6572);
+        input.setHint("Message Agentic..."); input.setHintTextColor(0xFF5A6572);
         input.setTextColor(Color.WHITE); input.setTextSize(14);
         input.setBackgroundColor(Color.TRANSPARENT);
         input.setMaxLines(3); input.setMinHeight(dp(40));
@@ -279,7 +279,7 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         x.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { hideKeyboard(); hideChat(true); } });
         sendBtn.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { sendInput(); } });
 
-        chatLp = new WindowManager.LayoutParams(w, Math.min((int) (s[1] * 0.52), dp(400)),
+        chatLp = new WindowManager.LayoutParams(w, Math.min((int) (s[1] * 0.60), dp(520)),
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
                 PixelFormat.TRANSLUCENT);
@@ -298,10 +298,11 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         Button b = new Button(this);
         b.setText(t); b.setTextSize(12); b.setTextColor(Color.WHITE);
         b.setMinWidth(0); b.setMinimumWidth(0); b.setMinHeight(0); b.setMinimumHeight(0);
+        b.setPadding(0, 0, 0, 0); b.setAllCaps(false);
         GradientDrawable g = new GradientDrawable();
         g.setColor(color); g.setCornerRadius(dp(10));
         b.setBackground(g);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(46), dp(32));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(54), dp(32));
         lp.setMargins(dp(4), 0, 0, 0);
         b.setLayoutParams(lp);
         return b;
@@ -391,7 +392,8 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     private void bubble(String text, int who) {
         if (msgBox == null) { transcript.add(who + "|" + text); return; }
         TextView tv = new TextView(this);
-        tv.setTextSize(who == SYS ? 11 : 13);
+        tv.setText(text);
+        tv.setTextSize(who == SYS ? 11.5f : 14);
         tv.setPadding(dp(10), dp(7), dp(10), dp(7));
         GradientDrawable g = new GradientDrawable();
         g.setCornerRadius(dp(12));

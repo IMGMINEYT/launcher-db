@@ -18,19 +18,17 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 /** Onboarding: permissions -> API setup -> START AGENTIC. */
 public class MainActivity extends Activity {
-    private static final int BG = 0xFF10141A, PANEL = 0xFF1E242C, ACCENT = 0xFF5FD068, TEAL = 0xFF2DD4BF, DIM = 0xFF8A94A0;
-    private Typeface pixel;
+    private static final int BG = 0xFF0F1319, CARD = 0xFF1A212B, FIELD = 0xFF232B36,
+            ACCENT = 0xFF5FD068, TEAL = 0xFF2DD4BF, DIM = 0xFF8A94A0, BTN2 = 0xFF2A3340;
+    private static final Typeface BOLD = Typeface.create("sans-serif-medium", Typeface.NORMAL);
     private LinearLayout root;
     private TextView status;
 
-    @Override protected void onCreate(Bundle b) {
-        super.onCreate(b);
-        pixel = Typeface.createFromAsset(getAssets(), "pixelify.ttf");
-    }
     @Override protected void onResume() {
         super.onResume();
         render();
@@ -43,114 +41,162 @@ public class MainActivity extends Activity {
         String s = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
         return s != null && s.contains(getPackageName());
     }
-    private boolean writeSettingsOk() { return Settings.System.canWrite(this); }
-
     private boolean notifOk() {
         return Build.VERSION.SDK_INT < 33 || checkSelfPermission("android.permission.POST_NOTIFICATIONS") == PackageManager.PERMISSION_GRANTED;
     }
+    private boolean writeSettingsOk() { return Settings.System.canWrite(this); }
 
     private void render() {
+        ScrollView sv = new ScrollView(this);
+        sv.setFillViewport(true);
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setGravity(Gravity.CENTER_HORIZONTAL);
         root.setBackgroundColor(BG);
-        root.setPadding(dp(24), dp(48), dp(24), dp(24));
+        root.setPadding(dp(24), dp(56), dp(24), dp(32));
+        sv.addView(root);
+
         TextView h = new TextView(this);
-        h.setText("AGENTIC"); h.setTypeface(pixel); h.setTextSize(34); h.setTextColor(TEAL);
-        h.setGravity(Gravity.CENTER);
+        h.setText("Agentic"); h.setTypeface(BOLD); h.setTextSize(32); h.setTextColor(Color.WHITE);
         root.addView(h);
+        TextView sub = new TextView(this);
+        sub.setText("Your phone, controlled by AI"); sub.setTextColor(DIM); sub.setTextSize(14);
+        sub.setPadding(0, dp(4), 0, dp(28));
+        root.addView(sub);
         status = new TextView(this);
-        status.setTextColor(DIM); status.setTextSize(13); status.setGravity(Gravity.CENTER);
-        status.setPadding(0, dp(6), 0, dp(18));
+        status.setTextColor(TEAL); status.setTextSize(13); status.setTypeface(BOLD);
+        status.setPadding(0, 0, 0, dp(14));
         root.addView(status);
+
         if (!overlayOk() || !a11yOk() || !notifOk() || !writeSettingsOk()) stepPermissions();
         else if (!SecureStore.configured(this)) stepApi();
         else stepStart();
-        setContentView(root);
+        setContentView(sv);
     }
 
-    private Button btn(String t, int color) {
-        Button b = new Button(this);
-        b.setText(t); b.setTextColor(Color.WHITE); b.setTextSize(15); b.setTypeface(pixel);
+    private LinearLayout card() {
+        LinearLayout c = new LinearLayout(this);
+        c.setOrientation(LinearLayout.VERTICAL);
         GradientDrawable g = new GradientDrawable();
-        g.setColor(color); g.setCornerRadius(dp(12));
+        g.setColor(CARD); g.setCornerRadius(dp(16));
+        c.setBackground(g);
+        c.setPadding(dp(16), dp(14), dp(16), dp(16));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+        lp.setMargins(0, 0, 0, dp(12));
+        c.setLayoutParams(lp);
+        return c;
+    }
+
+    private TextView label(String t) {
+        TextView v = new TextView(this);
+        v.setText(t); v.setTextColor(Color.WHITE); v.setTextSize(15); v.setTypeface(BOLD);
+        return v;
+    }
+    private TextView desc(String t) {
+        TextView v = new TextView(this);
+        v.setText(t); v.setTextColor(DIM); v.setTextSize(13);
+        v.setPadding(0, dp(3), 0, dp(10));
+        return v;
+    }
+
+    private Button btn(String t, int bg, int fg) {
+        Button b = new Button(this);
+        b.setText(t); b.setTextColor(fg); b.setTextSize(14); b.setTypeface(BOLD); b.setAllCaps(false);
+        GradientDrawable g = new GradientDrawable();
+        g.setColor(bg); g.setCornerRadius(dp(12));
         b.setBackground(g);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(52));
-        lp.setMargins(0, dp(8), 0, 0);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(48));
+        lp.setMargins(0, dp(6), 0, 0);
         b.setLayoutParams(lp);
         return b;
     }
 
     private void stepPermissions() {
-        status.setText("Step 1/3 - permissions chahiye");
+        status.setText("Step 1 of 3 - Permissions");
         if (!notifOk()) {
-            Button b = btn("ALLOW NOTIFICATIONS", 0xFF37414C);
+            LinearLayout c = card();
+            c.addView(label("Notifications"));
+            c.addView(desc("Status updates while the agent runs."));
+            Button b = btn("Allow notifications", BTN2, Color.WHITE);
             b.setOnClickListener(v -> { if (Build.VERSION.SDK_INT >= 33) requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 1); });
-            root.addView(b);
+            c.addView(b); root.addView(c);
         }
         if (!overlayOk()) {
-            Button b = btn("ALLOW FLOATING BALL", 0xFF37414C);
+            LinearLayout c = card();
+            c.addView(label("Floating ball"));
+            c.addView(desc("Lets Agentic show the draggable ball and chat window over other apps."));
+            Button b = btn("Allow display over apps", BTN2, Color.WHITE);
             b.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()))));
-            root.addView(b);
+            c.addView(b); root.addView(c);
         }
         if (!writeSettingsOk()) {
-            Button b = btn("ALLOW SCREEN ROTATE", 0xFF37414C);
+            LinearLayout c = card();
+            c.addView(label("Screen rotation"));
+            c.addView(desc("Lets the AI rotate the screen when you ask."));
+            Button b = btn("Allow modify settings", BTN2, Color.WHITE);
             b.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:" + getPackageName()))));
-            root.addView(b);
+            c.addView(b); root.addView(c);
         }
         if (!a11yOk()) {
-            Button b = btn("ENABLE ACCESSIBILITY", 0xFF37414C);
+            LinearLayout c = card();
+            c.addView(label("Accessibility (device control)"));
+            c.addView(desc("Required: Agentic reads the screen and taps/swipes/types for you. In Settings, find 'Agentic' and turn it ON, then come back."));
+            Button b = btn("Open accessibility settings", ACCENT, 0xFF0B0F13);
             b.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
-            root.addView(b);
-            TextView tip = new TextView(this);
-            tip.setText("Settings me 'Agentic' dhundho aur ON karo, phir wapas aao");
-            tip.setTextColor(DIM); tip.setTextSize(12); tip.setGravity(Gravity.CENTER);
-            tip.setPadding(0, dp(10), 0, 0);
-            root.addView(tip);
+            c.addView(b); root.addView(c);
         }
     }
 
     private void stepApi() {
-        status.setText("Step 2/3 - apni AI connect karo (koi bhi OpenAI-compatible API)");
-        EditText base = field("Base URL  (e.g. https://api.openai.com)", false);
-        EditText key = field("API Key", true);
-        root.addView(base); root.addView(key);
-        Button connect = btn("CONNECT", TEAL);
-        connect.setTextColor(0xFF0B0F13);
-        root.addView(connect);
+        status.setText("Step 2 of 3 - Connect your AI");
+        LinearLayout c = card();
+        c.addView(label("API connection"));
+        c.addView(desc("Works with any OpenAI-compatible API - OpenAI, OpenRouter, Groq, etc."));
+        EditText base = field("Base URL - e.g. https://api.openai.com", false);
+        EditText key = field("API key", true);
+        c.addView(base); c.addView(key);
+        Button connect = btn("Connect", ACCENT, 0xFF0B0F13);
+        c.addView(connect);
         ProgressBar spin = new ProgressBar(this);
         spin.setVisibility(View.GONE);
-        root.addView(spin);
+        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(-2, -2);
+        slp.gravity = Gravity.CENTER_HORIZONTAL; slp.setMargins(0, dp(10), 0, 0);
+        c.addView(spin, slp);
         TextView err = new TextView(this);
-        err.setTextColor(0xFFE53935); err.setTextSize(12); err.setGravity(Gravity.CENTER);
-        root.addView(err);
+        err.setTextColor(0xFFE57373); err.setTextSize(12);
+        err.setPadding(0, dp(6), 0, 0);
+        c.addView(err);
+        root.addView(c);
+        TextView note = new TextView(this);
+        note.setText("Your key is stored encrypted on this device only.");
+        note.setTextColor(DIM); note.setTextSize(12);
+        root.addView(note);
+
         connect.setOnClickListener(v -> {
             String b = base.getText().toString().trim(), k = key.getText().toString().trim();
-            if (b.isEmpty() || k.isEmpty()) { err.setText("Base URL aur API key dono daalo"); return; }
+            if (b.isEmpty() || k.isEmpty()) { err.setText("Enter both base URL and API key"); return; }
             err.setText(""); spin.setVisibility(View.VISIBLE); connect.setEnabled(false);
             new Thread(() -> {
                 try {
                     String[] res = Api.fetchModels(b, k);
-                    String root0 = res[0];
-                    String[] models = new String[res.length - 1];
+                    final String root0 = res[0];
+                    final String[] models = new String[res.length - 1];
                     System.arraycopy(res, 1, models, 0, models.length);
-                    final String fb = root0;
                     runOnUiThread(() -> {
                         spin.setVisibility(View.GONE); connect.setEnabled(true);
                         new AlertDialog.Builder(this)
-                            .setTitle("Model select karo (" + models.length + ")")
+                            .setTitle("Select model (" + models.length + ")")
                             .setItems(models, (d, which) -> {
                                 try {
-                                    SecureStore.saveConfig(this, fb, k, models[which]);
+                                    SecureStore.saveConfig(this, root0, k, models[which]);
                                     render();
-                                } catch (Exception e) { err.setText("Save failed: " + e.getMessage()); }
+                                } catch (Exception e) { err.setText("Key save nahi ho payi - dobara try karo"); }
                             })
                             .setNegativeButton("Cancel", null)
                             .show();
                     });
                 } catch (Exception e) {
                     String m = e.getMessage() != null ? e.getMessage() : e.toString();
-                    runOnUiThread(() -> { spin.setVisibility(View.GONE); connect.setEnabled(true); err.setText("Connect failed: " + m); });
+                    runOnUiThread(() -> { spin.setVisibility(View.GONE); connect.setEnabled(true); err.setText(m); });
                 }
             }).start();
         });
@@ -160,7 +206,10 @@ public class MainActivity extends Activity {
         EditText e = new EditText(this);
         e.setHint(hint); e.setHintTextColor(0xFF5A6572);
         e.setTextColor(Color.WHITE); e.setTextSize(14);
-        e.setBackgroundColor(PANEL); e.setPadding(dp(12), 0, dp(12), 0);
+        GradientDrawable g = new GradientDrawable();
+        g.setColor(FIELD); g.setCornerRadius(dp(10));
+        e.setBackground(g);
+        e.setPadding(dp(14), 0, dp(14), 0);
         e.setSingleLine(true);
         if (secret) e.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(48));
@@ -170,9 +219,24 @@ public class MainActivity extends Activity {
     }
 
     private void stepStart() {
-        status.setText("Step 3/3 - ready. Model: " + SecureStore.model(this));
-        Button start = btn("START AGENTIC", ACCENT);
-        start.setTextColor(0xFF0B0F13); start.setTextSize(19);
+        status.setText("Step 3 of 3 - Ready");
+        LinearLayout c = card();
+        c.addView(label("Connected"));
+        TextView m = desc("Model: " + SecureStore.model(this));
+        m.setPadding(0, dp(3), 0, dp(4));
+        c.addView(m);
+        TextView change = new TextView(this);
+        change.setText("Change API / model"); change.setTextColor(TEAL); change.setTextSize(13);
+        change.setPadding(0, dp(6), 0, 0);
+        change.setOnClickListener(v -> { SecureStore.clear(this); render(); });
+        c.addView(change);
+        root.addView(c);
+
+        Button start = btn("START AGENTIC", ACCENT, 0xFF0B0F13);
+        start.setTextSize(16);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(56));
+        lp.setMargins(0, dp(6), 0, dp(14));
+        start.setLayoutParams(lp);
         start.setOnClickListener(v -> {
             if (!overlayOk() || !a11yOk()) { render(); return; }
             Intent svc = new Intent(this, OverlayService.class);
@@ -180,10 +244,10 @@ public class MainActivity extends Activity {
             moveTaskToBack(true);
         });
         root.addView(start);
-        TextView change = new TextView(this);
-        change.setText("change API / model"); change.setTextColor(DIM); change.setTextSize(12);
-        change.setGravity(Gravity.CENTER); change.setPadding(0, dp(16), 0, 0);
-        change.setOnClickListener(v -> { SecureStore.clear(this); render(); });
-        root.addView(change);
+
+        TextView tips = new TextView(this);
+        tips.setText("Tap the ball to chat. Long-press it 5s to hide. Red OFF stops everything instantly.");
+        tips.setTextColor(DIM); tips.setTextSize(12); tips.setLineSpacing(0, 1.15f);
+        root.addView(tips);
     }
 }

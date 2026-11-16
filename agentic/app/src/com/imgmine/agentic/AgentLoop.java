@@ -100,7 +100,7 @@ public class AgentLoop extends Thread {
             try {
                 key = SecureStore.apiKey(ctx);
             } catch (Exception e) {
-                ui.systemMessage("Saved API key unreadable (" + e.getMessage() + ") - open the Agentic app, tap 'change API / model' and re-enter your key.");
+                ui.systemMessage("Saved key read nahi ho payi - app kholo, 'Change API / model' se key dobara daalo.");
                 ui.loopEnded();
                 return;
             }
@@ -173,9 +173,9 @@ public class AgentLoop extends Thread {
             }
             if (!stopped && steps >= MAX_STEPS) ui.systemMessage("Step limit (" + MAX_STEPS + ") reached - agent paused. Send a message to continue.");
         } catch (Api.ApiError e) {
-            ui.systemMessage("API error: " + e.getMessage());
+            ui.systemMessage(e.getMessage());
         } catch (Throwable e) {
-            ui.systemMessage("Agent error (" + e.getClass().getSimpleName() + ") - agent stopped, ball/window chalte rahenge. Dobara try karo.");
+            ui.systemMessage("Agent me error aaya - agent rok diya gaya, ball/window chalte rahenge. Dobara try karo.");
         } finally {
             ui.loopEnded();
         }
