@@ -222,6 +222,8 @@ public class AgentLoop extends Thread {
         if (svc == null) { ui.notice("Accessibility service is off - enable it first, then try again."); ui.loopEnded(); return; }
         svc.agentActive = true;
         if (moneyMode) ui.notice("Payment-related task: main har step pehle aapse confirm karunga.");
+        long taskId = TaskStore.begin(ctx, instruction);
+        String taskState = TaskStore.RUNNING, taskNote = null;
         try {
             SecureStore.Prov prov = SecureStore.active(ctx);
             if (prov == null || prov.base == null || prov.model == null || prov.keyCount() == 0) {
@@ -297,6 +299,7 @@ public class AgentLoop extends Thread {
                 prevSig = sig;
                 if (sameCount >= 6) {
                     lastAiText = "Main kahin atak gaya hoon - screen kai steps se same hai. Thoda guide karo (kya dikh raha hai?) ya naya instruction do.";
+                    taskState = TaskStore.PAUSED; taskNote = "stuck";
                     ui.aiMessage(lastAiText);
                     break;
                 }
@@ -346,7 +349,7 @@ public class AgentLoop extends Thread {
                 streamedThought[0] = null;
                 String act = a.optString("action");
                 String openedPkg = null;
-                if ("done".equals(act)) { lastAiText = a.optString("text", "Done."); ui.aiMessage(lastAiText); break; }
+                if ("done".equals(act)) { lastAiText = a.optString("text", "Done."); taskState = TaskStore.COMPLETED; taskNote = lastAiText; ui.aiMessage(lastAiText); break; }
                 if ("plan".equals(act)) {
                     String plan = a.optString("plan", "");
                     if (plan.length() > 0) ui.aiMessage("Plan:\n" + plan);
@@ -355,6 +358,7 @@ public class AgentLoop extends Thread {
                 }
                 if ("ask".equals(act)) {
                     lastAiText = a.optString("text", "The AI is asking:");
+                    taskState = TaskStore.WAITING; taskNote = lastAiText;
                     ui.aiMessage(lastAiText);
                     break; // user's next chat message resumes as a new instruction
                 }
@@ -387,12 +391,19 @@ public class AgentLoop extends Thread {
                 int wait = "wait".equals(act) ? Math.min(a.optInt("ms", 1000), 10000) : 250;
                 try { Thread.sleep(wait); } catch (InterruptedException ignored) { break; }
             }
-            if (!stopped && steps >= MAX_STEPS) ui.aiMessage("Bahut lamba task hai - ruk gaya hoon beech me. 'continue' bolo to wahi se aage badhunga, ya naya instruction do.");
+            if (!stopped && steps >= MAX_STEPS) {
+                taskState = TaskStore.PAUSED; taskNote = "step limit";
+                ui.aiMessage("Bahut lamba task hai - ruk gaya hoon beech me. 'continue' bolo to wahi se aage badhunga, ya naya instruction do.");
+            }
         } catch (Api.ApiError e) {
+            taskState = TaskStore.FAILED; taskNote = e.getMessage();
             ui.notice(e.getMessage());
         } catch (Throwable e) {
+            taskState = TaskStore.FAILED; taskNote = "error";
             ui.notice("Agent me error aaya - agent rok diya gaya, ball/window chalte rahenge. Dobara try karo.");
         } finally {
+            if (stopped && TaskStore.RUNNING.equals(taskState)) { taskState = TaskStore.CANCELLED; taskNote = "OFF"; }
+            TaskStore.update(ctx, taskId, taskState, taskNote);
             svc.agentActive = false;
             remember();
             ui.loopEnded();

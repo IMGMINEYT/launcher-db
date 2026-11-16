@@ -276,6 +276,30 @@ public class MainActivity extends Activity {
         });
         root.addView(start);
 
+        // recent tasks
+        org.json.JSONArray tasks = TaskStore.list(this);
+        if (tasks.length() > 0) {
+            LinearLayout tc = card();
+            tc.addView(label("Recent tasks"));
+            int shown = Math.min(6, tasks.length());
+            for (int i = 0; i < shown; i++) {
+                org.json.JSONObject t = tasks.optJSONObject(i);
+                if (t == null) continue;
+                TextView row = new TextView(this);
+                String txt = t.optString("text");
+                row.setText(TaskStore.icon(t.optString("state")) + "  " + (txt.length() > 46 ? txt.substring(0, 46) : txt));
+                row.setTextColor("completed".equals(t.optString("state")) ? DIM : Color.WHITE);
+                row.setTextSize(13); row.setPadding(0, dp(3), 0, 0);
+                tc.addView(row);
+            }
+            TextView clrT = new TextView(this);
+            clrT.setText("Clear task history"); clrT.setTextColor(DIM); clrT.setTextSize(12);
+            clrT.setPadding(0, dp(8), 0, 0);
+            clrT.setOnClickListener(v -> { TaskStore.clear(this); render(); });
+            tc.addView(clrT);
+            root.addView(tc);
+        }
+
         TextView tips = new TextView(this);
         tips.setText("Tap the ball to chat. Long-press it 5s to hide. Red OFF stops everything instantly.");
         tips.setTextColor(DIM); tips.setTextSize(12); tips.setLineSpacing(0, 1.15f);
