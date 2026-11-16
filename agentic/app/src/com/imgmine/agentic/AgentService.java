@@ -31,6 +31,7 @@ public class AgentService extends AccessibilityService {
     private final Handler main = new Handler(Looper.getMainLooper());
     private Map<Integer, AccessibilityNodeInfo> nodes = new HashMap<>();
     public volatile long lastEventAt = 0;
+    public volatile boolean agentActive = false;
 
     @Override public void onServiceConnected() { instance = this; }
     // ---- live screen state: refreshed on accessibility events (debounced), invisible to user ----
@@ -43,7 +44,7 @@ public class AgentService extends AccessibilityService {
     @Override public void onAccessibilityEvent(AccessibilityEvent e) {
         lastEventAt = System.currentTimeMillis();
         main.removeCallbacks(liveRefresh);
-        main.postDelayed(liveRefresh, 350); // debounced: fast but battery-friendly
+        main.postDelayed(liveRefresh, agentActive ? 200 : 400); // debounced: fast while the agent runs, gentle when idle
     }
     @Override public void onInterrupt() {}
     @Override public void onDestroy() { instance = null; super.onDestroy(); }
@@ -68,7 +69,7 @@ public class AgentService extends AccessibilityService {
         if (Build.VERSION.SDK_INT < 30) return null;
         OverlayService os = OverlayService.instance;
         if (os != null) os.setUiVisible(false);
-        try { Thread.sleep(140); } catch (InterruptedException ie) { if (os != null) os.setUiVisible(true); return null; }
+        try { Thread.sleep(110); } catch (InterruptedException ie) { if (os != null) os.setUiVisible(true); return null; }
         final CountDownLatch latch = new CountDownLatch(1);
         final Bitmap[] out = {null};
         try {

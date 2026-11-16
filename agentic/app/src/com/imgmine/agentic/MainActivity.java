@@ -235,6 +235,17 @@ public class MainActivity extends Activity {
         keys.setPadding(0, dp(6), 0, 0);
         keys.setOnClickListener(v -> manageKeys());
         c.addView(keys);
+        TextView memRow = new TextView(this);
+        memRow.setText("AI ki yaadein (memory): clear karo");
+        memRow.setTextColor(DIM); memRow.setTextSize(13);
+        memRow.setPadding(0, dp(6), 0, 0);
+        memRow.setOnClickListener(v -> new AlertDialog.Builder(this)
+            .setTitle("AI memory clear karein?")
+            .setMessage("Jo cheezein AI ne aapke baare me yaad rakhi hain, sab delete ho jayengi. Chat aur keys safe rahenge.")
+            .setPositiveButton("Clear", (dd, w2) -> { SecureStore.clearMemory(this); render(); })
+            .setNegativeButton("Cancel", null)
+            .show());
+        c.addView(memRow);
         TextView change = new TextView(this);
         change.setText("Change API / model"); change.setTextColor(TEAL); change.setTextSize(13);
         change.setPadding(0, dp(6), 0, 0);

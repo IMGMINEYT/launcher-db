@@ -49,6 +49,10 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     private View sendBtn;
     private TextView titleView, statusView;
     private AgentLoop loop;
+    private LinearLayout detailBox;
+    private TextView stepsRow;
+    private boolean detailOpen = false, replaying = false;
+    private final List<String> stepsLog = new ArrayList<>(); // live narration, rendered lazily
     private final java.util.List<String> pendingUser = new java.util.ArrayList<>(); // messages sent while busy
     private boolean busyNoted = false;
     private final org.json.JSONArray mem = new org.json.JSONArray(); // session memory across instructions
@@ -255,6 +259,18 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         root.addView(header);
         attachChatDrag(header);
 
+        stepsRow = new TextView(this);
+        stepsRow.setTextColor(DIM); stepsRow.setTextSize(11.5f);
+        stepsRow.setPadding(dp(4), 0, dp(4), dp(4));
+        stepsRow.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { toggleDetail(); } });
+        root.addView(stepsRow);
+        detailBox = new LinearLayout(this);
+        detailBox.setOrientation(LinearLayout.VERTICAL);
+        detailBox.setVisibility(View.GONE);
+        root.addView(detailBox);
+        detailOpen = false;
+        refreshStepsRow();
+
         msgScroll = new ScrollView(this);
         msgScroll.setVerticalScrollBarEnabled(false);
         msgBox = new LinearLayout(this);
@@ -354,7 +370,7 @@ public class OverlayService extends Service implements AgentLoop.Ui {
 
     private void hideChat(boolean backToBall) {
         hideKeyboard();
-        if (chat != null) { try { wm.removeView(chat); } catch (Exception ignored) {} chat = null; msgBox = null; input = null; }
+        if (chat != null) { try { wm.removeView(chat); } catch (Exception ignored) {} chat = null; msgBox = null; input = null; stepsRow = null; detailBox = null; }
         if (backToBall) showBall();
     }
 
@@ -392,7 +408,7 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         if (loop != null && loop.isAlive()) {
             synchronized (pendingUser) { pendingUser.add(text); }
             userMessage(text);
-            if (!busyNoted) { busyNoted = true; systemMessage("Message queue ho gaya - AI agle step me ise padh lega."); }
+            if (!busyNoted) { busyNoted = true; notice("Message queue ho gaya - AI agle step me ise padh lega."); }
             return;
         }
         busyNoted = false;
@@ -403,8 +419,65 @@ public class OverlayService extends Service implements AgentLoop.Ui {
 
     private static final int YOU = 1, AI = 2, SYS = 3;
 
+    private static String cut42(String t) { return t.length() > 42 ? t.substring(0, 42) : t; }
+
+    private TextView detailLine(String t) {
+        TextView tv = new TextView(this);
+        tv.setText(t); tv.setTextColor(DIM); tv.setTextSize(11.5f);
+        tv.setPadding(dp(6), dp(1), dp(6), dp(1));
+        return tv;
+    }
+
+    private void refreshStepsRow() {
+        if (stepsRow == null) return;
+        if (stepsLog.isEmpty()) { stepsRow.setVisibility(View.GONE); return; }
+        stepsRow.setVisibility(View.VISIBLE);
+        stepsRow.setText((detailOpen ? "\u25BE See less  \u00B7 " : "\u25B8 See more  \u00B7 ") + cut42(stepsLog.get(stepsLog.size() - 1)));
+    }
+
+    private void toggleDetail() {
+        if (detailBox == null) return;
+        detailOpen = !detailOpen;
+        if (detailOpen) {
+            detailBox.removeAllViews();
+            int start = Math.max(0, stepsLog.size() - 60);
+            for (int i = start; i < stepsLog.size(); i++) detailBox.addView(detailLine(stepsLog.get(i)));
+            detailBox.setVisibility(View.VISIBLE);
+        } else detailBox.setVisibility(View.GONE);
+        refreshStepsRow();
+    }
+
+    /** Step narration: logged + shown compactly; full detail behind See more. Never blocks the agent. */
+    private void narration(String t, boolean visible) {
+        transcript.add(SYS + "|" + t);
+        if (transcript.size() > 400) transcript.remove(0);
+        if (!replaying) {
+            stepsLog.add(t);
+            if (stepsLog.size() > 200) stepsLog.remove(0);
+        }
+        if (visible && msgBox != null) sysBubbleView(t);
+        refreshStepsRow();
+        if (detailOpen && detailBox != null) detailBox.addView(detailLine(t));
+    }
+
+    private void sysBubbleView(String text) {
+        TextView tv = new TextView(this);
+        tv.setText(text);
+        tv.setTextSize(11.5f);
+        tv.setPadding(dp(10), dp(7), dp(10), dp(7));
+        tv.setTextColor(DIM);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
+        lp.gravity = Gravity.CENTER_HORIZONTAL;
+        lp.setMargins(0, dp(3), 0, dp(3));
+        msgBox.addView(tv, lp);
+        scrollDown(false);
+    }
+
     private void bubble(String text, int who) {
-        if (msgBox == null) { transcript.add(who + "|" + text); return; }
+        if (who == SYS) { narration(text, false); return; }
+        transcript.add(who + "|" + text);
+        if (transcript.size() > 400) transcript.remove(0);
+        if (msgBox == null) return;
         TextView tv = new TextView(this);
         tv.setText(text);
         tv.setTextSize(who == SYS ? 11.5f : 14);
@@ -442,7 +515,8 @@ public class OverlayService extends Service implements AgentLoop.Ui {
 
     private void userMessage(String t) { bubble(t, YOU); }
     @Override public void aiMessage(String t) { ui.post(new Runnable() { @Override public void run() { bubble(t, AI); } }); }
-    @Override public void systemMessage(String t) { ui.post(new Runnable() { @Override public void run() { bubble(t, SYS); } }); }
+    @Override public void systemMessage(String t) { ui.post(new Runnable() { @Override public void run() { narration(t, false); } }); }
+    @Override public void notice(final String t) { ui.post(new Runnable() { @Override public void run() { narration(t, true); } }); }
 
     private void setStatus(String s) {
         statusText = s;
@@ -451,14 +525,12 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     @Override public void thinking(boolean on) {
         ui.post(new Runnable() { @Override public void run() { setStatus(on ? "working..." : "online"); } });
     }
-    @Override public void thinkingProgress(final int chars) {
-        ui.post(new Runnable() { @Override public void run() { setStatus("receiving " + chars + "..."); } });
-    }
+
 
     @Override public void askUser(final String question, final AgentLoop.YesNo cb) {
         ui.post(new Runnable() { @Override public void run() {
-            systemMessage(question);
-            if (msgBox == null) { openChat(); systemMessage(question); }
+            if (msgBox == null) openChat();
+            narration(question, true);
             LinearLayout row = new LinearLayout(OverlayService.this);
             row.setGravity(Gravity.CENTER);
             Button yes = smallBtn("YES", ACCENT); yes.setTextColor(0xFF0B0F13);
@@ -508,11 +580,15 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     private void replayTranscript() {
         List<String> copy = new ArrayList<>(transcript);
         transcript.clear();
+        replaying = true;
         for (String line : copy) {
             int sep = line.indexOf('|');
             int who = Integer.parseInt(line.substring(0, sep));
-            bubble(line.substring(sep + 1), who);
+            String body = line.substring(sep + 1);
+            if (who == SYS) narration(body, false); else bubble(body, who);
         }
+        replaying = false;
+        refreshStepsRow();
     }
 
     /** Hide/show ball+chat during screenshots so the AI never sees its own UI in captures. */
@@ -527,9 +603,14 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     /** CLR: wipe bubbles, transcript and session memory. Agent keeps running if active. */
     private void clearChat() {
         transcript.clear();
+        stepsLog.clear();
         while (mem.length() > 0) mem.remove(0);
         if (msgBox != null) msgBox.removeAllViews();
-        systemMessage("Chat clear ho gayi - naya session.");
+        if (detailBox != null) detailBox.removeAllViews();
+        detailOpen = false;
+        if (detailBox != null) detailBox.setVisibility(View.GONE);
+        refreshStepsRow();
+        notice("Chat clear ho gayi - naya session. (AI ki yaadein save rehti hain)");
     }
 
     // ---------- shutdown ----------

@@ -113,7 +113,19 @@ public final class Api {
         throw last != null ? last : new ApiError("Could not fetch models");
     }
 
-    public interface Progress { void onChars(int n); }
+    public interface Progress { void onPartial(String soFar); }
+
+    /** End index of a JSON string value starting at valueStart (just after the opening quote), or -1 if incomplete. */
+    public static int jsonStringEnd(String s, int valueStart) {
+        boolean esc = false;
+        for (int i = valueStart; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (esc) { esc = false; continue; }
+            if (c == '\\') { esc = true; continue; }
+            if (c == '"') return i;
+        }
+        return -1;
+    }
 
     /** Streaming chat completion with non-streaming fallback; returns full assistant content. */
     public static String chat(String root, String key, String model, JSONArray messages, Progress p) throws Exception {
@@ -167,7 +179,7 @@ public final class Api {
                     String part = delta.optString("content", "");
                     if (part.length() > 0) {
                         sb.append(part);
-                        if (p != null) p.onChars(sb.length());
+                        if (p != null) p.onPartial(sb.toString());
                     }
                 } catch (Exception ignored) {}
             }

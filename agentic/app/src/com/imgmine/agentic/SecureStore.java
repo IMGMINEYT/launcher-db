@@ -8,6 +8,8 @@ import android.util.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.security.KeyStore;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -125,6 +127,38 @@ public final class SecureStore {
     public static String model(Context c){ return p(c).getString("model", null); }
     public static boolean configured(Context c){ return baseUrl(c) != null && model(c) != null && keyCount(c) > 0; }
     public static void clear(Context c){ p(c).edit().clear().apply(); }
+
+    // ---- long-term memory (encrypted, compact) ----
+    private static final int MEM_MAX = 15;
+
+    public static List<String> loadMemory(Context c) {
+        List<String> out = new ArrayList<>();
+        try {
+            String st = p(c).getString("mem", null);
+            if (st == null) return out;
+            JSONArray a = new JSONArray(dec(st));
+            for (int i = 0; i < a.length(); i++) { String f = a.optString(i); if (f.length() > 0) out.add(f); }
+        } catch (Exception ignored) {}
+        return out;
+    }
+
+    public static void addMemory(Context c, String fact) {
+        if (fact == null) return;
+        fact = fact.trim();
+        if (fact.length() < 3) return;
+        if (fact.length() > 100) fact = fact.substring(0, 100);
+        List<String> m = loadMemory(c);
+        for (String x : m) if (x.equalsIgnoreCase(fact)) return;
+        m.add(fact);
+        while (m.size() > MEM_MAX) m.remove(0);
+        try {
+            JSONArray a = new JSONArray();
+            for (String x : m) a.put(x);
+            p(c).edit().putString("mem", enc(a.toString())).apply();
+        } catch (Exception ignored) {}
+    }
+
+    public static void clearMemory(Context c) { p(c).edit().remove("mem").apply(); }
 
     public static boolean appApproved(Context c, String pkg){ return p(c).getBoolean("ok_" + pkg, false); }
     public static void approveApp(Context c, String pkg){ p(c).edit().putBoolean("ok_" + pkg, true).apply(); }

@@ -13,9 +13,9 @@ import java.util.regex.Pattern;
 public class AgentLoop extends Thread {
     public interface Ui {
         void aiMessage(String text);
-        void systemMessage(String text);
+        void systemMessage(String text); // narration (collapsible, no cost)
+        void notice(String text);        // important: always visible
         void thinking(boolean on);
-        void thinkingProgress(int chars);
         void askUser(String question, YesNo cb);
         void loopEnded();
         /** Queued user messages sent while busy; null when none. */
@@ -23,7 +23,9 @@ public class AgentLoop extends Thread {
     }
     public interface YesNo { void answer(boolean yes); }
 
-    private static final int MAX_STEPS = 30;
+    private static final int MAX_STEPS = 60;
+    private static final Pattern THOUGHT = Pattern.compile("\"thought\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.){2,})");
+    private final String[] streamedThought = {null};
     private static final Pattern MONEY = Pattern.compile(
         "(?i)(pay|payment|paisa|paise|rupee|rupees|rs\\.?|inr|\u20B9|upi|buy|buying|purchase|khareed|kharid|order|debit|credit card|bank transfer|send money|paise bhej|recharge|bill|checkout|subscribe|subscription)");
 
@@ -33,6 +35,7 @@ public class AgentLoop extends Thread {
     private final boolean moneyMode;
     public volatile boolean stopped = false;
     private static String cachedApps;
+    private static long cachedAppsAt;
     private final JSONArray mem; // cross-instruction session memory (owned by OverlayService)
     private String lastAiText = "";
 
@@ -120,26 +123,39 @@ public class AgentLoop extends Thread {
             String key = SecureStore.currentKey(ctx);
             try {
                 return Api.chat(root, key, model, msgs, new Api.Progress() {
-                    @Override public void onChars(int n) { ui.thinkingProgress(n); }
+                    private boolean thoughtPosted = false;
+                    @Override public void onPartial(String soFar) {
+                        if (thoughtPosted) return;
+                        java.util.regex.Matcher m = THOUGHT.matcher(soFar);
+                        if (m.find()) {
+                            String t = m.group(1);
+                            int end = Api.jsonStringEnd(soFar, m.start(1));
+                            if (end > 0 && t.length() > 1) {
+                                thoughtPosted = true;
+                                streamedThought[0] = t;
+                                ui.systemMessage(t); // thought visible the moment it streams in
+                            }
+                        }
+                    }
                 });
             } catch (Api.ContextTooLong c) {
                 if (++compressions > 3)
-                    throw new Api.ApiError("Model ka context bahut chhota hai - CLR dabake naya session shuru karo");
+                    throw new Api.ApiError("Model ki memory chhoti hai - CLR dabake naya session shuru karo");
                 compressHard(msgs);
-                ui.systemMessage("Model memory full - history compress karke continue...");
+                ui.systemMessage("Model ki memory bhar gayi - purani chat samet ke continue...");
                 attempt--; // same key, retry compressed
             } catch (Api.RateLimited r) {
                 if (keys > 1 && attempt < keys - 1) {
                     SecureStore.rotateKey(ctx);
-                    ui.systemMessage("Key rate-limited - agli key se continue...");
+                    ui.systemMessage("Ek key busy hai - doosri key se continue...");
                 } else {
                     throw new Api.ApiError(keys > 1
-                        ? "Saari keys abhi rate-limited hain - 1-2 min baad try karo"
-                        : r.getMessage() + (SecureStore.keyCount(ctx) <= 1 ? " (tip: app me doosri key add karo, auto-switch ho jayega)" : ""));
+                        ? "Saari keys abhi busy hain - 1-2 min baad try karo"
+                        : r.getMessage() + (SecureStore.keyCount(ctx) <= 1 ? " (tip: app me doosri key add karo - busy hone par khud switch ho jayega)" : ""));
                 }
             }
         }
-        throw new Api.ApiError("Saari keys abhi rate-limited hain - 1-2 min baad try karo");
+        throw new Api.ApiError("Saari keys abhi busy hain - 1-2 min baad try karo");
     }
 
     private static String systemPrompt() {
@@ -169,14 +185,16 @@ public class AgentLoop extends Thread {
         "RULES:\n" +
         "1. \"thought\" is MANDATORY in every reply: one short sentence - what you see and why this action. Think before acting.\n" +
         "2. Multi-step task -> first reply is plan, then act step by step, re-checking the screen each turn.\n" +
-        "3. Recovery: if LAST RESULT is an error or the screen did not change, do NOT repeat blindly - wait, scroll, try coordinates, or pick another element. After 2 failed retries, ask the user.\n" +
+        "3. Persistence: NEVER give up on the user's task - if something is not found, vary the approach: scroll more, use the app's search, try coordinates, go back and retry. Only stop for done, a hard error, or when truly stuck after several different attempts (then ask).\n" +
         "4. ids come from the LATEST dump only; they change every screen.\n" +
         "5. After typing into an INPUT, the submit/send button is usually a nearby BTN - tap it to confirm.\n" +
         "6. Never confirm purchases/payments yourself; use ask for every such step.\n" +
         "7. Keep acting until the task is truly done, then reply done with a summary.\n" +
-        "8. The dump NEVER shows Agentic's own chat window, ball, or YES/NO dialogs - they are invisible to you. Never try to tap OFF/CLR/X/YES/NO; those belong to Agentic, not the target app.\n" +
-        "9. If a NOTE says the app you opened is now in the foreground, that open step succeeded - continue the plan, or reply done if the task was only to open it.\n" +
-        "10. If a VERIFY note says the screen did not change, your last action had no effect - never repeat the identical tap; try another element, coordinates, scroll or wait.\n\n" +
+        "8. Only open apps from the installed list. If the user asks for an app that is not in the list, say it is not installed (done/ask) instead of guessing a package. For apps without a guide, use standard Android patterns: search icons, bottom tabs, 3-dot menus, long-press for options.\n" +
+        "9. The dump NEVER shows Agentic's own chat window, ball, or YES/NO dialogs - they are invisible to you. Never try to tap OFF/CLR/X/YES/NO; those belong to Agentic, not the target app.\n" +
+        "10. If a NOTE says the app you opened is now in the foreground, that open step succeeded - continue the plan, or reply done if the task was only to open it.\n" +
+        "11. If a VERIFY note says the screen did not change, your last action had no effect - never repeat the identical tap; try another element, coordinates, scroll or wait.\n" +
+        "12. When the user states a durable fact, preference or standing instruction (his name, language choice, 'hamesha...', 'never...'), add \"remember\":\"<short fact, max 15 words>\" to that reply's JSON so it is remembered across sessions.\n\n" +
         "EXAMPLE (task: whatsapp pe Rahul ko 'hello' bhejo; dump shows App: com.whatsapp, #7 [INPUT] \"Message\" @300,2200, #9 [BTN] \"Send\" @1000,2200):\n" +
         "Turn 1: {\"thought\":\"Rahul ki chat khuli hai; pehle message type karta hu.\",\"action\":\"type\",\"id\":7,\"text\":\"hello\"}\n" +
         "Turn 2: {\"thought\":\"Message type ho gaya; ab Send dabata hu.\",\"action\":\"tap_id\",\"id\":9}\n" +
@@ -184,7 +202,7 @@ public class AgentLoop extends Thread {
     }
 
     private String installedApps() {
-        if (cachedApps != null) return cachedApps;
+        if (cachedApps != null && System.currentTimeMillis() - cachedAppsAt < 600000) return cachedApps;
         StringBuilder sb = new StringBuilder("Installed apps (label | package):\n");
         Intent i = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER);
         List<ResolveInfo> apps = ctx.getPackageManager().queryIntentActivities(i, 0);
@@ -195,31 +213,39 @@ public class AgentLoop extends Thread {
               .append(r.activityInfo.packageName).append('\n');
         }
         cachedApps = sb.toString();
+        cachedAppsAt = System.currentTimeMillis();
         return cachedApps;
     }
 
     @Override public void run() {
         AgentService svc = AgentService.instance;
-        if (svc == null) { ui.systemMessage("Accessibility service is off - enable it first, then try again."); ui.loopEnded(); return; }
-        if (moneyMode) ui.systemMessage("Payment-related task: I will confirm every step with you.");
+        if (svc == null) { ui.notice("Accessibility service is off - enable it first, then try again."); ui.loopEnded(); return; }
+        svc.agentActive = true;
+        if (moneyMode) ui.notice("Payment-related task: main har step pehle aapse confirm karunga.");
         try {
             String root = SecureStore.baseUrl(ctx), model = SecureStore.model(ctx);
             String key;
             try {
                 key = SecureStore.currentKey(ctx);
             } catch (Exception e) {
-                ui.systemMessage("Saved key read nahi ho payi - app kholo, 'Change API / model' se key dobara daalo.");
+                ui.notice("Saved key read nahi ho payi - app kholo, 'Change API / model' se key dobara daalo.");
                 ui.loopEnded();
                 return;
             }
             if (root == null || key == null || model == null) {
-                ui.systemMessage("API setup missing - open the Agentic app and connect your API first.");
+                ui.notice("API setup missing - open the Agentic app and connect your API first.");
                 ui.loopEnded();
                 return;
             }
             boolean visionOn = isVisionModel(model);
+            StringBuilder sys = new StringBuilder(systemPrompt());
+            java.util.List<String> longMem = SecureStore.loadMemory(ctx);
+            if (!longMem.isEmpty()) {
+                sys.append("\n\nUSER MEMORY (things he told you before - respect them):\n");
+                for (String f : longMem) sys.append("- ").append(f).append('\n');
+            }
             JSONArray msgs = new JSONArray();
-            msgs.put(new JSONObject().put("role", "system").put("content", systemPrompt()));
+            msgs.put(new JSONObject().put("role", "system").put("content", sys.toString()));
             for (int i = 0; i < mem.length(); i++) msgs.put(mem.get(i)); // session memory
             StringBuilder task = new StringBuilder("TASK: ").append(instruction).append("\n\n").append(installedApps());
             int steps = 0, retries = 0;
@@ -241,11 +267,20 @@ public class AgentLoop extends Thread {
                 }
                 String sig = Integer.toHexString(screen.hashCode());
                 String fg = foregroundOf(screen);
+                if (!fg.equals(lastGuidedPkg)) {
+                    String guide = AppKnowledge.guideFor(fg);
+                    if (guide != null) {
+                        msgs.put(new JSONObject().put("role", "user").put("content",
+                            "APP GUIDE for the app now in foreground (" + fg + "):\n" + guide));
+                        lastGuidedPkg = fg;
+                    }
+                }
                 StringBuilder note = new StringBuilder();
                 if (pendingOpenPkg != null) {
                     if (pendingOpenPkg.equals(fg)) {
                         note.append("\nNOTE: ").append(pendingOpenPkg).append(" is now open in the foreground - the open step succeeded.");
                         lastResult += " | verified foreground: " + fg;
+                        ui.notice("App khul gayi.");
                     } else {
                         note.append("\nNOTE: ").append(pendingOpenPkg).append(" is NOT in the foreground yet (current foreground: ").append(fg).append(").");
                     }
@@ -283,7 +318,7 @@ public class AgentLoop extends Thread {
                         reply = callWithRetry(root, model, msgs);
                     } catch (Api.VisionRejected vr) {
                         visionOn = false;
-                        ui.systemMessage("Is model me vision nahi hai - rich text + OCR mode me continue...");
+                        ui.systemMessage("Ye model photos nahi dekh sakta - text se kaam continue...");
                         JSONObject last = msgs.getJSONObject(msgs.length() - 1);
                         last.put("content", userMsg); // resend text-only
                         reply = callWithRetry(root, model, msgs);
@@ -293,8 +328,11 @@ public class AgentLoop extends Thread {
                 msgs.put(new JSONObject().put("role", "assistant").put("content", reply));
                 JSONObject a = parse(reply);
                 if (a == null) { lastResult = "error: reply was not one JSON action. Reply with exactly one raw JSON object."; continue; }
+                String rem = a.optString("remember", "");
+                if (rem.length() > 2) SecureStore.addMemory(ctx, rem);
                 String thought = a.optString("thought", "");
-                if (thought.length() > 0) ui.systemMessage(thought);
+                if (thought.length() > 0 && !thought.equals(streamedThought[0])) ui.systemMessage(thought);
+                streamedThought[0] = null;
                 String act = a.optString("action");
                 String openedPkg = null;
                 if ("done".equals(act)) { lastAiText = a.optString("text", "Done."); ui.aiMessage(lastAiText); break; }
@@ -324,6 +362,8 @@ public class AgentLoop extends Thread {
                     if (stopped) break;
                     if (ok == null || !ok) { lastResult = "user DENIED this step. Use ask or done now."; continue; }
                 }
+                String actLine = actionLine(a);
+                if (actLine != null) ui.systemMessage(actLine); // visible BEFORE the action executes
                 ui.thinking(true);
                 try { lastResult = svc.execBlocking(a); }
                 finally { ui.thinking(false); }
@@ -333,17 +373,35 @@ public class AgentLoop extends Thread {
                     retries++;
                     if (retries >= 4) { lastResult += " | hint: try a different approach (scroll, coordinates, or ask the user)."; }
                 } else retries = 0;
-                int wait = "wait".equals(act) ? Math.min(a.optInt("ms", 1000), 10000) : 400;
+                int wait = "wait".equals(act) ? Math.min(a.optInt("ms", 1000), 10000) : 250;
                 try { Thread.sleep(wait); } catch (InterruptedException ignored) { break; }
             }
-            if (!stopped && steps >= MAX_STEPS) ui.systemMessage("Step limit (" + MAX_STEPS + ") reached - agent paused. Send a message to continue.");
+            if (!stopped && steps >= MAX_STEPS) ui.aiMessage("Bahut lamba task hai - ruk gaya hoon beech me. 'continue' bolo to wahi se aage badhunga, ya naya instruction do.");
         } catch (Api.ApiError e) {
-            ui.systemMessage(e.getMessage());
+            ui.notice(e.getMessage());
         } catch (Throwable e) {
-            ui.systemMessage("Agent me error aaya - agent rok diya gaya, ball/window chalte rahenge. Dobara try karo.");
+            ui.notice("Agent me error aaya - agent rok diya gaya, ball/window chalte rahenge. Dobara try karo.");
         } finally {
+            svc.agentActive = false;
             remember();
             ui.loopEnded();
+        }
+    }
+
+    private String lastGuidedPkg = "";
+
+    private static String actionLine(JSONObject a) {
+        String act = a.optString("action");
+        switch (act) {
+            case "open_app": return "App khol raha hoon…";
+            case "tap": case "tap_id": return "Tap kar raha hoon…";
+            case "long_press": case "long_press_id": return "Long-press kar raha hoon…";
+            case "type": return "Likh raha hoon…";
+            case "swipe": case "scroll": return "Scroll kar raha hoon…";
+            case "back": return "Back ja raha hoon…";
+            case "home": return "Home ja raha hoon…";
+            case "recents": return "Recent apps khol raha hoon…";
+            default: return null; // wait/rotate/volume/etc: no extra line
         }
     }
 
