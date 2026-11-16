@@ -453,6 +453,7 @@ public class AgentLoop extends Thread {
                         reply = callWithRetry(fb, msgs);
                     } else throw primary;
                 } finally { ui.thinking(false); }
+                LogStore.addTokens(ctx, estTokens(msgs));
                 ui.systemMessage("step " + steps + ": screen " + tDump + "ms"
                     + (tShot > 0 ? ", photo " + tShot + "ms" : "")
                     + (tOcr > 0 ? ", ocr " + tOcr + "ms" : "")
@@ -540,8 +541,10 @@ public class AgentLoop extends Thread {
                 String actLine = actionLine(a);
                 if (actLine != null) ui.systemMessage(actLine); // visible BEFORE the action executes
                 ui.thinking(true);
+                long tExec = System.currentTimeMillis();
                 try { lastResult = svc.execBlocking(a); }
                 finally { ui.thinking(false); }
+                LogStore.log(ctx, taskId, steps, describe(a), lastResult, System.currentTimeMillis() - tExec);
                 lastAction = describe(a);
                 if (openedPkg != null && !lastResult.startsWith("error")) pendingOpenPkg = openedPkg;
                 if (lastResult.startsWith("error")) {
@@ -559,6 +562,7 @@ public class AgentLoop extends Thread {
             taskState = TaskStore.CANCELLED; taskNote = "Stopped";
         } catch (Api.ApiError e) {
             taskState = TaskStore.FAILED; taskNote = e.getMessage();
+            LogStore.log(ctx, taskId, -1, "api_error", e.getMessage() != null ? e.getMessage() : "error", 0);
             ui.notice(e.getMessage());
         } catch (Throwable e) {
             taskState = TaskStore.FAILED; taskNote = "error";

@@ -66,3 +66,8 @@ Do not treat the earlier milestone labels as full completion of the correspondin
 - HIGH (taps on Send/Post/Share/Pay/Buy/Delete/Call/Transfer/Book labeled elements, payment/call/delete/order tasks): confirmation EVERY risky action; denial is final for that action.
 - Payment-app foreground (Paytm/PhonePe/GPay/BHIM/MobiKwik) now triggers the same every-step payment gate as payment instructions.
 - Existing gates unchanged: first-time app-open approval (remembered per package), moneyMode every-step confirm, red OFF.
+
+# v1.6 diagnostics
+- LogStore: local action log (last 100 actions: step, action, result, duration) in app-private storage - no secrets, no screen content.
+- Settings -> Diagnostics card: today's token estimate (chars/4 heuristic, labeled as estimate, not provider billing), last 10 actions with errors highlighted, one-tap log clear.
+- API failures also logged. Compile/signature verified; not device-tested.

@@ -451,6 +451,33 @@ public class MainActivity extends Activity {
         mc.addView(hisRow);
         root.addView(mc);
 
+        LinearLayout dc = card();
+        dc.addView(label("Diagnostics"));
+        dc.addView(desc("Aaj ka token estimate: " + LogStore.tokensToday(this) + " (estimate hai, provider ka bill alag ho sakta hai)."));
+        org.json.JSONArray logs = LogStore.list(this);
+        TextView lh = new TextView(this);
+        lh.setText("Action log (" + logs.length() + "):");
+        lh.setTextColor(Color.WHITE); lh.setTextSize(13);
+        lh.setPadding(0, dp(2), 0, 0);
+        dc.addView(lh);
+        int shownL = Math.min(10, logs.length());
+        for (int i = 0; i < shownL; i++) {
+            org.json.JSONObject o = logs.optJSONObject(i);
+            if (o == null) continue;
+            TextView row = new TextView(this);
+            row.setText("  " + o.optString("action") + "  ->  " + o.optString("result") + "  (" + o.optLong("ms") + "ms)");
+            row.setTextColor(o.optString("result").startsWith("error") ? 0xFFE57373 : DIM);
+            row.setTextSize(11.5f);
+            dc.addView(row);
+        }
+        TextView clrL = new TextView(this);
+        clrL.setText("Log clear karo");
+        clrL.setTextColor(DIM); clrL.setTextSize(12);
+        clrL.setPadding(0, dp(8), 0, 0);
+        clrL.setOnClickListener(v -> { LogStore.clear(this); render(); });
+        dc.addView(clrL);
+        root.addView(dc);
+
         TextView tips = new TextView(this);
         tips.setText("Tap the ball to chat. Long-press it 5s to hide. Red OFF stops everything instantly. Keys sirf is phone pe encrypted rehti hain.");
         tips.setTextColor(DIM); tips.setTextSize(12); tips.setLineSpacing(0, 1.15f);
