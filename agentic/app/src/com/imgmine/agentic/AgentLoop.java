@@ -33,6 +33,8 @@ public class AgentLoop extends Thread {
     private final Ui ui;
     private final String instruction;
     private final boolean moneyMode;
+    private final int taskRisk; // 0 = LOW, 1 = MEDIUM (confirm once per task), 2 = HIGH (confirm every risky action)
+    private boolean mediumApproved = false;
     public volatile boolean stopped = false;
     public volatile boolean paused = false;
     private volatile int pauseEpoch;
@@ -57,6 +59,7 @@ public class AgentLoop extends Thread {
         this.ui = ui;
         this.instruction = instruction;
         this.moneyMode = MONEY.matcher(instruction).find();
+        this.taskRisk = classifyRisk(instruction);
         this.mem = mem;
     }
 
@@ -511,10 +514,22 @@ public class AgentLoop extends Thread {
                     }
                     openedPkg = pkg;
                 }
-                if (moneyMode) {
+                if (moneyMode || paymentApp(fg)) {
                     Boolean ok = askSync("Step " + steps + " allow kare?\n" + describe(a));
                     if (stopped) break;
                     if (ok == null || !ok) { lastResult = "user DENIED this step. Use ask or done now."; continue; }
+                } else {
+                    int risk = actionRisk(a, svc, taskRisk);
+                    if (risk == 2) {
+                        Boolean ok = askSync("SAVDHAN - AI ye karna chahta hai:\n" + describe(a) + "\nAllow? (har baar poochhunga)");
+                        if (stopped) break;
+                        if (ok == null || !ok) { lastResult = "user DENIED this action (" + describe(a) + "). Do NOT retry it - use ask or done."; continue; }
+                    } else if (risk == 1 && !mediumApproved) {
+                        Boolean ok = askSync("Is task me AI likhne/bhejne jaisa kaam karega - pehla step:\n" + describe(a) + "\nAllow? (is task ke liye ek baar)");
+                        if (stopped) break;
+                        if (ok == null || !ok) { lastResult = "user DENIED this kind of action. Use ask or done now."; continue; }
+                        mediumApproved = true;
+                    }
                 }
                 if (paused || MainActivity.foreground || observedPauseEpoch != pauseEpoch) {
                     awaitResume();
@@ -598,6 +613,47 @@ public class AgentLoop extends Thread {
             case "clear": return "Clear field #" + a.optInt("id");
             case "pinch": return "Pinch " + a.optString("mode", "in");
             default: return act;
+        }
+    }
+
+    /** Task-level risk from the instruction text. Payments are already covered by moneyMode (every-step). */
+    private static int classifyRisk(String instr) {
+        String t = instr.toLowerCase(java.util.Locale.ROOT);
+        if (t.matches(".*(pay\\b|payment|paise|paisa|upi|transfer|khareed|buy|purchase|order kar|book kar|delete|call kar|dial).*")) return 2;
+        if (t.matches(".*(send|bhej|message|msg|post|share|upload|form|fill|register|signup|sign up|copy|subscribe|comment|follow kar|like kar).*")) return 1;
+        return 0;
+    }
+
+    /** Payment-app foreground: same every-step protection as a payment task. */
+    private static boolean paymentApp(String fg) {
+        if (fg == null) return false;
+        String p = fg.toLowerCase(java.util.Locale.ROOT);
+        return p.contains("paytm") || p.contains("phonepe") || p.contains("paisa") || p.contains("bhim") || p.contains("mobikwik");
+    }
+
+    private static final String[] HIGH_LABELS = {"send", "bhejo", "bhej", "post", "share", "submit", "pay", "buy now",
+        "purchase", "place order", "confirm order", "transfer", "delete", "call", "book now", "donate", "pay now"};
+
+    /** Per-action risk: HIGH labels confirm every time; typing in a risky task confirms once. */
+    private static int actionRisk(org.json.JSONObject a, AgentService svc, int taskRisk) {
+        String act = a.optString("action");
+        if (act == null) return 0;
+        switch (act) {
+            case "done": case "ask": case "plan": case "look": case "wait": case "scroll": case "swipe":
+            case "back": case "home": case "recents": case "open_app": case "notifications": case "quick_settings":
+            case "volume_up": case "volume_down": case "rotate": case "power_menu":
+                return 0;
+            case "tap_id": case "long_press_id": case "double_tap_id": case "clear": {
+                String lbl = svc.nodeLabel(a.optInt("id"));
+                for (String h : HIGH_LABELS) if (lbl.contains(h)) return 2;
+                return taskRisk == 2 ? 1 : 0;
+            }
+            case "tap": case "long_press": case "double_tap": case "drag": case "pinch":
+                return taskRisk == 2 ? 1 : 0;
+            case "type":
+                return taskRisk >= 1 ? 1 : 0;
+            default:
+                return 0;
         }
     }
 

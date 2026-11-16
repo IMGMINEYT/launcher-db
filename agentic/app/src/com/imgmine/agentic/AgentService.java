@@ -197,6 +197,14 @@ public class AgentService extends AccessibilityService {
         return s.length() > max ? s.substring(0, max) : s;
     }
 
+    /** Short "text + description" of a dumped node for risk classification; "" when unknown. */
+    public String nodeLabel(int id) {
+        AccessibilityNodeInfo n = nodes.get(id);
+        if (n == null) return "";
+        CharSequence t = n.getText(), d = n.getContentDescription();
+        return ((t != null ? t : "") + " " + (d != null ? d : "")).trim().toLowerCase();
+    }
+
     public interface ResultCb { void onResult(String res); }
 
     /** Run an action JSON on the main thread; callback with a short result string. */

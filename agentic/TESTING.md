@@ -59,3 +59,10 @@ Do not treat the earlier milestone labels as full completion of the correspondin
 - Empty screens ("no interactive elements" / "screen unavailable") now auto-request a photo instead of wasting steps.
 - Invalid AI replies escalate (hard JSON rule at 2, friendly failure + model-switch advice at 4) instead of looping forever.
 - "app not installed" errors now tell the AI to use the exact package from the installed list.
+
+# v1.5 risk-classified security
+- LOW (open/scroll/read/navigate/wait/volume/rotate): free, no prompts.
+- MEDIUM (typing/sending-style tasks, forms, copy, subscribes): one confirmation per task at the first such action.
+- HIGH (taps on Send/Post/Share/Pay/Buy/Delete/Call/Transfer/Book labeled elements, payment/call/delete/order tasks): confirmation EVERY risky action; denial is final for that action.
+- Payment-app foreground (Paytm/PhonePe/GPay/BHIM/MobiKwik) now triggers the same every-step payment gate as payment instructions.
+- Existing gates unchanged: first-time app-open approval (remembered per package), moneyMode every-step confirm, red OFF.
