@@ -71,3 +71,11 @@ Do not treat the earlier milestone labels as full completion of the correspondin
 - LogStore: local action log (last 100 actions: step, action, result, duration) in app-private storage - no secrets, no screen content.
 - Settings -> Diagnostics card: today's token estimate (chars/4 heuristic, labeled as estimate, not provider billing), last 10 actions with errors highlighted, one-tap log clear.
 - API failures also logged. Compile/signature verified; not device-tested.
+
+# v1.7 voice - EXPERIMENTAL, default OFF
+- Voice (push-to-talk) behind a Settings toggle labeled EXPERIMENTAL, OFF by default. RECORD_AUDIO is requested only when the user enables it.
+- Mic buttons (Home + overlay chat) fill the input box with recognized text - the user reviews and sends; nothing is auto-sent.
+- Mic never stays on: listening stops after each phrase, on tap, and is destroyed with the service/activity.
+- SpeechRecognizer (system); on many devices recognition needs internet. Hinglish via free-form language model.
+- NOT device-tested: recognition availability varies by device/Android build. This is the riskiest overnight change.
+- Not included: text-to-speech replies (remaining work).

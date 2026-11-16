@@ -47,6 +47,8 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     private ScrollView msgScroll;
     private EditText input;
     private View sendBtn;
+    private final Voice voice = new Voice();
+    private TextView micBtn;
     private TextView titleView, statusView;
     private volatile AgentLoop loop;
     private LinearLayout detailBox;
@@ -297,6 +299,19 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         input.setBackgroundColor(Color.TRANSPARENT);
         input.setMaxLines(3); input.setMinHeight(dp(40));
         row.addView(input, new LinearLayout.LayoutParams(0, -2, 1f));
+        if (Voice.enabled(this)) {
+            micBtn = new TextView(this);
+            micBtn.setText("\uD83C\uDFA4"); micBtn.setTextSize(16);
+            micBtn.setGravity(Gravity.CENTER);
+            GradientDrawable mg = new GradientDrawable();
+            mg.setColor(TEAL); mg.setShape(GradientDrawable.OVAL);
+            micBtn.setBackground(mg);
+            LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(dp(36), dp(36));
+            mlp.setMargins(dp(6), 0, 0, 0);
+            micBtn.setLayoutParams(mlp);
+            micBtn.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { toggleVoice(); } });
+            row.addView(micBtn);
+        }
         sendBtn = circleBtn(ACCENT);
         row.addView(sendBtn);
         LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(-1, -2);
@@ -636,6 +651,20 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         notice("Chat clear ho gayi - naya session. (AI ki yaadein save rehti hain)");
     }
 
+    /** Push-to-talk: recognized text fills the input box; the user reviews and sends. */
+    private void toggleVoice() {
+        voice.toggle(this, new Voice.Cb() {
+            @Override public void onText(final String text) { ui.post(new Runnable() { @Override public void run() {
+                if (input != null) input.setText(text);
+            } }); }
+            @Override public void onState(final String st) { ui.post(new Runnable() { @Override public void run() { narration(st, false); } }); }
+            @Override public void onDone() { ui.post(new Runnable() { @Override public void run() {
+                if (micBtn != null) micBtn.setAlpha(1f);
+            } }); }
+        });
+        if (micBtn != null) micBtn.setAlpha(voice.isListening() ? 0.45f : 1f);
+    }
+
     // ---------- shutdown ----------
     private void stopAgent() {
         if (loop != null) { loop.stopped = true; loop.interrupt(); loop = null; }
@@ -658,6 +687,7 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     private void shutdownKeepConfig() { shutdownNow(); }
 
     @Override public void onDestroy() {
+        voice.destroy();
         if (instance == this) instance = null;
         AgentService a = AgentService.instance;
         if (a != null) a.clearPreview();

@@ -37,6 +37,8 @@ public class MainActivity extends Activity {
     private FrameLayout contentFrame;
     private final Handler ui = new Handler();
     private Runnable liveTick;
+    private final Voice voice = new Voice();
+    private Button homeMic;
 
     @Override protected void onResume() {
         super.onResume();
@@ -48,6 +50,13 @@ public class MainActivity extends Activity {
         foreground = false;
         super.onPause();
         stopLiveTick();
+        voice.destroy();
+    }
+
+    @Override public void onRequestPermissionsResult(int code, String[] perms, int[] results) {
+        super.onRequestPermissionsResult(code, perms, results);
+        if (code == 7 && results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) Voice.setEnabled(this, true);
+        render();
     }
 
     private int dp(float v) { return (int) (v * getResources().getDisplayMetrics().density + 0.5f); }
@@ -192,7 +201,29 @@ public class MainActivity extends Activity {
             sendInstruction(t);
             in.setText("");
         });
-        ic.addView(send);
+        if (Voice.enabled(this) && Voice.micGranted(this)) {
+            LinearLayout srow = new LinearLayout(this);
+            srow.setOrientation(LinearLayout.HORIZONTAL);
+            LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(0, dp(48), 1f);
+            slp.setMargins(0, dp(6), dp(8), 0);
+            send.setLayoutParams(slp);
+            srow.addView(send);
+            homeMic = btn("\uD83C\uDFA4 Bolo", BTN2, Color.WHITE);
+            LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(0, dp(48), 1f);
+            mlp.setMargins(dp(8), dp(6), 0, 0);
+            homeMic.setLayoutParams(mlp);
+            homeMic.setOnClickListener(v -> {
+                voice.toggle(this, new Voice.Cb() {
+                @Override public void onText(String text) { runOnUiThread(() -> in.setText(text)); }
+                @Override public void onState(String st) { runOnUiThread(() -> Toast.makeText(MainActivity.this, st, Toast.LENGTH_SHORT).show()); }
+                @Override public void onDone() { runOnUiThread(() -> homeMic.setText("\uD83C\uDFA4 Bolo")); }
+                });
+                homeMic.setText(voice.isListening() ? "\uD83D\uDD34 Sun raha..." : "\uD83C\uDFA4 Bolo");
+            });
+            ic.addView(srow);
+        } else {
+            ic.addView(send);
+        }
         root.addView(ic);
 
         OverlayService os = OverlayService.instance;
@@ -450,6 +481,22 @@ public class MainActivity extends Activity {
         hisRow.setOnClickListener(v -> { TaskStore.clear(this); Toast.makeText(this, "History clear", Toast.LENGTH_SHORT).show(); });
         mc.addView(hisRow);
         root.addView(mc);
+
+        LinearLayout vc = card();
+        vc.addView(label("Voice (EXPERIMENTAL)"));
+        boolean vOn = Voice.enabled(this) && Voice.micGranted(this);
+        vc.addView(desc(vOn
+            ? "ON - mic button Home aur chat me dikhega. Bolne ke baad text input me aata hai; send se pehle check kar sakte ho. Mic kabhi khula nahi rehta."
+            : "OFF (default). Experimental feature - abhi device pe test hona baaki hai. On karne pe mic permission maangega. Bolke instruction doge to text input me aayega, send aap khud karoge."));
+        Button vbtn = btn(vOn ? "Voice band karo" : "Voice on karo (experimental)", vOn ? BTN2 : ACCENT, vOn ? Color.WHITE : 0xFF0B0F13);
+        vbtn.setOnClickListener(v -> {
+            if (Voice.enabled(this) && Voice.micGranted(this)) { Voice.setEnabled(this, false); render(); return; }
+            if (!Voice.micGranted(this)) {
+                if (Build.VERSION.SDK_INT >= 23) requestPermissions(new String[]{"android.permission.RECORD_AUDIO"}, 7);
+            } else { Voice.setEnabled(this, true); render(); }
+        });
+        vc.addView(vbtn);
+        root.addView(vc);
 
         LinearLayout dc = card();
         dc.addView(label("Diagnostics"));
