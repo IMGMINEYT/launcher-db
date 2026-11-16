@@ -35,8 +35,8 @@ public final class Api {
     private static HttpURLConnection open(String url, String key, String method) throws Exception {
         HttpURLConnection h = (HttpURLConnection) new URL(url).openConnection();
         h.setRequestMethod(method);
-        h.setConnectTimeout(15000);
-        h.setReadTimeout(60000);
+        h.setConnectTimeout(10000);
+        h.setReadTimeout(120000);
         h.setRequestProperty("Authorization", "Bearer " + key);
         h.setRequestProperty("Accept", "application/json");
         if ("POST".equals(method)) {
@@ -78,17 +78,61 @@ public final class Api {
         throw last != null ? last : new ApiError("Could not fetch models");
     }
 
-    /** One non-streaming chat completion; returns assistant content text. */
-    public static String chat(String root, String key, String model, JSONArray messages) throws Exception {
+    public interface Progress { void onChars(int n); }
+
+    /** Streaming chat completion with non-streaming fallback; returns full assistant content. */
+    public static String chat(String root, String key, String model, JSONArray messages, Progress p) throws Exception {
         checkUrl(root);
+        try {
+            return chatOnce(root, key, model, messages, true, p);
+        } catch (Exception first) {
+            return chatOnce(root, key, model, messages, false, null); // fallback: plain
+        }
+    }
+
+    private static String chatOnce(String root, String key, String model, JSONArray messages, boolean stream, Progress p) throws Exception {
         JSONObject req = new JSONObject();
         req.put("model", model);
         req.put("messages", messages);
-        req.put("stream", false);
+        req.put("stream", stream);
         HttpURLConnection h = open(root + "/chat/completions", key, "POST");
         byte[] bytes = req.toString().getBytes(StandardCharsets.UTF_8);
         try (OutputStream os = h.getOutputStream()) { os.write(bytes); }
-        JSONObject resp = new JSONObject(body(h));
-        return resp.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
+        int code = h.getResponseCode();
+        if (code >= 400) {
+            InputStream es = h.getErrorStream();
+            StringBuilder sb = new StringBuilder();
+            if (es != null) try (BufferedReader r = new BufferedReader(new InputStreamReader(es, StandardCharsets.UTF_8))) {
+                String line; while ((line = r.readLine()) != null) sb.append(line);
+            }
+            throw new ApiError("HTTP " + code + ": " + (sb.length() > 300 ? sb.substring(0, 300) : sb.toString()));
+        }
+        if (!stream) {
+            JSONObject resp = new JSONObject(body(h));
+            return resp.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
+        }
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(h.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                if (!line.startsWith("data:")) continue;
+                String d = line.substring(5).trim();
+                if ("[DONE]".equals(d)) break;
+                try {
+                    JSONObject c = new JSONObject(d);
+                    JSONArray ch = c.optJSONArray("choices");
+                    if (ch == null || ch.length() == 0) continue;
+                    JSONObject delta = ch.getJSONObject(0).optJSONObject("delta");
+                    if (delta == null) continue;
+                    String part = delta.optString("content", "");
+                    if (part.length() > 0) {
+                        sb.append(part);
+                        if (p != null) p.onChars(sb.length());
+                    }
+                } catch (Exception ignored) {}
+            }
+        }
+        if (sb.length() == 0) throw new ApiError("empty stream");
+        return sb.toString();
     }
 }

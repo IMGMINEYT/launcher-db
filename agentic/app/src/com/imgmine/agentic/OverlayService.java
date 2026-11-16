@@ -15,7 +15,7 @@ import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
-import android.hardware.display.DisplayManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -46,16 +46,18 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     private LinearLayout msgBox;
     private ScrollView msgScroll;
     private EditText input;
-    private Button sendBtn;
-    private TextView titleView;
+    private View sendBtn;
+    private TextView titleView, statusView;
     private AgentLoop loop;
     private final List<String> transcript = new ArrayList<>();
     private OrientationEventListener orient;
     private BroadcastReceiver screenOff;
     private Typeface pixel;
     private int lastOrientation = -1;
+    private String statusText = "online";
 
-    private static final int BG = 0xF214181F, PANEL = 0xFF1E242C, ACCENT = 0xFF5FD068, RED = 0xFFE53935, TEAL = 0xFF2DD4BF;
+    private static final int BG = 0xF214181F, PANEL = 0xFF1E242C, PANEL2 = 0xFF232B34,
+            ACCENT = 0xFF5FD068, RED = 0xFFE53935, TEAL = 0xFF2DD4BF, DIM = 0xFF8A94A0;
 
     @Override public IBinder onBind(Intent i) { return null; }
 
@@ -63,22 +65,34 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         super.onCreate();
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         pixel = Typeface.createFromAsset(getAssets(), "pixelify.ttf");
-        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
-            try { stopAgent(); } catch (Throwable ignored) {}
-            try { wm.removeViewImmediate(ball); } catch (Throwable ignored) {}
-            try { wm.removeViewImmediate(chat); } catch (Throwable ignored) {}
-            Process.killProcess(Process.myPid());
-            System.exit(10);
+        final Thread mainThread = Looper.getMainLooper().getThread();
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override public void uncaughtException(Thread t, Throwable e) {
+                if (t == mainThread) {
+                    // UI thread is dead - nothing can render; remove + exit per spec.
+                    try { stopAgent(); } catch (Throwable ignored) {}
+                    try { wm.removeViewImmediate(ball); } catch (Throwable ignored) {}
+                    try { wm.removeViewImmediate(chat); } catch (Throwable ignored) {}
+                    Process.killProcess(Process.myPid());
+                    System.exit(10);
+                } else {
+                    // Background error: stop the agent, keep ball/window alive.
+                    try { stopAgent(); } catch (Throwable ignored) {}
+                    ui.post(new Runnable() { @Override public void run() {
+                        systemMessage("Agent error (" + e.getClass().getSimpleName() + ") - agent rok diya, ball/window chalte rahenge.");
+                    }});
+                }
+            }
         });
-        if (android.os.Build.VERSION.SDK_INT >= 26) {
+        if (Build.VERSION.SDK_INT >= 26) {
             NotificationManager nm = getSystemService(NotificationManager.class);
-            nm.createNotificationChannel(new NotificationChannel("agentic", "Agentic", NotificationManager.IMPORTANCE_MIN));
+            nm.createNotificationChannel(new NotificationChannel("agentic", "Agentic", NotificationManager.IMPORTANCE_LOW));
         }
         screenOff = new BroadcastReceiver() {
             @Override public void onReceive(Context c, Intent i) { shutdownNow(); }
         };
         try {
-            if (android.os.Build.VERSION.SDK_INT >= 33)
+            if (Build.VERSION.SDK_INT >= 33)
                 registerReceiver(screenOff, new IntentFilter(Intent.ACTION_SCREEN_OFF), Context.RECEIVER_NOT_EXPORTED);
             else
                 registerReceiver(screenOff, new IntentFilter(Intent.ACTION_SCREEN_OFF));
@@ -87,20 +101,20 @@ public class OverlayService extends Service implements AgentLoop.Ui {
             @Override public void onOrientationChanged(int deg) {
                 Display d = wm.getDefaultDisplay();
                 int rot = d.getRotation();
-                if (rot != lastOrientation) { lastOrientation = rot; ui.postDelayed(() -> clampAll(), 250); }
+                if (rot != lastOrientation) { lastOrientation = rot; ui.postDelayed(new Runnable() { @Override public void run() { clampAll(); } }, 250); }
             }
         };
         if (orient.canDetectOrientation()) orient.enable();
     }
 
     @Override public int onStartCommand(Intent i, int flags, int id) {
-        Notification.Builder nb = android.os.Build.VERSION.SDK_INT >= 26
+        Notification.Builder nb = Build.VERSION.SDK_INT >= 26
                 ? new Notification.Builder(this, "agentic") : new Notification.Builder(this);
         Notification n = nb.setContentTitle("Agentic").setContentText("Floating ball active")
                 .setSmallIcon(R.drawable.ic_stat).build();
         startForeground(NOTIF_ID, n);
         if (ball == null && chat == null) showBall();
-        return START_NOT_STICKY;
+        return START_STICKY;
     }
 
     private int[] size() {
@@ -124,15 +138,14 @@ public class OverlayService extends Service implements AgentLoop.Ui {
                 float w = getWidth(), r = w / 2f;
                 c.drawCircle(r, r, r - dp(1), ring);
                 c.drawCircle(r, r, r - dp(3), core);
-                // pixel bot glyph
                 float u = w / 16f;
-                c.drawRect(4*u, 6*u, 12*u, 11*u, glyph);                 // visor
+                c.drawRect(4*u, 6*u, 12*u, 11*u, glyph);
                 glyph.setColor(0xFF14181F);
-                c.drawRect(5.5f*u, 7.5f*u, 7.5f*u, 9.5f*u, glyph);       // eyes
+                c.drawRect(5.5f*u, 7.5f*u, 7.5f*u, 9.5f*u, glyph);
                 c.drawRect(8.5f*u, 7.5f*u, 10.5f*u, 9.5f*u, glyph);
                 glyph.setColor(ACCENT);
-                c.drawRect(7.25f*u, 3*u, 8.75f*u, 5*u, glyph);           // antenna
-                c.drawRect(5*u, 12*u, 11*u, 13*u, glyph);                // mouth
+                c.drawRect(7.25f*u, 3*u, 8.75f*u, 5*u, glyph);
+                c.drawRect(5*u, 12*u, 11*u, 13*u, glyph);
             }
         };
         ballLp = new WindowManager.LayoutParams(s, s, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
@@ -148,36 +161,41 @@ public class OverlayService extends Service implements AgentLoop.Ui {
 
     private void attachBallTouch() {
         final Handler h = new Handler(Looper.getMainLooper());
-        final Runnable longPress = () -> { shutdownKeepConfig(); };
-        ball.setOnTouchListener((v, ev) -> {
-            switch (ev.getActionMasked()) {
-                case MotionEvent.ACTION_DOWN:
-                    v.setTag(new float[]{ ev.getRawX(), ev.getRawY(), ballLp.x, ballLp.y });
-                    v.setTag(R.id.tag_moved, Boolean.FALSE);
-                    h.postDelayed(longPress, 5000);
-                    return true;
-                case MotionEvent.ACTION_MOVE: {
-                    float[] d = (float[]) v.getTag();
-                    float dx = ev.getRawX() - d[0], dy = ev.getRawY() - d[1];
-                    if (Math.abs(dx) > dp(6) || Math.abs(dy) > dp(6)) {
-                        v.setTag(R.id.tag_moved, Boolean.TRUE);
-                        h.removeCallbacks(longPress);
+        final Runnable longPress = new Runnable() { @Override public void run() { shutdownKeepConfig(); } };
+        ball.setOnTouchListener(new View.OnTouchListener() {
+            @Override public boolean onTouch(View v, MotionEvent ev) {
+                switch (ev.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                        v.setTag(new float[]{ ev.getRawX(), ev.getRawY(), ballLp.x, ballLp.y });
+                        v.setTag(R.id.tag_moved, Boolean.FALSE);
+                        v.animate().scaleX(0.88f).scaleY(0.88f).setDuration(100).start();
+                        h.postDelayed(longPress, 5000);
+                        return true;
+                    case MotionEvent.ACTION_MOVE: {
+                        float[] d = (float[]) v.getTag();
+                        float dx = ev.getRawX() - d[0], dy = ev.getRawY() - d[1];
+                        if (Math.abs(dx) > dp(6) || Math.abs(dy) > dp(6)) {
+                            v.setTag(R.id.tag_moved, Boolean.TRUE);
+                            h.removeCallbacks(longPress);
+                        }
+                        ballLp.x = (int) (d[2] + dx); ballLp.y = (int) (d[3] + dy);
+                        wm.updateViewLayout(ball, ballLp);
+                        return true;
                     }
-                    ballLp.x = (int) (d[2] + dx); ballLp.y = (int) (d[3] + dy);
-                    wm.updateViewLayout(ball, ballLp);
-                    return true;
+                    case MotionEvent.ACTION_UP: {
+                        h.removeCallbacks(longPress);
+                        v.animate().scaleX(1f).scaleY(1f).setDuration(120).start();
+                        boolean moved = Boolean.TRUE.equals(v.getTag(R.id.tag_moved));
+                        if (moved) snapBall(); else openChat();
+                        return true;
+                    }
+                    case MotionEvent.ACTION_CANCEL:
+                        h.removeCallbacks(longPress);
+                        v.animate().scaleX(1f).scaleY(1f).setDuration(120).start();
+                        return true;
                 }
-                case MotionEvent.ACTION_UP: {
-                    h.removeCallbacks(longPress);
-                    boolean moved = Boolean.TRUE.equals(v.getTag(R.id.tag_moved));
-                    if (moved) snapBall(); else openChat();
-                    return true;
-                }
-                case MotionEvent.ACTION_CANCEL:
-                    h.removeCallbacks(longPress);
-                    return true;
+                return false;
             }
-            return false;
         });
     }
 
@@ -186,7 +204,11 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         int target = (ballLp.x + ballLp.width / 2 < s[0] / 2) ? dp(4) : s[0] - ballLp.width - dp(4);
         ValueAnimator va = ValueAnimator.ofInt(ballLp.x, target);
         va.setDuration(220);
-        va.addUpdateListener(a -> { ballLp.x = (Integer) a.getAnimatedValue(); safeUpdate(ball, ballLp); });
+        va.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override public void onAnimationUpdate(ValueAnimator a) {
+                ballLp.x = (Integer) a.getAnimatedValue(); safeUpdate(ball, ballLp);
+            }
+        });
         va.start();
     }
 
@@ -198,22 +220,28 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     private void openChat() {
         if (chat != null) return;
         int[] s = size();
-        int w = Math.min((int) (s[0] * 0.86), dp(340));
+        int w = Math.min((int) (s[0] * 0.88), dp(340));
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         GradientDrawable bgd = new GradientDrawable();
-        bgd.setColor(BG); bgd.setCornerRadius(dp(14)); bgd.setStroke(dp(1), 0xFF2A313A);
+        bgd.setColor(BG); bgd.setCornerRadius(dp(16)); bgd.setStroke(dp(1), 0xFF2A313A);
         root.setBackground(bgd);
-        root.setPadding(dp(8), dp(6), dp(8), dp(8));
+        root.setPadding(dp(10), dp(8), dp(10), dp(10));
 
-        // header: drag handle + title + OFF + X
+        // header: drag zone, title + status, OFF, X
         LinearLayout header = new LinearLayout(this);
-        titleView = new TextView(this);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setPadding(dp(2), dp(2), dp(2), dp(6));
+        LinearLayout texts = new LinearLayout(this);
+        texts.setOrientation(LinearLayout.VERTICAL);
         String model = SecureStore.model(this);
+        titleView = new TextView(this);
         titleView.setText(model != null ? model : "Agentic");
-        titleView.setTextColor(TEAL); titleView.setTextSize(13); titleView.setTypeface(pixel);
-        LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-        header.addView(titleView, tlp);
+        titleView.setTextColor(TEAL); titleView.setTextSize(14); titleView.setTypeface(pixel);
+        statusView = new TextView(this);
+        statusView.setText(statusText); statusView.setTextColor(DIM); statusView.setTextSize(10);
+        texts.addView(titleView); texts.addView(statusView);
+        header.addView(texts, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         Button off = smallBtn("OFF", RED);
         Button x = smallBtn("X", 0xFF37414C);
         header.addView(off); header.addView(x);
@@ -221,34 +249,45 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         attachChatDrag(header);
 
         msgScroll = new ScrollView(this);
+        msgScroll.setVerticalScrollBarEnabled(false);
         msgBox = new LinearLayout(this);
         msgBox.setOrientation(LinearLayout.VERTICAL);
+        msgBox.setPadding(dp(2), dp(2), dp(2), dp(2));
         msgScroll.addView(msgBox);
         root.addView(msgScroll, new LinearLayout.LayoutParams(-1, 0, 1f));
 
+        // input row: rounded pill + send
         LinearLayout row = new LinearLayout(this);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        GradientDrawable rowBg = new GradientDrawable();
+        rowBg.setColor(PANEL); rowBg.setCornerRadius(dp(20));
+        row.setBackground(rowBg);
+        row.setPadding(dp(12), 0, dp(4), 0);
         input = new EditText(this);
-        input.setHint("Type instruction..."); input.setHintTextColor(0xFF6B7683);
+        input.setHint("Type instruction..."); input.setHintTextColor(0xFF5A6572);
         input.setTextColor(Color.WHITE); input.setTextSize(14);
-        input.setBackgroundColor(PANEL); input.setPadding(dp(8), 0, dp(8), 0);
-        row.addView(input, new LinearLayout.LayoutParams(0, dp(40), 1f));
-        sendBtn = smallBtn(">", ACCENT);
-        sendBtn.setTextColor(0xFF0B0F13);
+        input.setBackgroundColor(Color.TRANSPARENT);
+        input.setMaxLines(3); input.setMinHeight(dp(40));
+        row.addView(input, new LinearLayout.LayoutParams(0, -2, 1f));
+        sendBtn = circleBtn(ACCENT);
         row.addView(sendBtn);
-        root.addView(row);
+        LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(-1, -2);
+        rowLp.setMargins(0, dp(6), 0, 0);
+        root.addView(row, rowLp);
 
-        off.setOnClickListener(v -> shutdownNow());
-        x.setOnClickListener(v -> { hideKeyboard(); hideChat(true); });
-        sendBtn.setOnClickListener(v -> sendInput());
+        off.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { shutdownNow(); } });
+        x.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { hideKeyboard(); hideChat(true); } });
+        sendBtn.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) { sendInput(); } });
 
-        chatLp = new WindowManager.LayoutParams(w, Math.min((int) (s[1] * 0.52), dp(380)),
+        chatLp = new WindowManager.LayoutParams(w, Math.min((int) (s[1] * 0.52), dp(400)),
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
                 PixelFormat.TRANSLUCENT);
+        chatLp.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE | WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN;
         chatLp.gravity = Gravity.TOP | Gravity.START;
         chatLp.x = (s[0] - w) / 2; chatLp.y = s[1] / 5;
         chat = root;
-        chat.setAlpha(0f); chat.setScaleX(0.9f); chat.setScaleY(0.9f);
+        chat.setAlpha(0f); chat.setScaleX(0.92f); chat.setScaleY(0.92f);
         wm.addView(chat, chatLp);
         chat.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(160).start();
         hideBall();
@@ -260,31 +299,49 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         b.setText(t); b.setTextSize(12); b.setTextColor(Color.WHITE);
         b.setMinWidth(0); b.setMinimumWidth(0); b.setMinHeight(0); b.setMinimumHeight(0);
         GradientDrawable g = new GradientDrawable();
-        g.setColor(color); g.setCornerRadius(dp(8));
+        g.setColor(color); g.setCornerRadius(dp(10));
         b.setBackground(g);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(44), dp(32));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(46), dp(32));
         lp.setMargins(dp(4), 0, 0, 0);
         b.setLayoutParams(lp);
         return b;
     }
 
+    private View circleBtn(int color) {
+        TextView b = new TextView(this);
+        b.setText("\u27A4"); b.setTextSize(15); b.setTextColor(0xFF0B0F13);
+        b.setGravity(Gravity.CENTER);
+        GradientDrawable g = new GradientDrawable();
+        g.setColor(color); g.setShape(GradientDrawable.OVAL);
+        b.setBackground(g);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(36), dp(36));
+        lp.setMargins(dp(6), 0, dp(2), 0);
+        b.setLayoutParams(lp);
+        return b;
+    }
+
     private void attachChatDrag(View handle) {
-        handle.setOnTouchListener((v, ev) -> {
-            switch (ev.getActionMasked()) {
-                case MotionEvent.ACTION_DOWN:
-                    v.setTag(new float[]{ ev.getRawX(), ev.getRawY(), chatLp.x, chatLp.y });
-                    return true;
-                case MotionEvent.ACTION_MOVE: {
-                    float[] d = (float[]) v.getTag();
-                    chatLp.x = (int) (d[2] + ev.getRawX() - d[0]);
-                    chatLp.y = (int) (d[3] + ev.getRawY() - d[1]);
-                    safeUpdate(chat, chatLp);
-                    return true;
+        handle.setOnTouchListener(new View.OnTouchListener() {
+            @Override public boolean onTouch(View v, MotionEvent ev) {
+                switch (ev.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                        v.setTag(new float[]{ ev.getRawX(), ev.getRawY(), chatLp.x, chatLp.y });
+                        return true;
+                    case MotionEvent.ACTION_MOVE: {
+                        float[] d = (float[]) v.getTag();
+                        int[] s = size();
+                        chatLp.x = clamp((int) (d[2] + ev.getRawX() - d[0]), -chatLp.width / 2, s[0] - chatLp.width / 2);
+                        chatLp.y = clamp((int) (d[3] + ev.getRawY() - d[1]), 0, s[1] - dp(80));
+                        safeUpdate(chat, chatLp);
+                        return true;
+                    }
                 }
+                return false;
             }
-            return false;
         });
     }
+
+    private static int clamp(int v, int lo, int hi) { return Math.max(lo, Math.min(v, hi)); }
 
     private void hideChat(boolean backToBall) {
         hideKeyboard();
@@ -302,13 +359,13 @@ public class OverlayService extends Service implements AgentLoop.Ui {
     private void clampAll() {
         int[] s = size();
         if (ball != null) {
-            ballLp.x = Math.max(0, Math.min(ballLp.x, s[0] - ballLp.width));
-            ballLp.y = Math.max(0, Math.min(ballLp.y, s[1] - ballLp.height));
+            ballLp.x = clamp(ballLp.x, 0, s[0] - ballLp.width);
+            ballLp.y = clamp(ballLp.y, 0, s[1] - ballLp.height);
             safeUpdate(ball, ballLp);
         }
         if (chat != null) {
-            chatLp.x = Math.max(0, Math.min(chatLp.x, s[0] - dp(80)));
-            chatLp.y = Math.max(0, Math.min(chatLp.y, s[1] - dp(120)));
+            chatLp.x = clamp(chatLp.x, -chatLp.width / 2, s[0] - chatLp.width / 2);
+            chatLp.y = clamp(chatLp.y, 0, s[1] - dp(80));
             safeUpdate(chat, chatLp);
         }
     }
@@ -323,58 +380,101 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         String text = input.getText().toString().trim();
         if (text.isEmpty()) return;
         input.setText("");
-        if (loop != null && loop.isAlive()) { systemMessage("AI is working - press OFF to stop it first."); return; }
+        if (loop != null && loop.isAlive()) { systemMessage("AI abhi kaam kar raha hai - OFF dabao ya wait karo."); return; }
         userMessage(text);
         loop = new AgentLoop(this, this, text);
         loop.start();
     }
 
-    private void bubble(String text, int color, int textColor) {
-        if (msgBox == null) { transcript.add((color == TEAL ? "AI: " : color == ACCENT ? "YOU: " : "SYS: ") + text); return; }
+    private static final int YOU = 1, AI = 2, SYS = 3;
+
+    private void bubble(String text, int who) {
+        if (msgBox == null) { transcript.add(who + "|" + text); return; }
         TextView tv = new TextView(this);
-        tv.setText(text); tv.setTextColor(textColor); tv.setTextSize(13);
-        tv.setPadding(dp(8), dp(6), dp(8), dp(6));
+        tv.setTextSize(who == SYS ? 11 : 13);
+        tv.setPadding(dp(10), dp(7), dp(10), dp(7));
         GradientDrawable g = new GradientDrawable();
-        g.setColor(PANEL); g.setCornerRadius(dp(10)); g.setStroke(dp(1), color);
+        g.setCornerRadius(dp(12));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2);
+        lp.setMargins(who == YOU ? dp(48) : 0, dp(3), who == AI ? dp(48) : 0, dp(3));
+        if (who == YOU) {
+            lp.gravity = Gravity.END;
+            g.setColor(PANEL2); g.setStroke(dp(1), ACCENT);
+            tv.setTextColor(Color.WHITE);
+        } else if (who == AI) {
+            lp.gravity = Gravity.START;
+            g.setColor(PANEL); g.setStroke(dp(1), TEAL);
+            tv.setTextColor(Color.WHITE);
+        } else {
+            lp.gravity = Gravity.CENTER_HORIZONTAL;
+            g.setColor(Color.TRANSPARENT);
+            tv.setTextColor(DIM);
+        }
         tv.setBackground(g);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
-        lp.setMargins(0, dp(3), 0, dp(3));
         msgBox.addView(tv, lp);
-        msgScroll.post(() -> msgScroll.fullScroll(View.FOCUS_DOWN));
+        tv.setAlpha(0f); tv.setTranslationY(dp(8));
+        tv.animate().alpha(1f).translationY(0).setDuration(150).start();
+        scrollDown(false);
     }
 
-    private void userMessage(String t) { bubble(t, ACCENT, Color.WHITE); }
-    @Override public void aiMessage(String t) { ui.post(() -> bubble(t, TEAL, Color.WHITE)); }
-    @Override public void systemMessage(String t) { ui.post(() -> bubble(t, 0xFF5A6572, 0xFFB8C0CA)); }
+    private void scrollDown(boolean smooth) {
+        if (msgScroll == null) return;
+        msgScroll.post(new Runnable() { @Override public void run() {
+            if (msgScroll != null && msgBox != null) msgScroll.smoothScrollTo(0, msgBox.getBottom());
+        }});
+    }
+
+    private void userMessage(String t) { bubble(t, YOU); }
+    @Override public void aiMessage(String t) { ui.post(new Runnable() { @Override public void run() { bubble(t, AI); } }); }
+    @Override public void systemMessage(String t) { ui.post(new Runnable() { @Override public void run() { bubble(t, SYS); } }); }
+
+    private void setStatus(String s) {
+        statusText = s;
+        if (statusView != null) statusView.setText(s);
+    }
     @Override public void thinking(boolean on) {
-        ui.post(() -> { if (titleView != null) titleView.setText(on ? "thinking..." : (SecureStore.model(this) != null ? SecureStore.model(this) : "Agentic")); });
+        ui.post(new Runnable() { @Override public void run() { setStatus(on ? "working..." : "online"); } });
+    }
+    @Override public void thinkingProgress(final int chars) {
+        ui.post(new Runnable() { @Override public void run() { setStatus("receiving " + chars + "..."); } });
     }
 
-    @Override public void askUser(String question, AgentLoop.YesNo cb) {
-        ui.post(() -> {
+    @Override public void askUser(final String question, final AgentLoop.YesNo cb) {
+        ui.post(new Runnable() { @Override public void run() {
             systemMessage(question);
-            if (msgBox == null) { openChat(); }
-            LinearLayout row = new LinearLayout(this);
+            if (msgBox == null) { openChat(); systemMessage(question); }
+            LinearLayout row = new LinearLayout(OverlayService.this);
+            row.setGravity(Gravity.CENTER);
             Button yes = smallBtn("YES", ACCENT); yes.setTextColor(0xFF0B0F13);
             Button no = smallBtn("NO", RED);
+            LinearLayout.LayoutParams ylp = new LinearLayout.LayoutParams(dp(90), dp(36));
+            ylp.setMargins(dp(6), dp(4), dp(6), dp(4));
+            yes.setLayoutParams(ylp);
+            LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(dp(90), dp(36));
+            nlp.setMargins(dp(6), dp(4), dp(6), dp(4));
+            no.setLayoutParams(nlp);
             final boolean[] answered = {false};
-            yes.setOnClickListener(v -> { if (answered[0]) return; answered[0] = true; row.setEnabled(false); yes.setAlpha(0.4f); no.setAlpha(0.4f); cb.answer(true); });
-            no.setOnClickListener(v -> { if (answered[0]) return; answered[0] = true; row.setEnabled(false); yes.setAlpha(0.4f); no.setAlpha(0.4f); cb.answer(false); });
+            yes.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) {
+                if (answered[0]) return; answered[0] = true; yes.setAlpha(0.4f); no.setAlpha(0.4f); cb.answer(true);
+            }});
+            no.setOnClickListener(new View.OnClickListener() { @Override public void onClick(View v) {
+                if (answered[0]) return; answered[0] = true; yes.setAlpha(0.4f); no.setAlpha(0.4f); cb.answer(false);
+            }});
             row.addView(yes); row.addView(no);
             msgBox.addView(row);
-            msgScroll.post(() -> msgScroll.fullScroll(View.FOCUS_DOWN));
-        });
+            scrollDown(true);
+        }});
     }
 
-    @Override public void loopEnded() { ui.post(() -> {}); }
+    @Override public void loopEnded() { ui.post(new Runnable() { @Override public void run() { setStatus("online"); } }); }
 
     private void replayTranscript() {
         List<String> copy = new ArrayList<>(transcript);
         transcript.clear();
         for (String line : copy) {
-            if (line.startsWith("AI: ")) bubble(line.substring(4), TEAL, Color.WHITE);
-            else if (line.startsWith("YOU: ")) bubble(line.substring(5), ACCENT, Color.WHITE);
-            else bubble(line.substring(5), 0xFF5A6572, 0xFFB8C0CA);
+            int sep = line.indexOf('|');
+            int who = Integer.parseInt(line.substring(0, sep));
+            bubble(line.substring(sep + 1), who);
         }
     }
 
@@ -383,14 +483,14 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         if (loop != null) { loop.stopped = true; loop.interrupt(); loop = null; }
     }
 
-    /** Red OFF / screen off / glitch: halt AI mid-action, remove ball+window. */
+    /** Red OFF / screen off / fatal glitch: halt AI mid-action, remove ball+window. */
     private void shutdownNow() {
         stopAgent();
-        ui.post(() -> {
+        ui.post(new Runnable() { @Override public void run() {
             hideChat(false);
             hideBall();
             stopSelf();
-        });
+        }});
     }
 
     /** 5s long-press: remove UI, keep saved API config, do nothing else. */
@@ -400,10 +500,10 @@ public class OverlayService extends Service implements AgentLoop.Ui {
         stopAgent();
         try { unregisterReceiver(screenOff); } catch (Exception ignored) {}
         if (orient != null) orient.disable();
-        ui.post(() -> {
+        ui.post(new Runnable() { @Override public void run() {
             if (ball != null) { try { wm.removeView(ball); } catch (Exception ignored) {} ball = null; }
             if (chat != null) { try { wm.removeView(chat); } catch (Exception ignored) {} chat = null; }
-        });
+        }});
         super.onDestroy();
     }
 }

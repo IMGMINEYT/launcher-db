@@ -4,6 +4,9 @@ import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
+import android.os.Build;
+import android.provider.Settings;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.os.Bundle;
@@ -39,20 +42,25 @@ public class AgentService extends AccessibilityService {
 
     /** Compact dump of the interactive screen. ids are valid until the next dump. */
     public synchronized String dump() {
-        nodes.clear();
-        AccessibilityNodeInfo root = getRootInActiveWindow();
-        if (root == null) return "(screen unavailable)";
-        StringBuilder sb = new StringBuilder();
-        int[] sz = screenSize();
-        sb.append("Screen ").append(sz[0]).append("x").append(sz[1]).append('\n');
-        int[] count = {0};
-        walk(root, sb, count);
-        if (count[0] == 0) return sb.append("(no interactive elements)\n").toString();
-        return sb.toString();
+        try {
+            nodes.clear();
+            AccessibilityNodeInfo root = getRootInActiveWindow();
+            if (root == null) return "(screen unavailable)";
+            StringBuilder sb = new StringBuilder();
+            int[] sz = screenSize();
+            sb.append("App: ").append(root.getPackageName() != null ? root.getPackageName() : "?").append('\n');
+            sb.append("Screen ").append(sz[0]).append("x").append(sz[1]).append('\n');
+            int[] count = {0};
+            walk(root, sb, count, 0);
+            if (count[0] == 0) return sb.append("(no interactive elements)\n").toString();
+            return sb.toString();
+        } catch (Throwable t) {
+            return "(screen read error: " + t.getClass().getSimpleName() + ")";
+        }
     }
 
-    private void walk(AccessibilityNodeInfo n, StringBuilder sb, int[] count) {
-        if (n == null || count[0] >= 140) return;
+    private void walk(AccessibilityNodeInfo n, StringBuilder sb, int[] count, int depth) {
+        if (n == null || count[0] >= 100 || depth > 25) return;
         CharSequence t = n.getText(), d = n.getContentDescription();
         boolean clickable = n.isClickable(), editable = n.isEditable(), scrollable = n.isScrollable();
         if ((clickable || editable || scrollable || (t != null && t.length() > 0) || (d != null && d.length() > 0)) && n.isVisibleToUser()) {
@@ -60,18 +68,23 @@ public class AgentService extends AccessibilityService {
             int id = count[0];
             nodes.put(id, n);
             Rect r = new Rect(); n.getBoundsInScreen(r);
-            String cls = n.getClassName() != null ? n.getClassName().toString() : "?";
-            int dot = cls.lastIndexOf('.'); if (dot >= 0) cls = cls.substring(dot + 1);
-            sb.append('#').append(id).append(" [").append(cls).append(']');
+            String cls = n.getClassName() != null ? n.getClassName().toString() : "";
+            String role;
+            if (editable) role = "INPUT";
+            else if (cls.contains("Button")) role = "BTN";
+            else if (scrollable || cls.contains("RecyclerView") || cls.contains("ListView") || cls.contains("ScrollView")) role = "LIST";
+            else if (cls.contains("Image")) role = "IMG";
+            else if (clickable) role = "BTN";
+            else role = "TXT";
+            sb.append('#').append(id).append(" [").append(role).append(']');
             if (t != null && t.length() > 0) sb.append(" \"").append(cut(t.toString(), 60)).append('"');
             if (d != null && d.length() > 0) sb.append(" (").append(cut(d.toString(), 40)).append(')');
             sb.append(" @").append(r.centerX()).append(',').append(r.centerY());
-            if (clickable) sb.append(" clickable");
-            if (editable) sb.append(" editable");
-            if (scrollable) sb.append(" scrollable");
+            if (n.isFocused()) sb.append(" focused");
+            if (n.isSelected()) sb.append(" selected");
             sb.append('\n');
         }
-        for (int i = 0; i < n.getChildCount() && count[0] < 140; i++) walk(n.getChild(i), sb, count);
+        for (int i = 0; i < n.getChildCount() && count[0] < 100; i++) walk(n.getChild(i), sb, count, depth + 1);
     }
 
     private static String cut(String s, int max) {
@@ -118,6 +131,51 @@ public class AgentService extends AccessibilityService {
                 case "home": return performGlobalAction(GLOBAL_ACTION_HOME) ? "ok: home" : "error: home failed";
                 case "recents": return performGlobalAction(GLOBAL_ACTION_RECENTS) ? "ok: recents" : "error: recents failed";
                 case "wait": return "ok: waited";
+                case "long_press_id": {
+                    AccessibilityNodeInfo n = nodes.get(a.getInt("id"));
+                    if (n == null) return "error: no such element id (screen changed)";
+                    return n.performAction(AccessibilityNodeInfo.ACTION_LONG_CLICK) ? "ok: long-pressed #" + a.getInt("id") : longPressCenter(n);
+                }
+                case "long_press": return longPress(a.getInt("x"), a.getInt("y"));
+                case "scroll": {
+                    String dir = a.optString("direction", "down");
+                    int nodeAction = "up".equals(dir) ? AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD : AccessibilityNodeInfo.ACTION_SCROLL_FORWARD;
+                    if ("left".equals(dir) || "right".equals(dir)) {
+                        int[] sz = screenSize();
+                        int cy = sz[1] / 2;
+                        return "left".equals(dir) ? swipe(sz[0] * 4 / 5, cy, sz[0] / 5, cy, 300) : swipe(sz[0] / 5, cy, sz[0] * 4 / 5, cy, 300);
+                    }
+                    for (AccessibilityNodeInfo n : nodes.values()) {
+                        if (n != null && n.isScrollable() && n.isVisibleToUser() && n.performAction(nodeAction))
+                            return "ok: scrolled " + dir;
+                    }
+                    int[] sz = screenSize();
+                    return "up".equals(dir) ? swipe(sz[0] / 2, sz[1] / 3, sz[0] / 2, sz[1] * 3 / 4, 350)
+                                            : swipe(sz[0] / 2, sz[1] * 3 / 4, sz[0] / 2, sz[1] / 3, 350);
+                }
+                case "notifications": return performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS) ? "ok: notification shade" : "error: failed";
+                case "quick_settings": return performGlobalAction(GLOBAL_ACTION_QUICK_SETTINGS) ? "ok: quick settings" : "error: failed";
+                case "power_menu": return performGlobalAction(GLOBAL_ACTION_POWER_DIALOG) ? "ok: power menu" : "error: failed";
+                case "lock_screen":
+                    if (Build.VERSION.SDK_INT >= 28)
+                        return performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN) ? "ok: locked" : "error: failed";
+                    return "error: needs Android 9+";
+                case "volume_up": return volume(AudioManager.ADJUST_RAISE);
+                case "volume_down": return volume(AudioManager.ADJUST_LOWER);
+                case "rotate": {
+                    if (!Settings.System.canWrite(this)) return "error: Modify Settings permission off - user must enable it in the Agentic app";
+                    String mode = a.optString("mode", "auto");
+                    try {
+                        if ("auto".equals(mode)) {
+                            Settings.System.putInt(getContentResolver(), Settings.System.ACCELEROMETER_ROTATION, 1);
+                            return "ok: auto-rotate on";
+                        }
+                        Settings.System.putInt(getContentResolver(), Settings.System.ACCELEROMETER_ROTATION, 0);
+                        int rot = "landscape".equals(mode) ? 1 : "landscape_reverse".equals(mode) ? 3 : "portrait_reverse".equals(mode) ? 2 : 0;
+                        Settings.System.putInt(getContentResolver(), Settings.System.USER_ROTATION, rot);
+                        return "ok: rotated " + mode;
+                    } catch (Exception e) { return "error: " + e.getMessage(); }
+                }
                 case "open_app": {
                     String pkg = a.getString("package");
                     Intent i = getPackageManager().getLaunchIntentForPackage(pkg);
@@ -136,6 +194,26 @@ public class AgentService extends AccessibilityService {
     private String tapCenter(AccessibilityNodeInfo n) {
         Rect r = new Rect(); n.getBoundsInScreen(r);
         return tap(r.centerX(), r.centerY());
+    }
+
+    private String longPressCenter(AccessibilityNodeInfo n) {
+        Rect r = new Rect(); n.getBoundsInScreen(r);
+        return longPress(r.centerX(), r.centerY());
+    }
+
+    private String longPress(int x, int y) {
+        Path p = new Path(); p.moveTo(x, y);
+        GestureDescription g = new GestureDescription.Builder()
+                .addStroke(new GestureDescription.StrokeDescription(p, 0, 700)).build();
+        return dispatchGesture(g, null, null) ? "ok: long-pressed " + x + "," + y : "error: long-press rejected";
+    }
+
+    private String volume(int dir) {
+        try {
+            AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            am.adjustStreamVolume(AudioManager.STREAM_MUSIC, dir, AudioManager.FLAG_SHOW_UI);
+            return "ok: volume " + (dir == AudioManager.ADJUST_RAISE ? "up" : "down");
+        } catch (Exception e) { return "error: " + e.getMessage(); }
     }
 
     private String tap(int x, int y) {

@@ -43,6 +43,8 @@ public class MainActivity extends Activity {
         String s = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
         return s != null && s.contains(getPackageName());
     }
+    private boolean writeSettingsOk() { return Settings.System.canWrite(this); }
+
     private boolean notifOk() {
         return Build.VERSION.SDK_INT < 33 || checkSelfPermission("android.permission.POST_NOTIFICATIONS") == PackageManager.PERMISSION_GRANTED;
     }
@@ -61,7 +63,7 @@ public class MainActivity extends Activity {
         status.setTextColor(DIM); status.setTextSize(13); status.setGravity(Gravity.CENTER);
         status.setPadding(0, dp(6), 0, dp(18));
         root.addView(status);
-        if (!overlayOk() || !a11yOk() || !notifOk()) stepPermissions();
+        if (!overlayOk() || !a11yOk() || !notifOk() || !writeSettingsOk()) stepPermissions();
         else if (!SecureStore.configured(this)) stepApi();
         else stepStart();
         setContentView(root);
@@ -89,6 +91,11 @@ public class MainActivity extends Activity {
         if (!overlayOk()) {
             Button b = btn("ALLOW FLOATING BALL", 0xFF37414C);
             b.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()))));
+            root.addView(b);
+        }
+        if (!writeSettingsOk()) {
+            Button b = btn("ALLOW SCREEN ROTATE", 0xFF37414C);
+            b.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:" + getPackageName()))));
             root.addView(b);
         }
         if (!a11yOk()) {
