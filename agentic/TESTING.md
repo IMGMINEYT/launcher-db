@@ -32,3 +32,9 @@ This is a test candidate, not a production-ready or fully tested release.
 This milestone is only incremental UI/control work. Separate Tasks navigation, task priorities/real queue/duplicate detection, full provider editing and manual-model/configuration controls, editable/disableable memory, voice, risk-classified confirmations, encrypted structured task history, usage reporting and comprehensive diagnostics are not all implemented. The current history store is app-private SharedPreferences JSON, not an encrypted Room database.
 
 Do not treat the earlier milestone labels as full completion of the corresponding master-prompt sections.
+
+# v1.1.1 speed pass
+- Screenshot/OCR no longer run every step: capture only when the screen changed AND (vision first look, explicit "look" action, or a text-poor screen); OCR cached per screen hash; images recycled.
+- Old screen observations are dropped from API history (only the latest dump is sent), dump trimmed to 60 elements with shorter text, OCR capped at 25 lines.
+- Post-action settle wait reduced; per-step timings (screen/photo/ocr/AI ms) logged in the collapsible step narration for diagnostics.
+- Still not device-tested: actual step latency depends on his provider/model speed.

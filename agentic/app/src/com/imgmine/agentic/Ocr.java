@@ -49,11 +49,11 @@ public final class Ocr {
                 String s = line.getText();
                 if (s == null || s.trim().isEmpty()) continue;
                 s = s.replace('\n', ' ').trim();
-                sb.append('"').append(s.length() > 80 ? s.substring(0, 80) : s).append('"');
+                sb.append('"').append(s.length() > 80 ? s.substring(0, 60) : s).append('"');
                 Rect r = line.getBoundingBox();
                 if (r != null) sb.append(" @").append(r.centerX()).append(',').append(r.centerY());
                 sb.append('\n');
-                if (++n >= 40) return sb.toString();
+                if (++n >= 25) return sb.toString();
             }
         }
         return sb.toString();

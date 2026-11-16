@@ -193,6 +193,7 @@ public class AgentLoop extends Thread {
         "{\"thought\":\"...\",\"action\":\"volume_up\"} / {\"action\":\"volume_down\"}\n" +
         "{\"thought\":\"...\",\"action\":\"rotate\",\"mode\":\"auto|portrait|landscape|portrait_reverse|landscape_reverse\"} - rotate the screen\n" +
         "{\"thought\":\"...\",\"action\":\"power_menu\"} / {\"action\":\"lock_screen\"}\n" +
+        "{\"thought\":\"...\",\"action\":\"look\"} - need to SEE the screen (photo attached next observation; use only when the text dump is not enough)\n" +
         "{\"thought\":\"...\",\"action\":\"ask\",\"text\":\"...\"} - ask the user. REQUIRED when the task is ambiguous or a choice matters (what to send, which item, payments). Never guess for payments or personal messages.\n" +
         "{\"thought\":\"...\",\"action\":\"done\",\"text\":\"...\"} - task complete; short friendly summary in the user's language.\n\n" +
         "RULES:\n" +
@@ -266,6 +267,9 @@ public class AgentLoop extends Thread {
             int steps = 0, retries = 0;
             String lastResult = "(start)";
             String prevSig = null, pendingOpenPkg = null, lastAction = "";
+            String prevShotSig = null, ocrCacheSig = null, ocrCache = null;
+            boolean forceVision = false;
+            int lastObsIndex = -1;
             int sameCount = 0;
             while (!stopped && steps < MAX_STEPS) {
                 awaitResume();
@@ -276,15 +280,40 @@ public class AgentLoop extends Thread {
                 if (pending != null)
                     msgs.put(new JSONObject().put("role", "user").put("content",
                         "NEW MESSAGE FROM USER (steer the current task with it): " + pending));
+                long t0 = System.currentTimeMillis();
                 String screen = svc.dump();
-                Bitmap shot = svc.screenshotBitmap();
-                if (shot != null) { try { svc.updatePreview(shot); } catch (RuntimeException previewError) { svc.clearPreview(); } }
-                if (shot != null) {
-                    String ocr = Ocr.recognize(shot);
-                    if (ocr != null && ocr.length() > 0)
-                        screen += "OCR TEXT VISIBLE ON SCREEN (includes text inside images/web that the tree missed):\n" + ocr;
-                }
+                long tDump = System.currentTimeMillis() - t0;
                 String sig = Integer.toHexString(screen.hashCode());
+                // Speed: photo only when it can add info - vision model's first look / explicit "look",
+                // or a text-poor screen (games, image feeds) where OCR is the only way to read it.
+                boolean sparse = screen.length() < 900;
+                boolean wantShot = (visionOn && (steps == 1 || forceVision)) || sparse;
+                forceVision = false;
+                Bitmap shot = null;
+                long tShot = 0, tOcr = 0;
+                if (sig.equals(prevShotSig) || sig.equals(prevSig)) {
+                    // unchanged screen: reuse cached OCR, no new capture
+                    if (ocrCache != null && sig.equals(ocrCacheSig)) screen += ocrCache;
+                } else if (wantShot) {
+                    long ts = System.currentTimeMillis();
+                    shot = svc.screenshotBitmap();
+                    tShot = System.currentTimeMillis() - ts;
+                    if (shot != null) {
+                        prevShotSig = sig;
+                        try { svc.updatePreview(shot); } catch (RuntimeException previewError) { svc.clearPreview(); }
+                    }
+                }
+                boolean sendImage = visionOn && shot != null;
+                if (shot != null && !sendImage) {
+                    long to = System.currentTimeMillis();
+                    String ocr = Ocr.recognize(shot);
+                    tOcr = System.currentTimeMillis() - to;
+                    if (ocr != null && ocr.length() > 0) {
+                        String block = "OCR TEXT VISIBLE ON SCREEN (text inside images/web the tree missed):\n" + ocr;
+                        screen += block;
+                        ocrCache = block; ocrCacheSig = sig;
+                    }
+                }
                 String fg = foregroundOf(screen);
                 if (!fg.equals(lastGuidedPkg)) {
                     String guide = AppKnowledge.guideFor(fg);
@@ -324,8 +353,9 @@ public class AgentLoop extends Thread {
                 String userMsg = task.toString() + "\n\nSCREEN:\n" + screen + "\nLAST RESULT: " + lastResult + note +
                         (moneyMode ? "\nREMINDER: money-related - confirm steps with the user via ask." : "");
                 task.setLength(0);
+                if (lastObsIndex > 0 && lastObsIndex < msgs.length()) msgs.remove(lastObsIndex); // old screen dump: stale, drop it
                 JSONObject um = new JSONObject().put("role", "user");
-                String shot64 = (visionOn && shot != null) ? Ocr.jpeg64(shot) : null;
+                String shot64 = sendImage ? Ocr.jpeg64(shot) : null;
                 if (shot != null) shot.recycle();
                 if (shot64 != null) {
                     JSONArray parts = new JSONArray();
@@ -335,8 +365,11 @@ public class AgentLoop extends Thread {
                     um.put("content", parts);
                 } else um.put("content", userMsg);
                 msgs.put(um);
+                lastObsIndex = msgs.length() - 1;
                 ensureBudget(msgs);
+                if (lastObsIndex >= msgs.length()) lastObsIndex = -1; // budget trim may have dropped it
                 ui.thinking(true);
+                long tApi = System.currentTimeMillis();
                 String reply;
                 try {
                     try {
@@ -357,6 +390,10 @@ public class AgentLoop extends Thread {
                         reply = callWithRetry(fb, msgs);
                     } else throw primary;
                 } finally { ui.thinking(false); }
+                ui.systemMessage("step " + steps + ": screen " + tDump + "ms"
+                    + (tShot > 0 ? ", photo " + tShot + "ms" : "")
+                    + (tOcr > 0 ? ", ocr " + tOcr + "ms" : "")
+                    + ", AI " + ((System.currentTimeMillis() - tApi) / 1000f) + "s");
                 if (stopped) break;
                 if (paused || MainActivity.foreground || observedPauseEpoch != pauseEpoch) {
                     awaitResume();
@@ -380,6 +417,11 @@ public class AgentLoop extends Thread {
                     String plan = a.optString("plan", "");
                     if (plan.length() > 0) ui.aiMessage("Plan:\n" + plan);
                     lastResult = "plan noted; now execute step 1.";
+                    continue;
+                }
+                if ("look".equals(act)) {
+                    forceVision = true;
+                    lastResult = "ok: fresh photo attached to this observation.";
                     continue;
                 }
                 if ("ask".equals(act)) {
@@ -420,7 +462,7 @@ public class AgentLoop extends Thread {
                     retries++;
                     if (retries >= 4) { lastResult += " | hint: try a different approach (scroll, coordinates, or ask the user)."; }
                 } else retries = 0;
-                int wait = "wait".equals(act) ? Math.min(a.optInt("ms", 1000), 10000) : 250;
+                int wait = "wait".equals(act) ? Math.min(a.optInt("ms", 1000), 10000) : 150;
                 try { Thread.sleep(wait); } catch (InterruptedException ignored) { break; }
             }
             if (!stopped && steps >= MAX_STEPS) {

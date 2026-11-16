@@ -151,7 +151,7 @@ public class AgentService extends AccessibilityService {
     }
 
     private void walk(AccessibilityNodeInfo n, StringBuilder sb, int[] count, int depth) {
-        if (n == null || count[0] >= 100 || depth > 25) return;
+        if (n == null || count[0] >= 60 || depth > 25) return;
         CharSequence pk = n.getPackageName();
         if (pk != null && getPackageName().contentEquals(pk)) return; // never expose our own UI
         CharSequence t = n.getText(), d = n.getContentDescription();
@@ -177,10 +177,10 @@ public class AgentService extends AccessibilityService {
             else if (clickable) role = "BTN";
             else role = "TXT";
             sb.append('#').append(id).append(" [").append(role).append(']');
-            if (t != null && t.length() > 0) sb.append(" \"").append(cut(t.toString(), 60)).append('"');
-            if (d != null && d.length() > 0) sb.append(" (").append(cut(d.toString(), 40)).append(')');
+            if (t != null && t.length() > 0) sb.append(" \"").append(cut(t.toString(), 40)).append('"');
+            if (d != null && d.length() > 0) sb.append(" (").append(cut(d.toString(), 30)).append(')');
             if (hint != null && hint.length() > 0) sb.append(" hint:").append(cut(hint.toString(), 30));
-            if (rid != null && rid.length() > 0) sb.append(" id:").append(cut(rid, 28));
+            if (rid != null && rid.length() > 0) sb.append(" id:").append(cut(rid, 20));
             sb.append(" @").append(r.centerX()).append(',').append(r.centerY());
             if (n.isFocused()) sb.append(" focused");
             if (n.isSelected()) sb.append(" selected");
@@ -188,7 +188,7 @@ public class AgentService extends AccessibilityService {
             if (!n.isEnabled()) sb.append(" disabled");
             sb.append('\n');
         }
-        for (int i = 0; i < n.getChildCount() && count[0] < 100; i++) walk(n.getChild(i), sb, count, depth + 1);
+        for (int i = 0; i < n.getChildCount() && count[0] < 60; i++) walk(n.getChild(i), sb, count, depth + 1);
     }
 
     private static String cut(String s, int max) {
