@@ -56,9 +56,9 @@ public class AgentService extends AccessibilityService {
         return new int[]{ m.widthPixels, m.heightPixels };
     }
 
-    /** Live dump: returns the event-refreshed state when fresh, else rebuilds now. */
+    /** Live dump: fresh build while the agent runs (change detection + valid ids need it), cached when idle. */
     public String dump() {
-        if (liveDump != null && System.currentTimeMillis() - liveAt < 1500) return liveDump;
+        if (!agentActive && liveDump != null && System.currentTimeMillis() - liveAt < 1500) return liveDump;
         String d = buildDump();
         liveDump = d; liveAt = System.currentTimeMillis();
         return d;

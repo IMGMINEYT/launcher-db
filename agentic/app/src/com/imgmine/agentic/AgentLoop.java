@@ -289,11 +289,15 @@ public class AgentLoop extends Thread {
                 if (sig.equals(prevSig)) {
                     sameCount++;
                     note.append("\nVERIFY: the screen did NOT change after your last action (").append(lastAction)
-                        .append(") - it had no visible effect; change approach, do not repeat it.");
+                        .append(") - it had no visible effect; do not repeat it.");
+                    if (sameCount == 2)
+                        note.append("\nSTUCK-WARNING: screen unchanged for 2 steps. CHANGE STRATEGY NOW: use the app's search, scroll, a different element, or coordinates - never repeat the same tap.");
+                    if (sameCount == 4)
+                        note.append("\nSTUCK-CRITICAL: screen unchanged for 4 steps. Try a completely different route (back out, search bar, recents) - keep going, do not stop.");
                 } else sameCount = 0;
                 prevSig = sig;
-                if (sameCount >= 2) {
-                    lastAiText = "Main loop me phas gaya hoon - screen badal hi nahi rahi. Naya instruction bhejo ya OFF dabao.";
+                if (sameCount >= 6) {
+                    lastAiText = "Main kahin atak gaya hoon - screen kai steps se same hai. Thoda guide karo (kya dikh raha hai?) ya naya instruction do.";
                     ui.aiMessage(lastAiText);
                     break;
                 }
