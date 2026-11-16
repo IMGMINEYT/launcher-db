@@ -18,9 +18,12 @@ public final class Api {
     public static class ApiError extends Exception { ApiError(String m){ super(m); } }
     public static class RateLimited extends ApiError { RateLimited(String m){ super(m); } }
     public static class ContextTooLong extends ApiError { ContextTooLong(String m){ super(m); } }
+    public static class VisionRejected extends ApiError { VisionRejected(String m){ super(m); } }
 
     static ApiError classify(int code, String raw) {
         String l = raw == null ? "" : raw.toLowerCase();
+        if (code == 400 && (l.contains("image") || l.contains("vision") || l.contains("multimodal") || l.contains("modality")))
+            return new VisionRejected("Model images support nahi karta");
         if (code == 429 || l.contains("rate limit") || l.contains("rate_limit") || l.contains("quota") || l.contains("insufficient"))
             return new RateLimited(friendly(code));
         if ((l.contains("context") && (l.contains("length") || l.contains("window"))) || l.contains("maximum context")

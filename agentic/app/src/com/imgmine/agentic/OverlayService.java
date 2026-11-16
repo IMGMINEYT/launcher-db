@@ -64,8 +64,11 @@ public class OverlayService extends Service implements AgentLoop.Ui {
 
     @Override public IBinder onBind(Intent i) { return null; }
 
+    public static volatile OverlayService instance;
+
     @Override public void onCreate() {
         super.onCreate();
+        instance = this;
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         pixel = Typeface.create("sans-serif-medium", Typeface.NORMAL);
         final Thread mainThread = Looper.getMainLooper().getThread();
@@ -510,6 +513,15 @@ public class OverlayService extends Service implements AgentLoop.Ui {
             int who = Integer.parseInt(line.substring(0, sep));
             bubble(line.substring(sep + 1), who);
         }
+    }
+
+    /** Hide/show ball+chat during screenshots so the AI never sees its own UI in captures. */
+    public void setUiVisible(final boolean vis) {
+        ui.post(new Runnable() { @Override public void run() {
+            int v = vis ? View.VISIBLE : View.INVISIBLE;
+            if (ball != null) ball.setVisibility(v);
+            if (chat != null) chat.setVisibility(v);
+        } });
     }
 
     /** CLR: wipe bubbles, transcript and session memory. Agent keeps running if active. */

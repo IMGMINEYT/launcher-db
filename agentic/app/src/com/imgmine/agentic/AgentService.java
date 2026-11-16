@@ -8,12 +8,14 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.os.Build;
 import android.provider.Settings;
+import android.graphics.Bitmap;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -31,7 +33,18 @@ public class AgentService extends AccessibilityService {
     public volatile long lastEventAt = 0;
 
     @Override public void onServiceConnected() { instance = this; }
-    @Override public void onAccessibilityEvent(AccessibilityEvent e) { lastEventAt = System.currentTimeMillis(); }
+    // ---- live screen state: refreshed on accessibility events (debounced), invisible to user ----
+    private volatile String liveDump;
+    private volatile long liveAt;
+    private final Runnable liveRefresh = new Runnable() { @Override public void run() {
+        try { liveDump = buildDump(); liveAt = System.currentTimeMillis(); } catch (Throwable ignored) {}
+    } };
+
+    @Override public void onAccessibilityEvent(AccessibilityEvent e) {
+        lastEventAt = System.currentTimeMillis();
+        main.removeCallbacks(liveRefresh);
+        main.postDelayed(liveRefresh, 350); // debounced: fast but battery-friendly
+    }
     @Override public void onInterrupt() {}
     @Override public void onDestroy() { instance = null; super.onDestroy(); }
     @Override public boolean onUnbind(Intent i) { instance = null; return super.onUnbind(i); }
@@ -42,8 +55,42 @@ public class AgentService extends AccessibilityService {
         return new int[]{ m.widthPixels, m.heightPixels };
     }
 
+    /** Live dump: returns the event-refreshed state when fresh, else rebuilds now. */
+    public String dump() {
+        if (liveDump != null && System.currentTimeMillis() - liveAt < 1500) return liveDump;
+        String d = buildDump();
+        liveDump = d; liveAt = System.currentTimeMillis();
+        return d;
+    }
+
+    /** Full-screen screenshot (API 30+), overlay hidden during capture. Null when unavailable. */
+    public Bitmap screenshotBitmap() {
+        if (Build.VERSION.SDK_INT < 30) return null;
+        OverlayService os = OverlayService.instance;
+        if (os != null) os.setUiVisible(false);
+        try { Thread.sleep(140); } catch (InterruptedException ie) { if (os != null) os.setUiVisible(true); return null; }
+        final CountDownLatch latch = new CountDownLatch(1);
+        final Bitmap[] out = {null};
+        try {
+            takeScreenshot(Display.DEFAULT_DISPLAY, getMainExecutor(), new TakeScreenshotCallback() {
+                @Override public void onSuccess(ScreenshotResult r) {
+                    try {
+                        Bitmap hw = Bitmap.wrapHardwareBuffer(r.getHardwareBuffer(), r.getColorSpace());
+                        r.getHardwareBuffer().close();
+                        if (hw != null) out[0] = hw.copy(Bitmap.Config.ARGB_8888, false);
+                    } catch (Throwable ignored) {}
+                    latch.countDown();
+                }
+                @Override public void onFailure(int i) { latch.countDown(); }
+            });
+            latch.await(4, TimeUnit.SECONDS);
+        } catch (Throwable ignored) {}
+        if (os != null) os.setUiVisible(true);
+        return out[0];
+    }
+
     /** Compact dump of the interactive screen. ids are valid until the next dump. */
-    public synchronized String dump() {
+    public synchronized String buildDump() {
         try {
             nodes.clear();
             AccessibilityNodeInfo root = pickRoot();
@@ -91,8 +138,15 @@ public class AgentService extends AccessibilityService {
         CharSequence pk = n.getPackageName();
         if (pk != null && getPackageName().contentEquals(pk)) return; // never expose our own UI
         CharSequence t = n.getText(), d = n.getContentDescription();
+        CharSequence hint = Build.VERSION.SDK_INT >= 26 ? n.getHintText() : null;
+        String rid = null;
+        try {
+            String full = n.getViewIdResourceName();
+            if (full != null) { int sl = full.lastIndexOf('/'); rid = full.substring(sl + 1); }
+        } catch (Throwable ignored) {}
         boolean clickable = n.isClickable(), editable = n.isEditable(), scrollable = n.isScrollable();
-        if ((clickable || editable || scrollable || (t != null && t.length() > 0) || (d != null && d.length() > 0)) && n.isVisibleToUser()) {
+        if ((clickable || editable || scrollable || (t != null && t.length() > 0) || (d != null && d.length() > 0)
+                || (hint != null && hint.length() > 0)) && n.isVisibleToUser()) {
             count[0]++;
             int id = count[0];
             nodes.put(id, n);
@@ -108,9 +162,13 @@ public class AgentService extends AccessibilityService {
             sb.append('#').append(id).append(" [").append(role).append(']');
             if (t != null && t.length() > 0) sb.append(" \"").append(cut(t.toString(), 60)).append('"');
             if (d != null && d.length() > 0) sb.append(" (").append(cut(d.toString(), 40)).append(')');
+            if (hint != null && hint.length() > 0) sb.append(" hint:").append(cut(hint.toString(), 30));
+            if (rid != null && rid.length() > 0) sb.append(" id:").append(cut(rid, 28));
             sb.append(" @").append(r.centerX()).append(',').append(r.centerY());
             if (n.isFocused()) sb.append(" focused");
             if (n.isSelected()) sb.append(" selected");
+            if (n.isChecked()) sb.append(" checked");
+            if (!n.isEnabled()) sb.append(" disabled");
             sb.append('\n');
         }
         for (int i = 0; i < n.getChildCount() && count[0] < 100; i++) walk(n.getChild(i), sb, count, depth + 1);

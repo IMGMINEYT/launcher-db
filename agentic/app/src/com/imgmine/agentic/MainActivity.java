@@ -181,11 +181,14 @@ public class MainActivity extends Activity {
                     final String root0 = res[0];
                     final String[] models = new String[res.length - 1];
                     System.arraycopy(res, 1, models, 0, models.length);
+                    final String[] display = new String[models.length];
+                    for (int i = 0; i < models.length; i++)
+                        display[i] = models[i] + (AgentLoop.isVisionModel(models[i]) ? "   [vision]" : "");
                     runOnUiThread(() -> {
                         spin.setVisibility(View.GONE); connect.setEnabled(true);
                         new AlertDialog.Builder(this)
-                            .setTitle("Select model (" + models.length + ")")
-                            .setItems(models, (d, which) -> {
+                            .setTitle("Select model (" + models.length + ") - [vision] = photos/samajh sakta hai")
+                            .setItems(display, (d, which) -> {
                                 try {
                                     SecureStore.saveConfig(this, root0, k, models[which]);
                                     render();

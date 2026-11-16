@@ -1,6 +1,7 @@
 package com.imgmine.agentic;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import org.json.JSONArray;
@@ -43,28 +44,71 @@ public class AgentLoop extends Thread {
         this.mem = mem;
     }
 
+    /** Known vision-capable model ids (OpenAI-compatible multimodal). */
+    public static boolean isVisionModel(String id) {
+        if (id == null) return false;
+        String s = id.toLowerCase();
+        String[] pats = {"vision", "gpt-4o", "gpt-4.1", "gpt-5", "claude-3", "claude-4", "sonnet-4", "opus-4",
+            "gemini", "llava", "pixtral", "minicpm", "molmo", "internvl", "grok-2", "grok-4"};
+        for (String p : pats) if (s.contains(p)) return true;
+        if (s.contains("qwen") && s.contains("vl")) return true;
+        if (s.contains("llama-3.2") && (s.contains("11b") || s.contains("90b"))) return true;
+        return false;
+    }
+
     // ---- context/token management ----
     private static int estTokens(JSONArray msgs) {
         int chars = 0;
         for (int i = 0; i < msgs.length(); i++) {
             JSONObject o = msgs.optJSONObject(i);
-            if (o != null) chars += o.optString("content").length();
+            if (o == null) continue;
+            Object c = o.opt("content");
+            if (c instanceof JSONArray) {
+                JSONArray parts = (JSONArray) c;
+                for (int j = 0; j < parts.length(); j++) {
+                    JSONObject p = parts.optJSONObject(j);
+                    if (p == null) continue;
+                    chars += "image_url".equals(p.optString("type")) ? 4400 : p.optString("text").length();
+                }
+            } else chars += o.optString("content").length();
         }
         return chars / 4 + msgs.length() * 4;
     }
 
     private static final int TOKEN_BUDGET = 5000;
 
+    /** Replace image parts in all but the newest message with their text (images cost the most). */
+    private static void stripOldImages(JSONArray msgs) throws Exception {
+        for (int i = 1; i < msgs.length() - 1; i++) {
+            JSONObject o = msgs.optJSONObject(i);
+            if (o == null) continue;
+            Object c = o.opt("content");
+            if (!(c instanceof JSONArray)) continue;
+            JSONArray parts = (JSONArray) c;
+            for (int j = parts.length() - 1; j >= 0; j--) {
+                JSONObject p = parts.optJSONObject(j);
+                if (p != null && "image_url".equals(p.optString("type"))) parts.remove(j);
+            }
+            if (parts.length() == 1) {
+                JSONObject p0 = parts.optJSONObject(0);
+                if (p0 != null) o.put("content", p0.optString("text"));
+            }
+        }
+    }
+
     /** Drop oldest turns (after system) until under budget; leaves a marker so the model knows. */
     private static void ensureBudget(JSONArray msgs) throws Exception {
+        if (estTokens(msgs) <= TOKEN_BUDGET) return;
+        stripOldImages(msgs);
         if (estTokens(msgs) <= TOKEN_BUDGET) return;
         if (msgs.length() > 2)
             msgs.put(1, new JSONObject().put("role", "user").put("content", "[purani conversation memory limit ke liye compress ho gayi]"));
         while (msgs.length() > 2 && estTokens(msgs) > TOKEN_BUDGET) msgs.remove(2);
     }
 
-    /** Hard compress after a provider context-length error: keep system + last 4. */
+    /** Hard compress after a provider context-length error: strip images, keep system + last 4. */
     private static void compressHard(JSONArray msgs) {
+        try { stripOldImages(msgs); } catch (Exception ignored) {}
         while (msgs.length() > 5) msgs.remove(1);
     }
 
@@ -173,6 +217,7 @@ public class AgentLoop extends Thread {
                 ui.loopEnded();
                 return;
             }
+            boolean visionOn = isVisionModel(model);
             JSONArray msgs = new JSONArray();
             msgs.put(new JSONObject().put("role", "system").put("content", systemPrompt()));
             for (int i = 0; i < mem.length(); i++) msgs.put(mem.get(i)); // session memory
@@ -188,6 +233,12 @@ public class AgentLoop extends Thread {
                     msgs.put(new JSONObject().put("role", "user").put("content",
                         "NEW MESSAGE FROM USER (steer the current task with it): " + pending));
                 String screen = svc.dump();
+                Bitmap shot = svc.screenshotBitmap();
+                if (shot != null) {
+                    String ocr = Ocr.recognize(shot);
+                    if (ocr != null && ocr.length() > 0)
+                        screen += "OCR TEXT VISIBLE ON SCREEN (includes text inside images/web that the tree missed):\n" + ocr;
+                }
                 String sig = Integer.toHexString(screen.hashCode());
                 String fg = foregroundOf(screen);
                 StringBuilder note = new StringBuilder();
@@ -214,12 +265,29 @@ public class AgentLoop extends Thread {
                 String userMsg = task.toString() + "\n\nSCREEN:\n" + screen + "\nLAST RESULT: " + lastResult + note +
                         (moneyMode ? "\nREMINDER: money-related - confirm steps with the user via ask." : "");
                 task.setLength(0);
-                msgs.put(new JSONObject().put("role", "user").put("content", userMsg));
+                JSONObject um = new JSONObject().put("role", "user");
+                String shot64 = (visionOn && shot != null) ? Ocr.jpeg64(shot) : null;
+                if (shot64 != null) {
+                    JSONArray parts = new JSONArray();
+                    parts.put(new JSONObject().put("type", "text").put("text", userMsg));
+                    parts.put(new JSONObject().put("type", "image_url").put("image_url",
+                        new JSONObject().put("url", "data:image/jpeg;base64," + shot64)));
+                    um.put("content", parts);
+                } else um.put("content", userMsg);
+                msgs.put(um);
                 ensureBudget(msgs);
                 ui.thinking(true);
                 String reply;
                 try {
-                    reply = callWithRetry(root, model, msgs);
+                    try {
+                        reply = callWithRetry(root, model, msgs);
+                    } catch (Api.VisionRejected vr) {
+                        visionOn = false;
+                        ui.systemMessage("Is model me vision nahi hai - rich text + OCR mode me continue...");
+                        JSONObject last = msgs.getJSONObject(msgs.length() - 1);
+                        last.put("content", userMsg); // resend text-only
+                        reply = callWithRetry(root, model, msgs);
+                    }
                 } finally { ui.thinking(false); }
                 if (stopped) break;
                 msgs.put(new JSONObject().put("role", "assistant").put("content", reply));
