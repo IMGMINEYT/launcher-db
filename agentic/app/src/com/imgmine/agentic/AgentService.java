@@ -317,7 +317,7 @@ public class AgentService extends AccessibilityService {
                 case "open_app": {
                     String pkg = a.getString("package");
                     Intent i = getPackageManager().getLaunchIntentForPackage(pkg);
-                    if (i == null) return "error: app not installed: " + pkg;
+                    if (i == null) return "error: app not installed: " + pkg + " (check the installed list; use its exact package)";
                     i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(i);
                     return "ok: opened " + pkg;

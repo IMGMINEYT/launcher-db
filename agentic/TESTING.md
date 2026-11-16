@@ -51,3 +51,11 @@ Do not treat the earlier milestone labels as full completion of the correspondin
 - New actions: double_tap(_id), drag (press-hold-move), pinch (two-finger zoom), clear (empty input field).
 - Security: password fields now redacted (***) in every screen dump.
 - Compile/signature verified; gestures not device-tested (pinch/drag semantics may need tuning on real apps).
+
+# v1.4 hardening pass
+- Network resilience: transient failures (timeout, empty reply, connection errors) retry twice with 1.5s backoff on the same key before failing the task. Permanent config errors (bad host) fail fast.
+- Fixed a stale-index bug in observation-history trimming (old screen dumps now removed by identity, safe after budget trims).
+- Rotation/resize handling: dimension change invalidates cached screenshots/OCR so coordinates stay honest.
+- Empty screens ("no interactive elements" / "screen unavailable") now auto-request a photo instead of wasting steps.
+- Invalid AI replies escalate (hard JSON rule at 2, friendly failure + model-switch advice at 4) instead of looping forever.
+- "app not installed" errors now tell the AI to use the exact package from the installed list.

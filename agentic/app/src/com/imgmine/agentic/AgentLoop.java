@@ -131,7 +131,7 @@ public class AgentLoop extends Thread {
     /** Chat call with key rotation on rate-limit and compression on context overflow. */
     private String callWithRetry(SecureStore.Prov pv, JSONArray msgs) throws Exception {
         int keys = Math.max(1, pv.keyCount());
-        int compressions = 0;
+        int compressions = 0, netRetries = 0;
         for (int attempt = 0; attempt <= keys; attempt++) {
             String key = pv.currentKey();
             try {
@@ -166,6 +166,18 @@ public class AgentLoop extends Thread {
                         ? "Saari keys abhi busy hain - 1-2 min baad try karo"
                         : r.getMessage() + (pv.keyCount() <= 1 ? " (tip: app me doosri key add karo - busy hone par khud switch ho jayega)" : ""));
                 }
+            } catch (Api.ApiError e) {
+                String m = e.getMessage() != null ? e.getMessage() : "";
+                boolean transientNet = (m.contains("timeout") || m.contains("internet") || m.contains("khaali reply")
+                    || m.contains("network") || m.contains("connect")) && !m.contains("host nahi mila");
+                if (transientNet && netRetries < 2) {
+                    netRetries++;
+                    ui.systemMessage("Network hiccup - dobara koshish...");
+                    try { Thread.sleep(1500); } catch (InterruptedException ie) { throw e; }
+                    attempt--; // same key, one more try
+                    continue;
+                }
+                throw e;
             }
         }
         throw new Api.ApiError("Saari keys abhi busy hain - 1-2 min baad try karo");
@@ -304,7 +316,9 @@ public class AgentLoop extends Thread {
             String prevSig = null, pendingOpenPkg = null, lastAction = "";
             String prevShotSig = null, ocrCacheSig = null, ocrCache = null;
             boolean forceVision = false;
-            int lastObsIndex = -1;
+            JSONObject lastObs = null;
+            String prevDims = null;
+            int parseErrs = 0;
             int sameCount = 0;
             while (!stopped && steps < MAX_STEPS) {
                 awaitResume();
@@ -321,6 +335,15 @@ public class AgentLoop extends Thread {
                 String sig = Integer.toHexString(screen.hashCode());
                 // Speed: photo only when it can add info - vision model's first look / explicit "look",
                 // or a text-poor screen (games, image feeds) where OCR is the only way to read it.
+                if (screen.contains("(no interactive elements)") || screen.contains("(screen unavailable)"))
+                    forceVision = true; // tree is blind here - a photo is the only way forward
+                String dims = "";
+                if (screen.startsWith("App: ")) {
+                    int i = screen.indexOf("Screen "), j = i >= 0 ? screen.indexOf('\n', i) : -1;
+                    if (j > i) dims = screen.substring(i + 7, j);
+                }
+                if (prevDims != null && !dims.equals(prevDims)) { prevShotSig = null; ocrCache = null; ocrCacheSig = null; } // rotation/resize: old captures invalid
+                prevDims = dims;
                 boolean sparse = screen.length() < 900;
                 boolean wantShot = (visionOn && (steps == 1 || forceVision)) || sparse;
                 forceVision = false;
@@ -388,7 +411,10 @@ public class AgentLoop extends Thread {
                 String userMsg = task.toString() + "\n\nSCREEN:\n" + screen + "\nLAST RESULT: " + lastResult + note +
                         (moneyMode ? "\nREMINDER: money-related - confirm steps with the user via ask." : "");
                 task.setLength(0);
-                if (lastObsIndex > 0 && lastObsIndex < msgs.length()) msgs.remove(lastObsIndex); // old screen dump: stale, drop it
+                if (lastObs != null) { // drop the previous screen dump - it is stale
+                    for (int i = msgs.length() - 1; i > 0; i--)
+                        if (msgs.get(i) == lastObs) { msgs.remove(i); break; }
+                }
                 JSONObject um = new JSONObject().put("role", "user");
                 String shot64 = sendImage ? Ocr.jpeg64(shot) : null;
                 if (shot != null) shot.recycle();
@@ -400,9 +426,8 @@ public class AgentLoop extends Thread {
                     um.put("content", parts);
                 } else um.put("content", userMsg);
                 msgs.put(um);
-                lastObsIndex = msgs.length() - 1;
+                lastObs = um;
                 ensureBudget(msgs);
-                if (lastObsIndex >= msgs.length()) lastObsIndex = -1; // budget trim may have dropped it
                 ui.thinking(true);
                 long tApi = System.currentTimeMillis();
                 String reply;
@@ -439,7 +464,18 @@ public class AgentLoop extends Thread {
                 }
                 msgs.put(new JSONObject().put("role", "assistant").put("content", reply));
                 JSONObject a = parse(reply);
-                if (a == null) { lastResult = "error: reply was not one JSON action. Reply with exactly one raw JSON object."; continue; }
+                if (a == null) {
+                    parseErrs++;
+                    lastResult = "error: reply was not one JSON action. Reply with exactly one raw JSON object."
+                        + (parseErrs >= 2 ? " HARD RULE: your reply must START with { and END with } - no text before or after." : "");
+                    if (parseErrs >= 4) {
+                        taskState = TaskStore.FAILED; taskNote = "Model ne 4 baar invalid reply diya";
+                        ui.aiMessage("Ye model instructions follow nahi kar pa raha - Settings me doosra model ya provider try karo.");
+                        break;
+                    }
+                    continue;
+                }
+                parseErrs = 0;
                 String rem = a.optString("remember", "");
                 if (rem.length() > 2) SecureStore.addMemory(ctx, rem);
                 String thought = a.optString("thought", "");
