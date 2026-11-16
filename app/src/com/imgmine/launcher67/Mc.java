@@ -8,10 +8,10 @@ import java.util.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/** MCPEDL addons + texture packs through the same public JSON search their website uses. */
+/** MCPEDL addons, maps + texture packs through the same public JSON search their website uses. */
 final class Mc {
     private static final String API = "https://api.mcpedl.com/api/search/advanced?";
-    private static final String UA = "67Launcher/1.6 (+https://67-launcher.netlify.app)";
+    private static final String UA = "67Launcher/1.7 (+https://67-launcher.netlify.app)";
     private static final long TTL = 10 * 60 * 1000L;
     private static final Map<String, Object[]> CACHE = new HashMap<>();
     private static long lastCall;
@@ -45,10 +45,10 @@ final class Mc {
         }
         List<Addon> out = new ArrayList<>();
         try {
-            for (int t : new int[]{1, 3}) {
+            for (int t : new int[]{1, 2, 3}) {
                 String u = API + "q=" + URLEncoder.encode(q, "UTF-8") + "&type_id=" + t + "&page=1&per_page=15";
                 JSONObject r = new JSONObject(new String(get(u, 2 << 20), "UTF-8"));
-                out.addAll(parse(r.optJSONArray("results"), t == 1 ? "addon" : "texture"));
+                out.addAll(parse(r.optJSONArray("results"), t == 1 ? "addon" : t == 2 ? "world" : "texture"));
             }
         } catch (Exception e) { return null; }
         synchronized (CACHE) { CACHE.put(ck, new Object[]{System.currentTimeMillis(), out}); }
