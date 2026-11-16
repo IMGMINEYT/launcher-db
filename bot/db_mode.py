@@ -395,11 +395,27 @@ def setup(client, owner_id, tmp_dir):
     def mode_on():
         return bool(state.get("on")) and bool(GH_TOKEN)
 
+    def to_private(event):
+        """In a group the bot stays silent there: every reply on this message (and the
+        status edits that follow) goes to the owner's private chat instead."""
+        try:
+            msg = event.message
+            if getattr(msg, "is_private", False):
+                return
+            async def _reply(text="", *a, **k):
+                return await client.send_message(owner_id, text or "")
+            msg.reply = _reply
+        except Exception:
+            pass
+
+    queued = set()   # lower-case file names waiting in / being worked on by the queue
+
     # ---- /db commands -------------------------------------------------
     @client.on(events.NewMessage(pattern=r"^/db(?:\s+(.*))?$"))
     async def on_db(event):
         if not is_owner(event):
             return  # not the owner: behave as before
+        to_private(event)
         arg = (event.pattern_match.group(1) or "").strip()
         low = arg.lower()
         if not GH_TOKEN:
@@ -537,6 +553,7 @@ def setup(client, owner_id, tmp_dir):
         msg = event.message
         if msg.out or not msg.photo or msg.document or not is_owner(event) or not (mode_on() or edit_active() or promo_active()):
             return
+        to_private(event)
         data = await client.download_media(msg.photo, file=bytes)
         if promo_active():
             slot, link = promo["slot"], promo["link"]
@@ -612,7 +629,32 @@ def setup(client, owner_id, tmp_dir):
         msg = event.message
         if msg.out or not msg.document or not is_owner(event) or not (mode_on() or edit_active()):
             return  # everyone else, and owner with mode off: unchanged renamer path
+        to_private(event)
         eid = edit["id"] if edit_active() else None
+        if not eid:
+            # duplicates are refused before anything is queued or downloaded
+            fn = _label(msg).replace("/", "_").replace("\\", "_")
+            key = fn.strip().lower()
+            hit = None
+            try:
+                d0, _ = await asyncio.to_thread(_read_data)
+                hit = _find_dup_by_name(d0["addons"], fn)
+            except Exception:
+                hit = None
+            if hit:
+                try:
+                    await msg.reply("This file is already in the database: %s (%s). Nothing was added." % (
+                        hit.get("name") or hit.get("id"), hit.get("id")))
+                except Exception:
+                    pass
+                raise events.StopPropagation
+            if key in queued:
+                try:
+                    await msg.reply("This file is already in the queue: %s. Skipped." % fn)
+                except Exception:
+                    pass
+                raise events.StopPropagation
+            queued.add(key)
         now = time.time()
         in_batch = (not eid) and (not queue.empty() or now - batch["last"] < 10)
         batch["last"] = now
@@ -885,6 +927,8 @@ def setup(client, owner_id, tmp_dir):
                     res["ok"] = False
             except Exception:
                 res["ok"] = False
+            if not retry:
+                queued.discard(_label(msg).strip().lower())
             if not retry and opts.get("batch") and not res.get("dup"):
                 (batch["ok"] if res.get("ok") else batch["fail"]).append(_label(msg))
             if opts.get("quiet") or opts.get("batch"):
