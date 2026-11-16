@@ -349,14 +349,22 @@ public class AgentService extends AccessibilityService {
     }
 
     private String tap(int x, int y) {
+        if (tapOnce(x, y)) return "ok: tapped " + x + "," + y;
+        // local helper: one retry with adjacent coordinates before giving up
+        if (tapOnce(x + 12, y + 12)) return "ok: tapped " + (x + 12) + "," + (y + 12) + " (retry)";
+        return "error: tap gesture rejected";
+    }
+
+    private boolean tapOnce(int x, int y) {
         x = clampX(x); y = clampY(y);
         Path p = new Path(); p.moveTo(x, y);
         GestureDescription g = new GestureDescription.Builder()
                 .addStroke(new GestureDescription.StrokeDescription(p, 0, 80)).build();
-        return dispatchGesture(g, null, null) ? "ok: tapped " + x + "," + y : "error: tap gesture rejected";
+        return dispatchGesture(g, null, null);
     }
 
     private String swipe(int x1, int y1, int x2, int y2, int ms) {
+        ms = Math.max(50, Math.min(ms, 1500)); // clamp nonsense durations
         x1 = clampX(x1); y1 = clampY(y1); x2 = clampX(x2); y2 = clampY(y2);
         Path p = new Path(); p.moveTo(x1, y1); p.lineTo(x2, y2);
         GestureDescription g = new GestureDescription.Builder()

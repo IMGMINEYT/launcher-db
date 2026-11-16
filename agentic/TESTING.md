@@ -38,3 +38,9 @@ Do not treat the earlier milestone labels as full completion of the correspondin
 - Old screen observations are dropped from API history (only the latest dump is sent), dump trimmed to 60 elements with shorter text, OCR capped at 25 lines.
 - Post-action settle wait reduced; per-step timings (screen/photo/ocr/AI ms) logged in the collapsible step narration for diagnostics.
 - Still not device-tested: actual step latency depends on his provider/model speed.
+
+# v1.2 fast behavior + local helper
+- Behavior-rules block injected with every API call: act decisively, no re-reading unchanged screens, one-line thoughts, plan only for 3+ step tasks.
+- LocalAssist: rule-based instant commands (back/home/recents/scroll/volume/lock/shade) with NO API call and zero tokens; conservative exact-phrase matching only, everything else goes to the AI unchanged. Works even before API setup.
+- Tap gets one adjacent-coordinate retry on gesture rejection; swipe durations clamped.
+- Caveat: LocalAssist is rules, not a trained mini-AI. Compile/signature verified; not device-tested.

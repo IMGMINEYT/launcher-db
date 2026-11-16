@@ -179,7 +179,7 @@ public class AgentLoop extends Thread {
         "#id [TYPE] \"text\" (description) @cx,cy flags\n" +
         "TYPE: BTN (clickable), INPUT (editable field - type here), LIST (scrollable area), TXT (static text), IMG (image). flags: focused/selected. @cx,cy is the element center in pixels.\n\n" +
         "ACTIONS (exactly one per reply):\n" +
-        "{\"thought\":\"...\",\"action\":\"plan\",\"plan\":\"1) ... 2) ... 3) ...\"} - REQUIRED as your FIRST reply for any multi-step task\n" +
+        "{\"thought\":\"...\",\"action\":\"plan\",\"plan\":\"1) ... 2) ... 3) ...\"} - first reply for tasks with 3+ steps (skip for trivial ones)\n" +
         "{\"thought\":\"...\",\"action\":\"tap_id\",\"id\":N} - tap element N (ALWAYS prefer over coordinates)\n" +
         "{\"thought\":\"...\",\"action\":\"tap\",\"x\":X,\"y\":Y} - tap raw pixel, only when no id fits\n" +
         "{\"thought\":\"...\",\"action\":\"type\",\"id\":N,\"text\":\"...\"} - set text of INPUT element N\n" +
@@ -196,9 +196,14 @@ public class AgentLoop extends Thread {
         "{\"thought\":\"...\",\"action\":\"look\"} - need to SEE the screen (photo attached next observation; use only when the text dump is not enough)\n" +
         "{\"thought\":\"...\",\"action\":\"ask\",\"text\":\"...\"} - ask the user. REQUIRED when the task is ambiguous or a choice matters (what to send, which item, payments). Never guess for payments or personal messages.\n" +
         "{\"thought\":\"...\",\"action\":\"done\",\"text\":\"...\"} - task complete; short friendly summary in the user's language.\n\n" +
+        "SPEED RULES (always on):\n" +
+        "A. Act FAST and decisively - do not deliberate. If the next move is obvious (back, tap the visible button, scroll), do it NOW.\n" +
+        "B. Never re-read or re-verify a screen you just read unless it changed or your action failed.\n" +
+        "C. Keep \"thought\" to ONE short line. No long reasoning.\n" +
+        "D. Use the fewest steps possible. Skip plan for trivial 1-2 step tasks.\n\n" +
         "RULES:\n" +
         "1. \"thought\" is MANDATORY in every reply: one short sentence - what you see and why this action. Think before acting.\n" +
-        "2. Multi-step task -> first reply is plan, then act step by step, re-checking the screen each turn.\n" +
+        "2. Tasks with 3+ steps -> first reply is plan, then act step by step, re-checking the screen each turn.\n" +
         "3. Persistence: NEVER give up on the user's task - if something is not found, vary the approach: scroll more, use the app's search, try coordinates, go back and retry. Only stop for done, a hard error, or when truly stuck after several different attempts (then ask).\n" +
         "4. ids come from the LATEST dump only; they change every screen.\n" +
         "5. After typing into an INPUT, the submit/send button is usually a nearby BTN - tap it to confirm.\n" +
@@ -238,6 +243,21 @@ public class AgentLoop extends Thread {
         if (moneyMode) ui.notice("Payment-related task: main har step pehle aapse confirm karunga.");
         long taskId = TaskStore.begin(ctx, instruction);
         activeTaskId = taskId;
+        // Local instant commands (rules, not AI): zero API call, zero tokens.
+        try {
+            org.json.JSONObject quick = LocalAssist.match(instruction);
+            if (quick != null) {
+                String res = svc.execBlocking(quick);
+                boolean ok = res.startsWith("ok");
+                lastAiText = ok ? "Ho gaya." : "Ye abhi nahi ho paya - " + res;
+                ui.aiMessage(lastAiText);
+                TaskStore.update(ctx, taskId, ok ? TaskStore.COMPLETED : TaskStore.FAILED, res);
+                svc.agentActive = false;
+                remember();
+                ui.loopEnded();
+                return;
+            }
+        } catch (Throwable ignored) {}
         String taskState = TaskStore.RUNNING, taskNote = null;
         try {
             SecureStore.Prov prov = SecureStore.active(ctx);
