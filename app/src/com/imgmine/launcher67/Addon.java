@@ -5,6 +5,7 @@ final class Addon {
     long size, added;
     boolean icon, cf, nine, laby, slim;
     String page = "", author = "", labyHash = "";
+    String seed, seedCoords;          // WiseHosting seed string + coords; null until detail loaded
     String lname = "", ldesc = "";
     java.util.List<String> vers;   // MCPEDL declared supported versions; null = not checked or none found
     Mc.Info info;                  // parsed post page (files + versions); null until loaded

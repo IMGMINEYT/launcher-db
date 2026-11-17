@@ -29,8 +29,8 @@ final class Panel {
     private ListView list;
     private TextView state, clear;
     private EditText search;
-    private TextView[] chips = new TextView[5];
-    private static final String[] KEYS = {"", "addon", "world", "texture", "skin"};
+    private TextView[] chips = new TextView[6];
+    private static final String[] KEYS = {"", "addon", "world", "texture", "skin", "seed"};
     private boolean shown;
     private int cw, ch, typeFilter;
     private List<Addon> all = new ArrayList<>(), view = new ArrayList<>();
@@ -50,6 +50,11 @@ final class Panel {
     private List<Addon> feed = new ArrayList<>();   // MCPEDL/9mc items, in arrival order
     private List<Addon> labyFeed = new ArrayList<>();
     private boolean labyDone;
+    // SEEDS tab state (WiseHosting, Bedrock-only)
+    private HorizontalScrollView seedRow;
+    private String seedTag;
+    private boolean seedDone;
+    private List<Addon> seedFeed = new ArrayList<>();
 
     /** Button that fills with progress while downloading; red dot when the addon declares no support for the user's game version. */
     private final class PBtn extends TextView {
@@ -204,7 +209,7 @@ final class Panel {
 
         // type chips
         LinearLayout cr = new LinearLayout(ctx);
-        String[] names = {"ALL", "ADDONS", "WORLDS", "TEXTURES", "SKINS"};
+        String[] names = {"ALL", "ADDONS", "WORLDS", "TEXTURES", "SKINS", "SEEDS"};
         for (int i = 0; i < names.length; i++) {
             final int k = i;
             TextView c = text(names[i], 12, Ui.MUTE);
@@ -223,6 +228,29 @@ final class Panel {
         hs.setHorizontalScrollBarEnabled(false);
         hs.addView(cr);
         card.addView(hs, clp);
+
+        // seed subcategory chips (visible only on the SEEDS tab)
+        LinearLayout sr = new LinearLayout(ctx);
+        TextView allC = text("ALL SEEDS", 12, Ui.MUTE);
+        allC.setGravity(Gravity.CENTER);
+        allC.setPadding(Ui.dp(9), Ui.dp(5), Ui.dp(9), Ui.dp(7));
+        allC.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { seedTag = null; seedDone = false; seedFeed = new ArrayList<>(); seedChipStyle(); refilter(true); loadMore(); } });
+        sr.addView(allC, chipLp());
+        for (final String[] tg : Seeds.TAGS) {
+            TextView c = text(tg[0].toUpperCase(java.util.Locale.ROOT), 12, Ui.MUTE);
+            c.setGravity(Gravity.CENTER);
+            c.setPadding(Ui.dp(9), Ui.dp(5), Ui.dp(9), Ui.dp(7));
+            c.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { seedTag = tg[1]; seedDone = false; seedFeed = new ArrayList<>(); seedChipStyle(); refilter(true); loadMore(); } });
+            c.setTag(tg[1]);
+            sr.addView(c, chipLp());
+        }
+        seedRow = new HorizontalScrollView(ctx);
+        seedRow.setHorizontalScrollBarEnabled(false);
+        seedRow.addView(sr);
+        seedRow.setVisibility(View.GONE);
+        LinearLayout.LayoutParams slp2 = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        slp2.setMargins(Ui.dp(2), 0, Ui.dp(2), Ui.dp(6));
+        card.addView(seedRow, slp2);
 
         // list + state
         FrameLayout body = new FrameLayout(ctx);
@@ -253,7 +281,24 @@ final class Panel {
         body.addView(state, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
 
+    private LinearLayout.LayoutParams chipLp() {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.rightMargin = Ui.dp(5);
+        return lp;
+    }
+
+    private void seedChipStyle() {
+        if (seedRow == null) return;
+        LinearLayout sr = (LinearLayout) seedRow.getChildAt(0);
+        for (int i = 0; i < sr.getChildCount(); i++) {
+            TextView c = (TextView) sr.getChildAt(i);
+            boolean on = (i == 0 && seedTag == null) || (i > 0 && ((String) c.getTag()).equals(seedTag));
+            c.setTextColor(on ? Ui.GREEN : Ui.MUTE);
+        }
+    }
+
     private void chipStyle() {
+        if (seedRow != null) seedRow.setVisibility(typeFilter == 5 ? View.VISIBLE : View.GONE);
         for (int i = 0; i < chips.length; i++) {
             boolean on = i == typeFilter;
             chips[i].setTextColor(on ? Ui.GREEN : Ui.MUTE);
@@ -319,7 +364,8 @@ final class Panel {
         final int[] types = feedTypes();
         final boolean nineMore = (typeFilter == 0 || typeFilter == 1) && !nineEnded;
         final boolean labyMore = typeFilter == 4 && !labyDone;
-        boolean any = nineMore || labyMore;
+        final boolean seedMore = typeFilter == 5 && !seedDone;
+        boolean any = nineMore || labyMore || seedMore;
         for (int t : types) if (!endedTypes.contains(t)) { any = true; break; }
         if (!any) return;
         feedLoading = true;
@@ -339,6 +385,7 @@ final class Panel {
                     NineMc.Page np = nineMore ? NineMc.browse(ninePage) : null;
                     if (np != null) got.addAll(np.items);
                     final List<Addon> lb = labyMore ? Laby.search("", 30) : null;
+                    final List<Addon> sd = seedMore ? Seeds.browse(seedTag) : null;
                     final NineMc.Page fnp = np;
                     main.post(new Runnable() {
                         public void run() {
@@ -352,6 +399,11 @@ final class Panel {
                                     labyDone = true;
                                     labyFeed = lb;
                                     for (Addon a : lb) seenIds.add(a.id);
+                                }
+                                if (sd != null) {
+                                    seedDone = true;
+                                    seedFeed = sd;
+                                    for (Addon a : sd) seenIds.add(a.id);
                                 }
                                 refilter(false);
                                 List<Addon> warm = new ArrayList<>();
@@ -441,6 +493,7 @@ final class Panel {
         } else {
             view.addAll(db);
             if (typeFilter == 4 && !labyFeed.isEmpty()) { view.add(header("LABY SKINS - POPULAR")); view.addAll(labyFeed); }
+            if (typeFilter == 5 && !seedFeed.isEmpty()) { view.add(header("WISEHOSTING - BEDROCK SEEDS")); view.addAll(seedFeed); }
             List<Addon> fd = new ArrayList<>();
             for (Addon a : feed) if (tabHas(a)) fd.add(a);
             if (!fd.isEmpty()) {
@@ -526,10 +579,22 @@ final class Panel {
         col.addView(btns);
         h.row = new LinearLayout(ctx);
         h.row.addView(wrap, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        h.dl.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { download(h.a); } });
+        h.dl.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { if ("seed".equals(h.a.type)) copySeed(h.a); else download(h.a); } });
         h.q.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (h.a == null) return;
+                if ("seed".equals(h.a.type) && h.a.desc.trim().length() == 0) {
+                    h.q.setText("...");
+                    final Addon a = h.a;
+                    new Thread(new Runnable() { public void run() {
+                        Seeds.fillDetail(a);
+                        main.post(new Runnable() { public void run() {
+                            open.add(a.id);
+                            refilter(false);
+                        } });
+                    } }).start();
+                    return;
+                }
                 if (!open.remove(h.a.id)) open.add(h.a.id);
                 bind(h, h.a);
             }
@@ -593,6 +658,14 @@ final class Panel {
     }
 
     private void btn(PBtn b, Addon a) {
+        if ("seed".equals(a.type)) {
+            b.pct = -1;
+            b.dot = false;
+            b.setAlpha(1f);
+            b.setText("COPY SEED");
+            b.invalidate();
+            return;
+        }
         Integer p = prog.get(a.id);
         if (p != null) {
             b.pct = Math.max(0, p);
@@ -627,6 +700,25 @@ final class Panel {
             ctx.startActivity(it);
             hide();
         } catch (Exception ignored) {}
+    }
+
+    /** Copies the exact seed string to the clipboard, fetching the detail page first if needed. */
+    private void copySeed(final Addon a) {
+        if (a.seed != null) { copySeedText(a); return; }
+        Toast.makeText(ctx, "Loading seed...", Toast.LENGTH_SHORT).show();
+        new Thread(new Runnable() { public void run() {
+            final boolean ok = Seeds.fillDetail(a);
+            main.post(new Runnable() { public void run() {
+                if (ok) copySeedText(a);
+                else Toast.makeText(ctx, "Could not load this seed. Try again.", Toast.LENGTH_SHORT).show();
+            } });
+        } }).start();
+    }
+
+    private void copySeedText(Addon a) {
+        android.content.ClipboardManager cm = (android.content.ClipboardManager) ctx.getSystemService(Context.CLIPBOARD_SERVICE);
+        cm.setPrimaryClip(android.content.ClipData.newPlainText("Minecraft seed", a.seed));
+        Toast.makeText(ctx, "Seed copied: " + a.seed, Toast.LENGTH_LONG).show();
     }
 
     private void download(final Addon a) {
