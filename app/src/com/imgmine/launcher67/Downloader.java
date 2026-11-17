@@ -122,6 +122,29 @@ final class Downloader {
         } catch (Exception ignored) {}
     }
 
+    /** True when a downloaded pack carries the usual signs of an encrypted paid Marketplace pack. */
+    static boolean looksPaid(File f) {
+        try {
+            java.util.zip.ZipFile z = new java.util.zip.ZipFile(f);
+            java.util.Enumeration<? extends java.util.zip.ZipEntry> en = z.entries();
+            boolean bad = false, contentsBad = false;
+            while (en.hasMoreElements()) {
+                String n = en.nextElement().getName().toLowerCase(java.util.Locale.ROOT);
+                String base = n.contains("/") ? n.substring(n.lastIndexOf('/') + 1) : n;
+                if (base.equals("signatures.json")) { bad = true; break; }
+                if (base.equals("contents.json")) {
+                    try {
+                        byte[] b = Api.readAll(z.getInputStream(z.getEntry(n)), 1 << 20);
+                        String t = new String(b, "UTF-8").replace("\uFEFF", "").trim();
+                        if (!t.startsWith("{")) contentsBad = true;
+                    } catch (Exception e) { contentsBad = true; }
+                }
+            }
+            z.close();
+            return bad || contentsBad;
+        } catch (Exception e) { return false; }
+    }
+
     /** Hands the downloaded file to Minecraft so Bedrock imports it. */
     static void install(Context c, String fileName) {
         Uri u = Uri.parse("content://" + ShareProvider.AUTH + "/dl/" + Uri.encode(fileName));

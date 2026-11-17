@@ -637,10 +637,17 @@ final class Panel {
             public void progress(int pct) { prog.put(a.id, pct); refreshRow(a.id); }
             public void done(boolean ok) {
                 prog.remove(a.id);
-                if (ok) done.add(a.id);
-                else if (a.cf || a.nine) { a.download = ""; openPage(a); }
+                boolean good = ok;
+                if (ok && (a.cf || a.nine)
+                        && Downloader.looksPaid(new java.io.File(new java.io.File(ctx.getFilesDir(), "dl"), a.safeFile()))) {
+                    new java.io.File(new java.io.File(ctx.getFilesDir(), "dl"), a.safeFile()).delete();
+                    Toast.makeText(ctx, "That file looks like paid Marketplace content. 67 Launcher only installs free community addons.", Toast.LENGTH_LONG).show();
+                    good = false;
+                }
+                if (good) done.add(a.id);
+                else if (a.cf || a.nine) { a.download = ""; }
                 refreshRow(a.id);
-                if (ok && shown) hide();
+                if (good && shown) hide();
             }
         });
     }
@@ -657,10 +664,15 @@ final class Panel {
                 main.post(new Runnable() {
                     public void run() {
                         prog.remove(a.id);
-                        if (f == null) { refreshRow(a.id); openPage(a); return; }
+                        refreshRow(a.id);
+                        if (f == null) { openPage(a); return; }
+                        if ("no".equals(f[2])) {
+                            Toast.makeText(ctx, "No file listed for your Minecraft version. Opening the addon page so you can pick one.", Toast.LENGTH_LONG).show();
+                            openPage(a);
+                            return;
+                        }
                         a.download = f[0];
                         a.filename = f[1];
-                        refreshRow(a.id);
                         download(a);
                     }
                 });
