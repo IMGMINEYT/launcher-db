@@ -29,8 +29,8 @@ final class Panel {
     private ListView list;
     private TextView state, clear;
     private EditText search;
-    private TextView[] chips = new TextView[7];
-    private static final String[] KEYS = {"", "addon", "world", "pack", "template", "texture", "skin"};
+    private TextView[] chips = new TextView[5];
+    private static final String[] KEYS = {"", "addon", "world", "texture", "skin"};
     private boolean shown;
     private int cw, ch, typeFilter;
     private List<Addon> all = new ArrayList<>(), view = new ArrayList<>();
@@ -204,8 +204,8 @@ final class Panel {
 
         // type chips
         LinearLayout cr = new LinearLayout(ctx);
-        String[] names = {"ALL", "ADDONS", "WORLDS", "PACKS", "TEMPLATES", "TEXTURES", "SKINS"};
-        for (int i = 0; i < 7; i++) {
+        String[] names = {"ALL", "ADDONS", "WORLDS", "TEXTURES", "SKINS"};
+        for (int i = 0; i < names.length; i++) {
             final int k = i;
             TextView c = text(names[i], 12, Ui.MUTE);
             c.setGravity(Gravity.CENTER);
@@ -238,7 +238,9 @@ final class Panel {
         adapter = new Adapter();
         list.setAdapter(adapter);
         list.setOnScrollListener(new AbsListView.OnScrollListener() {
-            public void onScrollStateChanged(AbsListView v, int s) { if (s != SCROLL_STATE_IDLE) hideKeys(); }
+            public void onScrollStateChanged(AbsListView v, int s) {
+                if (s != SCROLL_STATE_IDLE) hideKeys(); else prefetchVersions();
+            }
             public void onScroll(AbsListView v, int first, int visible, int total) {
                 if (total > 0 && first + visible >= total - 6) loadMore();
             }
@@ -252,7 +254,7 @@ final class Panel {
     }
 
     private void chipStyle() {
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < chips.length; i++) {
             boolean on = i == typeFilter;
             chips[i].setTextColor(on ? Ui.GREEN : Ui.MUTE);
             chips[i].setBackground(new Ui.Bevel(on ? 0xFF1E2B22 : Ui.CARD, on ? Ui.GREEN_D : Ui.shade(Ui.CARD, 1.2f), Ui.shade(on ? 0xFF1E2B22 : Ui.CARD, 0.7f), 0xFF000000));
@@ -297,9 +299,9 @@ final class Panel {
         switch (typeFilter) {
             case 1: return new int[]{1};
             case 2: return new int[]{2};
-            case 5: return new int[]{3};
-            case 6: return new int[]{6};
-            case 0: return new int[]{1, 2};
+            case 3: return new int[]{3};
+            case 4: return new int[]{6};
+            case 0: return new int[]{1};
             default: return new int[0];
         }
     }
@@ -311,52 +313,56 @@ final class Panel {
         srchGen++;
     }
 
-    /** Next feed page for the current tab; safe to call often, it gates itself. */
+    /** Next feed round for the current tab: one page from every open source. Errors retry on the next scroll, never end a source. */
     private void loadMore() {
         if (feedLoading || search.getText().toString().trim().length() >= 2) return;
-        int[] types = feedTypes();
-        int pick = -1;
-        for (int t : types) if (!endedTypes.contains(t)) { pick = t; break; }
+        final int[] types = feedTypes();
         final boolean nineMore = (typeFilter == 0 || typeFilter == 1) && !nineEnded;
-        final boolean labyMore = typeFilter == 6 && !labyDone;
-        if (pick < 0 && !nineMore && !labyMore) return;
+        final boolean labyMore = typeFilter == 4 && !labyDone;
+        boolean any = nineMore || labyMore;
+        for (int t : types) if (!endedTypes.contains(t)) { any = true; break; }
+        if (!any) return;
         feedLoading = true;
-        final int typeId = pick;
-        final int page = typeId < 0 ? 0 : nextPage.containsKey(typeId) ? nextPage.get(typeId) : 1;
         new Thread(new Runnable() {
             public void run() {
-                Mc.Page mp = typeId < 0 ? null : Mc.browse(typeId, page);
-                NineMc.Page np = nineMore ? NineMc.browse(ninePage) : null;
-                final List<Addon> lb;
-                if (labyMore && !labyDone) lb = Laby.search("", 30); else lb = null;
-                final Mc.Page fmp = mp;
-                final NineMc.Page fnp = np;
-                main.post(new Runnable() {
-                    public void run() {
-                        feedLoading = false;
-                        if (fmp != null) {
-                            if (fmp.more) nextPage.put(typeId, page + 1); else endedTypes.add(typeId);
-                            int added = 0;
-                            for (Addon a : fmp.items) if (seenIds.add(a.id)) { feed.add(a); added++; }
-                            if (added == 0 && !fmp.more) endedTypes.add(typeId);
-                        } else if (typeId >= 0) endedTypes.add(typeId);
-                        if (fnp != null) {
-                            ninePage++;
-                            nineEnded = !fnp.more;
-                            for (Addon a : fnp.items) if (seenIds.add(a.id)) feed.add(a);
-                        }
-                        if (lb != null) {
-                            labyDone = true;
-                            labyFeed = lb;
-                            for (Addon a : lb) seenIds.add(a.id);
-                        }
-                        refilter(false);
-                        List<Addon> warm = new ArrayList<>();
-                        int n = 0;
-                        for (int i = feed.size() - 1; i >= 0 && n < 16; i--) { warm.add(feed.get(i)); n++; }
-                        Images.prefetch(warm, 16);
+                try {
+                    final List<Addon> got = new ArrayList<>();
+                    final List<int[]> adv = new ArrayList<>();
+                    for (int t : types) {
+                        if (endedTypes.contains(t)) continue;
+                        int pg = nextPage.containsKey(t) ? nextPage.get(t) : 1;
+                        Mc.Page p = Mc.browse(t, pg);
+                        if (p == null) continue;
+                        got.addAll(p.items);
+                        adv.add(new int[]{t, pg, p.more ? 1 : 0});
                     }
-                });
+                    NineMc.Page np = nineMore ? NineMc.browse(ninePage) : null;
+                    if (np != null) got.addAll(np.items);
+                    final List<Addon> lb = labyMore ? Laby.search("", 30) : null;
+                    final NineMc.Page fnp = np;
+                    main.post(new Runnable() {
+                        public void run() {
+                            try {
+                                for (int[] a : adv) {
+                                    if (a[2] == 1) nextPage.put(a[0], a[1] + 1); else endedTypes.add(a[0]);
+                                }
+                                for (Addon a : got) if (seenIds.add(a.id)) feed.add(a);
+                                if (fnp != null) { ninePage++; nineEnded = !fnp.more; }
+                                if (lb != null) {
+                                    labyDone = true;
+                                    labyFeed = lb;
+                                    for (Addon a : lb) seenIds.add(a.id);
+                                }
+                                refilter(false);
+                                List<Addon> warm = new ArrayList<>();
+                                for (int i = feed.size() - 1; i >= 0 && warm.size() < 16; i--) warm.add(feed.get(i));
+                                Images.prefetch(warm, 16);
+                            } finally { feedLoading = false; }
+                        }
+                    });
+                } catch (Exception e) {
+                    main.post(new Runnable() { public void run() { feedLoading = false; } });
+                }
             }
         }).start();
     }
@@ -383,15 +389,13 @@ final class Panel {
         new Thread(new Runnable() {
             public void run() {
                 final List<Addon> cf = new ArrayList<>();
-                if (tab != 3 && tab != 4) {
-                    for (int t : tab == 6 ? new int[]{6} : tab == 0 ? new int[]{1, 2, 3} : feedTypes()) {
-                        Mc.Page p = Mc.query(q, t, 1);
-                        if (p != null) cf.addAll(p.items);
-                    }
+                for (int t : tab == 4 ? new int[]{6} : tab == 0 ? new int[]{1, 2, 3} : feedTypes()) {
+                    Mc.Page p = Mc.query(q, t, 1);
+                    if (p != null) cf.addAll(p.items);
                 }
                 NineMc.Page npg = (tab == 0 || tab == 1 || tab == 2) ? NineMc.search(q, 1) : null;
                 final List<Addon> nn = npg == null ? null : npg.items;
-                final List<Addon> lb = (tab == 6 || tab == 0) ? Laby.search(q, 20) : null;
+                final List<Addon> lb = (tab == 4 || tab == 0) ? Laby.search(q, 20) : null;
                 main.post(new Runnable() {
                     public void run() {
                         if (gen != srchGen) return;
@@ -427,22 +431,22 @@ final class Panel {
         List<Addon> db = Fuzzy.search(typed, qs);
         if (searching) {
             if (!db.isEmpty()) { view.add(header("67 DATABASE")); view.addAll(db); }
+            if (!labyAll.isEmpty() && (typeFilter == 0 || typeFilter == 4)) { view.add(header("LABY SKINS")); view.addAll(labyAll); }
             List<Addon> cf = new ArrayList<>();
             for (Addon a : cfAll) if (tabHas(a)) cf.add(a);
-            if (!cf.isEmpty()) { view.add(header("MCPEDL")); view.addAll(cf); }
+            if (!cf.isEmpty()) { view.add(header(typeFilter == 4 ? "MCPEDL SKIN PACKS" : "MCPEDL")); view.addAll(cf); }
             List<Addon> nn = new ArrayList<>();
             for (Addon a : nineAll) if (tabHas(a)) nn.add(a);
             if (!nn.isEmpty()) { view.add(header("9MINECRAFT")); view.addAll(nn); }
-            if (!labyAll.isEmpty() && (typeFilter == 0 || typeFilter == 6)) { view.add(header("LABY SKINS")); view.addAll(labyAll); }
         } else {
             view.addAll(db);
+            if (typeFilter == 4 && !labyFeed.isEmpty()) { view.add(header("LABY SKINS - POPULAR")); view.addAll(labyFeed); }
             List<Addon> fd = new ArrayList<>();
             for (Addon a : feed) if (tabHas(a)) fd.add(a);
             if (!fd.isEmpty()) {
-                if (!db.isEmpty()) view.add(header(typeFilter == 0 ? "MCPEDL + 9MINECRAFT - LATEST" : "LATEST"));
+                if (!db.isEmpty() || typeFilter == 4) view.add(header(typeFilter == 4 ? "MCPEDL SKIN PACKS" : typeFilter == 0 ? "MCPEDL + 9MINECRAFT - LATEST" : "LATEST"));
                 view.addAll(fd);
             }
-            if (typeFilter == 6 && !labyFeed.isEmpty()) { view.add(header("LABY SKINS - POPULAR")); view.addAll(labyFeed); }
         }
         if (view.isEmpty() && !all.isEmpty()) {
             String q = qs.trim();
@@ -574,11 +578,17 @@ final class Panel {
         h.q.setVisibility(a.desc.trim().length() > 0 ? View.VISIBLE : View.GONE);
         h.q.setText(o ? "-" : "?");
         btn(h.dl, a);
-        if (a.cf && a.vers == null && userVer != null) {
-            final String id = a.id;
-            Mc.loadInfo(a, main, new Runnable() {
-                public void run() { refreshVer(id); }
-            });
+    }
+
+    /** Version info for the rows on screen, fetched only when scrolling rests. */
+    private void prefetchVersions() {
+        if (userVer == null || list == null) return;
+        for (int i = 0; i < list.getChildCount(); i++) {
+            Holder h = (Holder) list.getChildAt(i).getTag(R.id.holder);
+            if (h != null && h.a != null && h.a.cf && h.a.info == null) {
+                final String id = h.a.id;
+                Mc.loadInfo(h.a, main, new Runnable() { public void run() { refreshVer(id); } });
+            }
         }
     }
 
