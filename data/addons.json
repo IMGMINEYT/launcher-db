@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-15T19:34:08Z",
+ "updated": "2026-11-17T11:26:10Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -948,5 +948,11 @@
    "added": "2026-11-15T19:34:08Z",
    "icon": true
   }
+ ],
+ "promos": [
+  {
+   "image": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/promo-1-1794914767.jpg"
+  },
+  null
  ]
 }
