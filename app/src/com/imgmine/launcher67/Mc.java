@@ -190,14 +190,19 @@ final class Mc {
             List<String[]> tok = new ArrayList<>();
             for (String[] f : info.files) {
                 for (String t : fileTokens(f[1])) {
-                    if (t.equals(userVer) || (t.startsWith("1.") && t.substring(2).equals(userVer))
-                            || (userVer.startsWith("1.") && userVer.substring(2).equals(t))) tok.add(f);
+                    String n = t.startsWith("1.") && Integer.parseInt(t.substring(2, t.indexOf('.', 2) < 0 ? t.length() : t.indexOf('.', 2))) >= 26
+                            ? t.substring(2) : t;
+                    if (McVer.matches(n, userVer) || McVer.matches(t, userVer)) tok.add(f);
                 }
             }
             if (!tok.isEmpty()) return new String[]{tok.get(0)[0], tok.get(0)[1], "yes"};
             boolean anyTokens = false;
             for (String[] f : info.files) if (!fileTokens(f[1]).isEmpty()) { anyTokens = true; break; }
             if (anyTokens) return new String[]{latest[0], latest[1], "no"};
+            if (!info.versions.isEmpty())
+                return McVer.matchesAny(info.versions, userVer)
+                        ? new String[]{latest[0], latest[1], "yes"}
+                        : new String[]{latest[0], latest[1], "no"};
         }
         return new String[]{latest[0], latest[1], "unknown"};
     }

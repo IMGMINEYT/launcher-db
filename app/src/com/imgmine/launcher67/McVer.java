@@ -44,6 +44,17 @@ final class McVer {
         return norm(previewRaw(c));
     }
 
+    /** True when a declared version string fits the user's normalized version, either side may carry patch detail. */
+    static boolean matches(String declared, String userVer) {
+        return declared.equals(userVer) || declared.startsWith(userVer + ".") || userVer.startsWith(declared + ".");
+    }
+
+    static boolean matchesAny(java.util.List<String> declared, String userVer) {
+        if (declared == null || userVer == null) return false;
+        for (String d : declared) if (matches(d, userVer)) return true;
+        return false;
+    }
+
     /** Short human status for the main screen. */
     static String status(Context c) {
         String r = raw(c), p = previewRaw(c);

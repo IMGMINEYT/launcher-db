@@ -544,7 +544,7 @@ final class Panel {
     }
 
     private boolean redDot(Addon a) {
-        return a.vers != null && !a.vers.isEmpty() && userVer != null && !a.vers.contains(userVer);
+        return a.vers != null && !a.vers.isEmpty() && userVer != null && !McVer.matchesAny(a.vers, userVer);
     }
 
     private void bind(Holder h, Addon a) {
