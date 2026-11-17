@@ -129,7 +129,7 @@ final class Mc {
                 Info i = pageInfo(a);
                 synchronized (INFO) {
                     INFO_PENDING.remove(a.id);
-                    if (i != null) INFO.put(a.id, i);
+                    if (i != null) { INFO.put(a.id, i); a.info = i; a.vers = i.versions; }
                 }
                 if (i != null && h != null && done != null) h.post(done);
             }

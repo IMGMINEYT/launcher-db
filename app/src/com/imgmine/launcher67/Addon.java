@@ -7,6 +7,7 @@ final class Addon {
     String page = "", author = "", labyHash = "";
     String lname = "", ldesc = "";
     java.util.List<String> vers;   // MCPEDL declared supported versions; null = not checked or none found
+    Mc.Info info;                  // parsed post page (files + versions); null until loaded
 
     String srcLabel() { return cf ? "MCPEDL" : nine ? "9MINECRAFT" : laby ? "LABY" : ""; }
 

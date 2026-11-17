@@ -544,7 +544,9 @@ final class Panel {
     }
 
     private boolean redDot(Addon a) {
-        return a.vers != null && !a.vers.isEmpty() && userVer != null && !McVer.matchesAny(a.vers, userVer);
+        if (a.info == null || userVer == null || userVer.length() == 0) return false;
+        String[] pick = Mc.pickFile(a.info, userVer);
+        return pick != null && "no".equals(pick[2]);
     }
 
     private void bind(Holder h, Addon a) {
@@ -660,7 +662,7 @@ final class Panel {
             public void run() {
                 Mc.Info info = Mc.pageInfo(a);
                 final String[] f = Mc.pickFile(info, userVer);
-                if (info != null) a.vers = info.versions;
+                if (info != null) { a.vers = info.versions; a.info = info; }
                 main.post(new Runnable() {
                     public void run() {
                         prog.remove(a.id);

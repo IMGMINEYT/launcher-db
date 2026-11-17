@@ -29,12 +29,20 @@ final class McVer {
      */
     static String norm(String raw) {
         if (raw == null) return null;
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)\\.(\\d+)").matcher(raw);
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+(?:\\.\\d+)+)").matcher(raw);
         if (!m.find()) return null;
-        int major = Integer.parseInt(m.group(1)), minor = Integer.parseInt(m.group(2));
-        if (major == 1 && minor >= 26) return minor + ".0";
-        if (major >= 26) return major + "." + minor;
-        return major + "." + minor;
+        String v = m.group(1);
+        String[] parts = v.split("\\.");
+        if (parts.length >= 2 && "1".equals(parts[0])) {
+            try {
+                if (Integer.parseInt(parts[1]) >= 26) {
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 1; i < parts.length; i++) { if (i > 1) sb.append('.'); sb.append(parts[i]); }
+                    return sb.toString();
+                }
+            } catch (Exception ignored) {}
+        }
+        return v;
     }
 
     /** The version to match addons against: the release game if installed, else Preview. */
@@ -44,9 +52,9 @@ final class McVer {
         return norm(previewRaw(c));
     }
 
-    /** True when a declared version string fits the user's normalized version, either side may carry patch detail. */
+    /** True when a declared version fits the installed version. A broad declaration ("26.0") covers a narrower install ("26.0.1"); a narrow declaration ("26.0.1") never implies broader support. */
     static boolean matches(String declared, String userVer) {
-        return declared.equals(userVer) || declared.startsWith(userVer + ".") || userVer.startsWith(declared + ".");
+        return declared.equals(userVer) || userVer.startsWith(declared + ".");
     }
 
     static boolean matchesAny(java.util.List<String> declared, String userVer) {
