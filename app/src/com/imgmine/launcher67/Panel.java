@@ -46,7 +46,8 @@ final class Panel {
     private final Set<Integer> endedTypes = new HashSet<>();
     private final Set<String> seenIds = new HashSet<>();
     private int ninePage = 1;
-    private boolean nineEnded, feedLoading;
+    private boolean nineEnded, feedLoading, feedFailed;
+    private TextView foot;
     private List<Addon> feed = new ArrayList<>();   // MCPEDL/9mc items, in arrival order
     private List<Addon> labyFeed = new ArrayList<>();
     private boolean labyDone;
@@ -265,9 +266,16 @@ final class Panel {
         list.setPadding(Ui.dp(6), Ui.dp(6), Ui.dp(6), Ui.dp(6));
         adapter = new Adapter();
         list.setAdapter(adapter);
+        foot = text("", 13, Ui.MUTE);
+        foot.setGravity(Gravity.CENTER);
+        foot.setPadding(0, Ui.dp(14), 0, Ui.dp(14));
+        foot.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { if (feedFailed) { feedFailed = false; loadMore(); } } });
+        list.addFooterView(foot, null, true);
         list.setOnScrollListener(new AbsListView.OnScrollListener() {
             public void onScrollStateChanged(AbsListView v, int s) {
-                if (s != SCROLL_STATE_IDLE) hideKeys(); else prefetchVersions();
+                if (s != SCROLL_STATE_IDLE) { hideKeys(); return; }
+                prefetchVersions();
+                if (list.getLastVisiblePosition() >= adapter.getCount() - 6) loadMore();
             }
             public void onScroll(AbsListView v, int first, int visible, int total) {
                 if (total > 0 && first + visible >= total - 6) loadMore();
@@ -367,8 +375,9 @@ final class Panel {
         final boolean seedMore = typeFilter == 5 && !seedDone;
         boolean any = nineMore || labyMore || seedMore;
         for (int t : types) if (!endedTypes.contains(t)) { any = true; break; }
-        if (!any) return;
+        if (!any) { if (foot != null) foot.setText(""); return; }
         feedLoading = true;
+        if (foot != null) foot.setText("Loading more...");
         new Thread(new Runnable() {
             public void run() {
                 try {
@@ -382,11 +391,21 @@ final class Panel {
                         got.addAll(p.items);
                         adv.add(new int[]{t, pg, p.more ? 1 : 0});
                     }
-                    NineMc.Page np = nineMore ? NineMc.browse(ninePage) : null;
-                    if (np != null) got.addAll(np.items);
-                    final List<Addon> lb = labyMore ? Laby.search("", 30) : null;
-                    final List<Addon> sd = seedMore ? Seeds.browse(seedTag) : null;
-                    final NineMc.Page fnp = np;
+                    // fetch independent sources in parallel; Mc.get/NineMc throttles stay per-class
+                    final NineMc.Page[] np = new NineMc.Page[1];
+                    final List<Addon>[] lb = new List[1];
+                    final List<Addon>[] sd = new List[1];
+                    Thread t9 = nineMore ? new Thread(new Runnable() { public void run() { np[0] = NineMc.browse(ninePage); } }) : null;
+                    Thread tl = labyMore ? new Thread(new Runnable() { public void run() { lb[0] = Laby.search("", 30); } }) : null;
+                    Thread ts = seedMore ? new Thread(new Runnable() { public void run() { sd[0] = Seeds.browse(seedTag); } }) : null;
+                    if (t9 != null) t9.start();
+                    if (tl != null) tl.start();
+                    if (ts != null) ts.start();
+                    if (t9 != null) t9.join();
+                    if (tl != null) tl.join();
+                    if (ts != null) ts.join();
+                    if (np[0] != null) got.addAll(np[0].items);
+                    final NineMc.Page fnp = np[0];
                     main.post(new Runnable() {
                         public void run() {
                             try {
@@ -395,25 +414,30 @@ final class Panel {
                                 }
                                 for (Addon a : got) if (seenIds.add(a.id)) feed.add(a);
                                 if (fnp != null) { ninePage++; nineEnded = !fnp.more; }
-                                if (lb != null) {
+                                if (lb[0] != null) {
                                     labyDone = true;
-                                    labyFeed = lb;
-                                    for (Addon a : lb) seenIds.add(a.id);
+                                    labyFeed = lb[0];
+                                    for (Addon a : lb[0]) seenIds.add(a.id);
                                 }
-                                if (sd != null) {
+                                if (sd[0] != null) {
                                     seedDone = true;
-                                    seedFeed = sd;
-                                    for (Addon a : sd) seenIds.add(a.id);
+                                    seedFeed = sd[0];
+                                    for (Addon a : sd[0]) seenIds.add(a.id);
                                 }
                                 refilter(false);
                                 List<Addon> warm = new ArrayList<>();
                                 for (int i = feed.size() - 1; i >= 0 && warm.size() < 16; i--) warm.add(feed.get(i));
                                 Images.prefetch(warm, 16);
+                                feedFailed = got.isEmpty() && adv.isEmpty() && fnp == null && lb[0] == null && sd[0] == null;
+                                if (foot != null) foot.setText(feedFailed ? "Could not load more - tap to retry" : "");
                             } finally { feedLoading = false; }
                         }
                     });
                 } catch (Exception e) {
-                    main.post(new Runnable() { public void run() { feedLoading = false; } });
+                    main.post(new Runnable() { public void run() {
+                        feedLoading = false; feedFailed = true;
+                        if (foot != null) foot.setText("Could not load more - tap to retry");
+                    } });
                 }
             }
         }).start();
