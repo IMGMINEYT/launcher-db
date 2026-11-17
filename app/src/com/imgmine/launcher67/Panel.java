@@ -377,7 +377,7 @@ final class Panel {
         for (int t : types) if (!endedTypes.contains(t)) { any = true; break; }
         if (!any) { if (foot != null) foot.setText(""); return; }
         feedLoading = true;
-        if (foot != null) foot.setText("Loading more...");
+        main.post(new Runnable() { public void run() { if (foot != null) foot.setText("Loading more..."); } });
         new Thread(new Runnable() {
             public void run() {
                 try {
