@@ -2,7 +2,7 @@
 """Generates app/src/main assets/commands.json: curated Bedrock command templates.
 Every entry: n=name(what it does), c=command text, cb=ok in command block, note=syntax/cheat/version caveat, warn=danger flag.
 Bedrock syntax only (no Java NBT). Identifiers are current minecraft:* string ids."""
-import json, io, os
+import json, io, os, re
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "app", "assets", "commands.json")
 
@@ -98,25 +98,25 @@ ITEMS = [
     ("iron_sword", 1), ("iron_pickaxe", 1), ("iron_axe", 1), ("iron_helmet", 1), ("iron_chestplate", 1),
     ("iron_leggings", 1), ("iron_boots", 1), ("iron_ingot", 64), ("gold_ingot", 64),
     ("golden_apple", 16), ("enchanted_golden_apple", 8), ("totem_of_undying", 1), ("elytra", 1),
-    ("trident", 1), ("bow", 1), ("crossbow", 1), ("arrow", 64), ("spectral_arrow", 64),
+    ("trident", 1), ("bow", 1), ("crossbow", 1), ("arrow", 64),
     ("shield", 1), ("mace", 1), ("fishing_rod", 1), ("flint_and_steel", 1), ("shears", 1),
     ("torch", 64), ("lantern", 32), ("glowstone", 64), ("sea_lantern", 32), ("shroomlight", 32),
     ("oak_log", 64), ("spruce_log", 64), ("birch_log", 64), ("jungle_log", 64), ("acacia_log", 64),
     ("dark_oak_log", 64), ("mangrove_log", 64), ("cherry_log", 64), ("bamboo_block", 64),
     ("stone", 64), ("cobblestone", 64), ("stone_bricks", 64), ("deepslate", 64), ("obsidian", 32),
     ("glass", 64), ("white_wool", 64), ("black_wool", 64), ("red_wool", 64), ("blue_wool", 64),
-    ("bricks", 64), ("quartz_block", 64), ("prismarine", 64), ("netherrack", 64), ("end_stone", 64),
+    ("brick_block", 64), ("quartz_block", 64), ("prismarine", 64), ("netherrack", 64), ("end_stone", 64),
     ("purpur_block", 64), ("amethyst_block", 32), ("copper_block", 32), ("tnt", 16),
     ("bed", 1), ("crafting_table", 1), ("furnace", 1), ("chest", 4), ("ender_chest", 1),
     ("anvil", 1), ("enchanting_table", 1), ("brewing_stand", 1), ("beacon", 1),
     ("bread", 32), ("cooked_beef", 32), ("cooked_porkchop", 32), ("cooked_chicken", 32),
     ("baked_potato", 32), ("golden_carrot", 32), ("cake", 1), ("cookie", 32),
     ("potion", 4), ("splash_potion", 4), ("experience_bottle", 32), ("ender_pearl", 16),
-    ("eye_of_ender", 16), ("fire_charge", 16), ("firework_rocket", 64), ("boat", 1),
-    ("oak_boat", 1), ("minecart", 1), ("rail", 64), ("powered_rail", 32), ("saddle", 1),
+    ("ender_eye", 16), ("fire_charge", 16), ("firework_rocket", 64),
+    ("oak_boat", 1), ("minecart", 1), ("rail", 64), ("golden_rail", 32), ("saddle", 1),
     ("lead", 4), ("name_tag", 4), ("bone", 32), ("string", 32), ("gunpowder", 32),
-    ("ender_eye", 0), ("book", 16), ("writable_book", 1), ("map", 1), ("compass", 1),
-    ("clock", 1), ("spyglass", 1), ("brush", 1), ("bundle", 1), ("shulker_box", 1),
+    ("book", 16), ("writable_book", 1), ("empty_map", 1), ("compass", 1), ("banner", 1),
+    ("clock", 1), ("spyglass", 1), ("brush", 1), ("bundle", 1), ("undyed_shulker_box", 1),
     ("diamond_block", 16), ("emerald", 64), ("emerald_block", 16), ("lapis_lazuli", 64),
     ("redstone", 64), ("slime_ball", 32), ("honeycomb", 16), ("amethyst_shard", 32),
 ]
@@ -128,13 +128,13 @@ for it, n in ITEMS:
 # ---- /summon mobs ----
 MOBS = [
     "zombie", "skeleton", "creeper", "spider", "enderman", "witch", "slime", "zombie_villager",
-    "husk", "stray", "drowned", "phantom", "pillager", "vindicator", "evoker", "ravager",
+    "husk", "stray", "drowned", "phantom", "pillager", "vindicator", "evocation_illager", "ravager",
     "vex", "silverfish", "endermite", "guardian", "elder_guardian", "blaze", "magma_cube",
     "ghast", "wither_skeleton", "hoglin", "piglin", "piglin_brute", "zoglin", "warden",
     "breeze", "bogged", "creeper", "villager", "wandering_trader", "iron_golem", "snow_golem",
     "wolf", "cat", "ocelot", "horse", "donkey", "mule", "cow", "mooshroom", "pig", "sheep",
     "chicken", "rabbit", "bee", "fox", "goat", "frog", "axolotl", "turtle", "dolphin",
-    "squid", "glow_squid", "cod", "salmon", "pufferfish", "tropical_fish", "camel", "llama",
+    "squid", "glow_squid", "cod", "salmon", "pufferfish", "tropicalfish", "camel", "llama",
     "parrot", "armadillo", "bat", "polar_bear", "panda", "allay", "wither", "ender_dragon",
 ]
 seen_m = set()
@@ -157,18 +157,18 @@ EFFECTS = [
     ("water_breathing", "Water breathing"), ("invisibility", "Invisibility"), ("night_vision", "Night vision"),
     ("weakness", "Weakness"), ("poison", "Poison"), ("wither", "Wither"), ("absorption", "Absorption hearts"),
     ("saturation", "Saturation (full hunger)"), ("levitation", "Levitation"), ("slow_falling", "Slow falling"),
-    ("conduit_power", "Conduit power"), ("hero_of_the_village", "Hero of the village"),
+    ("conduit_power", "Conduit power"), ("village_hero", "Hero of the village"),
     ("darkness", "Darkness"), ("blindness", "Blindness"), ("nausea", "Nausea"),
     ("health_boost", "Health boost"), ("mining_fatigue", "Mining fatigue"), ("hunger", "Hunger"),
     ("bad_omen", "Bad omen (starts raids)"), ("trial_omen", "Trial omen"), ("raid_omen", "Raid omen"),
-    ("wind_charged", "Wind charged"), ("weaving", "Weaving"), ("oozing", "Oozing"), ("infestation", "Infestation"),
+    ("wind_charged", "Wind charged"), ("weaving", "Weaving"), ("oozing", "Oozing"), ("infested", "Infested"),
 ]
 for e, d in EFFECTS:
     w = e in ("poison", "wither", "instant_damage", "bad_omen", "raid_omen")
-    add("chat", d + " for 60s", "/effect @s minecraft:" + e + " 60 0", False, CHEAT + "; last number = level-1", w)
-    add("chat", d + " strong, 30s", "/effect @s minecraft:" + e + " 30 2", False, CHEAT + "; level 3", w)
+    add("chat", d + " for 60s", "/effect @s " + e + " 60 0", False, CHEAT + "; last number = level-1", w)
+    add("chat", d + " strong, 30s", "/effect @s " + e + " 30 2", False, CHEAT + "; level 3", w)
 add("chat", "Remove all effects (self)", "/effect @s clear", False, "")
-add("chat", "Infinite night vision trick", "/effect @s minecraft:night_vision 999999 0 true", False, CHEAT)
+add("chat", "Infinite night vision trick", "/effect @s night_vision 999999 0 true", False, CHEAT)
 
 # ---- /enchant ----
 ENCH = ["sharpness", "smite", "bane_of_arthropods", "knockback", "fire_aspect", "looting",
@@ -176,17 +176,17 @@ ENCH = ["sharpness", "smite", "bane_of_arthropods", "knockback", "fire_aspect", 
         "infinity", "protection", "fire_protection", "blast_protection", "projectile_protection",
         "thorns", "feather_falling", "depth_strider", "frost_walker", "respiration", "aqua_affinity",
         "loyalty", "impaling", "riptide", "channeling", "mending", "multishot", "quick_charge",
-        "piercing", "density", "breach", "wind_burst", "soul_speed", "swift_sneak", "lure", "luck_of_the_sea"]
+        "piercing", "density", "breach", "wind_burst", "soul_speed", "swift_sneak", "lure", "luck_of_the_sea", "binding", "vanishing", "lunge"]
 for en in ENCH:
-    add("chat", "Enchant held item: " + en.replace("_", " "), "/enchant @s minecraft:" + en + " 3", False,
+    add("chat", "Enchant held item: " + en.replace("_", " "), "/enchant @s " + en + " 3", False,
         CHEAT + "; hold the item first; level must fit the enchant")
 
 # ---- blocks: /setblock + /fill ----
 BLOCKS = ["stone", "cobblestone", "stone_bricks", "oak_planks", "glass", "obsidian", "bedrock",
           "diamond_block", "gold_block", "iron_block", "emerald_block", "glowstone", "sea_lantern",
-          "white_wool", "black_wool", "bricks", "quartz_block", "prismarine", "amethyst_block",
+          "white_wool", "black_wool", "brick_block", "quartz_block", "prismarine", "amethyst_block",
           "copper_block", "tnt", "water", "lava", "air", "sand", "gravel", "grass_block", "dirt",
-          "snow_block", "ice", "packed_ice", "blue_ice", "honey_block", "slime_block", "magma_block"]
+          "snow", "ice", "packed_ice", "blue_ice", "honey_block", "slime", "magma"]
 for b in BLOCKS:
     w = b in ("tnt", "lava")
     add("chat", "Place " + b.replace("_", " ") + " at your feet", "/setblock ~ ~-1 ~ minecraft:" + b, True, CHEAT, w)
@@ -204,10 +204,10 @@ add("chat", "Teleport 50 blocks up", "/tp @s ~ ~50 ~", False, "")
 add("chat", "Teleport to the nearest village (after /locate)", "/tp @s <x> ~ <z>", False, "Use coords from /locate structure village")
 
 # ---- locate ----
-for s in ["village", "stronghold", "mineshaft", "desert_temple", "jungle_temple", "ocean_monument",
-          "woodland_mansion", "pillager_outpost", "ancient_city", "trial_chambers", "bastion_remnant",
-          "nether_fortress", "end_city", "shipwreck", "buried_treasure", "ruined_portal", "igloo",
-          "swamp_hut", "trail_ruins", "ocean_ruin"]:
+for s in ["village", "stronghold", "mineshaft", "temple", "monument", "mansion",
+          "pillager_outpost", "ancient_city", "trial_chambers", "bastion_remnant",
+          "fortress", "end_city", "shipwreck", "buried_treasure", "ruined_portal",
+          "trail_ruins", "ruins"]:
     add("chat", "Find nearest " + s.replace("_", " "), "/locate structure minecraft:" + s, False, CHEAT)
 
 # ---- scoreboard kit ----
@@ -232,16 +232,18 @@ for s in SOUNDS:
     add("chat", "Play sound " + s, "/playsound " + s + " @s ~ ~ ~ 1 1", True, "")
 
 # ---- spawn eggs (real Bedrock items: <mob>_spawn_egg) ----
+EGGNAME = {"evocation_illager": "evoker", "tropicalfish": "tropical_fish"}
 for m in sorted(seen_m):
     if m in ("wither", "ender_dragon"):
         continue  # no spawn egg for bosses
-    add("chat", "Spawn egg: " + m.replace("_", " "), "/give @s minecraft:" + m + "_spawn_egg 4", False, CHEAT)
+    egg = EGGNAME.get(m, m)
+    add("chat", "Spawn egg: " + m.replace("_", " "), "/give @s minecraft:" + egg + "_spawn_egg 4", False, CHEAT)
 
 # ---- color families (16 colors each) ----
 COLORS = ["white", "orange", "magenta", "light_blue", "yellow", "lime", "pink", "gray",
           "light_gray", "cyan", "purple", "blue", "brown", "green", "red", "black"]
 for fam, per in [("wool", 16), ("concrete", 16), ("terracotta", 16), ("stained_glass", 16),
-                 ("carpet", 8), ("bed", 1), ("candle", 8), ("dye", 16), ("banner", 1), ("shulker_box", 1)]:
+                 ("carpet", 8), ("candle", 8), ("dye", 16), ("shulker_box", 1)]:
     for col in COLORS:
         add("chat", "Give " + col.replace("_", " ") + " " + fam.replace("_", " "),
             "/give @s minecraft:" + col + "_" + fam + " " + str(per), False, CHEAT)
@@ -265,7 +267,7 @@ for t in ["netherite_upgrade", "sentry", "dune", "coast", "wild", "ward", "eye",
     add("chat", "Smithing template: " + t.replace("_", " "), "/give @s minecraft:" + t + "_armor_trim_smithing_template" + " 2" if t != "netherite_upgrade" else "/give @s minecraft:netherite_upgrade_smithing_template 2", False, CHEAT)
 for s in ["angler", "archer", "arms_up", "blade", "brewer", "burn", "danger", "explorer",
           "flow", "friend", "guster", "heart", "heartbreak", "howl", "miner", "mourner",
-          "plenty", "prize", "scrape", "sheaf", "shelter", "skull", "snort", "bolt"]:
+          "plenty", "prize", "scrape", "sheaf", "shelter", "skull", "snort"]:
     add("chat", "Pottery sherd: " + s.replace("_", " "), "/give @s minecraft:" + s + "_pottery_sherd 4", False, CHEAT)
 
 # ---- flowers + saplings ----
@@ -319,13 +321,13 @@ for w in ["oak", "spruce", "birch", "jungle", "acacia", "dark_oak", "mangrove", 
 for w in ["oak", "spruce", "birch", "jungle", "acacia", "dark_oak", "mangrove", "cherry", "bamboo", "crimson", "warped"]:
     add("chat", "Give " + w.replace("_", " ") + " planks", "/give @s minecraft:" + w + "_planks 64", False, CHEAT)
 for r in ["redstone_torch", "repeater", "comparator", "piston", "sticky_piston", "observer",
-          "dispenser", "dropper", "hopper", "lever", "redstone_lamp", "note_block", "target",
+          "dispenser", "dropper", "hopper", "lever", "redstone_lamp", "noteblock", "target",
           "daylight_detector", "tripwire_hook", "trapped_chest", "lectern", "sculk_sensor",
           "calibrated_sculk_sensor", "crafter", "heavy_weighted_pressure_plate", "light_weighted_pressure_plate",
-          "oak_pressure_plate", "stone_pressure_plate", "polished_blackstone_pressure_plate", "oak_button", "stone_button"]:
+          "wooden_pressure_plate", "stone_pressure_plate", "polished_blackstone_pressure_plate", "wooden_button", "stone_button"]:
     add("chat", "Give " + r.replace("_", " "), "/give @s minecraft:" + r + " 4", False, CHEAT)
 for o in ["coal_ore", "iron_ore", "copper_ore", "gold_ore", "redstone_ore", "lapis_ore",
-          "diamond_ore", "emerald_ore", "nether_quartz_ore", "nether_gold_ore", "ancient_debris",
+          "diamond_ore", "emerald_ore", "quartz_ore", "nether_gold_ore", "ancient_debris",
           "deepslate_diamond_ore", "deepslate_iron_ore", "deepslate_gold_ore"]:
     add("chat", "Give " + o.replace("_", " "), "/give @s minecraft:" + o + " 16", False, CHEAT)
 for f in ["apple", "melon_slice", "carrot", "potato", "beetroot", "sweet_berries", "glow_berries",
@@ -342,8 +344,8 @@ for b in ["cod_bucket", "salmon_bucket", "pufferfish_bucket", "tropical_fish_buc
 
 # ---- command block kits (selector-based, made for blocks) ----
 add("block", "Kit: give everyone at spawn a starter set", "/give @a[r=10] minecraft:stone_sword 1", True, "Run in a command block at spawn")
-add("block", "Kit: heal everyone nearby", "/effect @a[r=10] minecraft:instant_health 1 2", True, "")
-add("block", "Kit: feed everyone nearby", "/effect @a[r=10] minecraft:saturation 10 0", True, "")
+add("block", "Kit: heal everyone nearby", "/effect @a[r=10] instant_health 1 2", True, "")
+add("block", "Kit: feed everyone nearby", "/effect @a[r=10] saturation 10 0", True, "")
 add("block", "Kit: teleport pad (10 blocks up)", "/tp @p[r=2] ~ ~10 ~", True, "Step-on pad")
 add("block", "Kit: adventure zone entry", "/gamemode adventure @p[r=5]", True, "")
 add("block", "Kit: kill items on ground (lag clear)", "/kill @e[type=minecraft:item]", True, "Deletes dropped items", True)
@@ -353,7 +355,7 @@ add("block", "Kit: welcome new player title", "/title @a[tag=!welcomed] title WE
 add("block", "Kit: tag after welcome", "/tag @a[tag=!welcomed] add welcomed", True, "Chain after the title block")
 add("block", "Kit: day button", "/time set day", True, "Button on impulse block")
 add("block", "Kit: rain off button", "/weather clear", True, "")
-add("block", "Kit: arena heal pad", "/effect @a[r=3] minecraft:regeneration 5 2", True, "Repeating block, always active")
+add("block", "Kit: arena heal pad", "/effect @a[r=3] regeneration 5 2", True, "Repeating block, always active")
 add("block", "Kit: checkpoint setter", "/spawnpoint @a[r=4] ~ ~ ~", True, "")
 add("block", "Kit: spawn zombies wave", "/summon minecraft:zombie ~ ~1 ~", True, CHEAT)
 add("block", "Kit: XP fountain", "/xp 10L @a[r=5]", True, CHEAT)
@@ -361,7 +363,37 @@ add("block", "Kit: barrier floor fill", "/fill ~-5 ~-1 ~-5 ~5 ~-1 ~5 minecraft:g
 add("block", "Kit: everyone to arena", "/tp @a 100 65 100", True, "Replace coords")
 add("block", "Kit: clear inventory gate", "/clear @a[r=3]", True, "Wipes items - for kit-based arenas", True)
 
+
+VANILLA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vanilla")
+
+def validate():
+    """Drop entries whose identifiers are not in Mojang bedrock-samples command enums."""
+    d = json.load(io.open(os.path.join(VANILLA, "mojang-commands.json"), encoding="utf-8"))
+    en = {e["name"]: {v["value"] for v in e["values"]} for e in d["command_enums"]}
+    ITEM, EFF, ENC, BLK, ENT, SF = (en["Item"], en["Effect"], en["Enchant"], en["Block"], en["EntityType"], en["StructureFeature"])
+    kept, dropped = [], []
+    for e in E:
+        c, ok = e["c"], True
+        for m in re.finditer(r"/give @\w (minecraft:[a-z0-9_]+)", c):
+            ok &= m.group(1) in ITEM
+        for m in re.finditer(r"/summon (minecraft:[a-z0-9_:]+)", c):
+            ok &= m.group(1) in ENT
+        for m in re.finditer(r"/effect @\w(?:\[[^]]*\])? ([a-z0-9_:]+)", c):
+            ok &= (m.group(1) in EFF) or (m.group(1) == "clear")
+        for m in re.finditer(r"/enchant @\w ([a-z0-9_:]+)", c):
+            ok &= m.group(1) in ENC
+        for m in re.finditer(r"(?:setblock|fill) (?:[~\d-]+ ){1,6}(minecraft:[a-z0-9_]+)", c):
+            ok &= m.group(1) in BLK
+        for m in re.finditer(r"/locate structure ([a-z0-9_:]+)", c):
+            ok &= m.group(1) in SF
+        (kept if ok else dropped).append(e)
+    for e in dropped:
+        print("DROPPED", e["n"], "|", e["c"])
+    print("validation: kept", len(kept), "dropped", len(dropped))
+    E[:] = kept
+
 def main():
+    validate()
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     # stable ids
     for i, e in enumerate(E):
