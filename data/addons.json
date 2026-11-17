@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-17T11:26:10Z",
+ "updated": "2026-11-17T11:27:17Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -947,6 +947,18 @@
    "sha256": "41fe5887bf35fc1216c7fb466f88804458844e3c11e7c39e3c7b22a84c21e38d",
    "added": "2026-11-15T19:34:08Z",
    "icon": true
+  },
+  {
+   "id": "secret-doors-add-on",
+   "name": "Secret Doors Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/secret-doors-add-on.jpg",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/secret-doors-add-on/Secret.Doors.Add-On.by.FREE.MC.MARKET.PLACE.mcaddon",
+   "size": 441143,
+   "type": "addon",
+   "filename": "Secret Doors Add-On by FREE MC MARKET PLACE.mcaddon",
+   "sha256": "5b2aa6377a76f5b00662040dc2f37152e183cc5ab305fc617ec3b6f1feef645a",
+   "added": "2026-11-17T11:27:17Z"
   }
  ],
  "promos": [
