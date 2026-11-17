@@ -638,24 +638,37 @@ final class Panel {
         if (a.banner != null) Images.load(h.img, a.banner, a.icon);
         boolean o = open.contains(a.id);
         if (a.desc.trim().length() == 0) o = false;
-        h.desc.setVisibility(o ? View.VISIBLE : View.GONE);
+        boolean seedRow = "seed".equals(a.type);
+        h.desc.setVisibility(o || (seedRow && a.desc.trim().length() > 0) ? View.VISIBLE : View.GONE);
+        h.desc.setMaxLines(o ? Integer.MAX_VALUE : 2);
+        h.desc.setEllipsize(o ? null : TextUtils.TruncateAt.END);
         h.desc.setText(a.desc);
-        h.q.setVisibility(a.desc.trim().length() > 0 ? View.VISIBLE : View.GONE);
+        h.q.setVisibility(a.desc.trim().length() > 0 || seedRow ? View.VISIBLE : View.GONE);
         h.q.setText(o ? "-" : "?");
         btn(h.dl, a);
     }
 
     /** Version info for the rows on screen, fetched only when scrolling rests. */
     private void prefetchVersions() {
-        if (userVer == null || list == null) return;
+        if (list == null) return;
         for (int i = 0; i < list.getChildCount(); i++) {
             Holder h = (Holder) list.getChildAt(i).getTag(R.id.holder);
-            if (h != null && h.a != null && h.a.cf && h.a.info == null) {
+            if (h == null || h.a == null) continue;
+            if (userVer != null && h.a.cf && h.a.info == null) {
                 final String id = h.a.id;
                 Mc.loadInfo(h.a, main, new Runnable() { public void run() { refreshVer(id); } });
+            } else if ("seed".equals(h.a.type) && h.a.seed == null && seedTried.add(h.a.id)) {
+                final Addon a = h.a;
+                final String id = a.id;
+                new Thread(new Runnable() { public void run() {
+                    boolean ok = Seeds.fillDetail(a);
+                    if (!ok) seedTried.remove(a.id);   // allow retry on a later idle
+                    main.post(new Runnable() { public void run() { refreshVer(id); } });
+                } }).start();
             }
         }
     }
+    private final Set<String> seedTried = new HashSet<>();
 
     private void btn(PBtn b, Addon a) {
         if ("seed".equals(a.type)) {
