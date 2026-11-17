@@ -6,6 +6,7 @@ final class Addon {
     boolean icon, cf, nine, laby, slim;
     String page = "", author = "", labyHash = "";
     String seed, seedCoords;          // WiseHosting seed string + coords; null until detail loaded
+    Cmds.Entry cmd;                   // bundled command template; non-null only for type "command"
     String lname = "", ldesc = "";
     java.util.List<String> vers;   // MCPEDL declared supported versions; null = not checked or none found
     Mc.Info info;                  // parsed post page (files + versions); null until loaded
@@ -31,5 +32,5 @@ final class Addon {
         return Math.max(1, size / 1024) + " KB";
     }
 
-    String typeLabel() { if (type.equals("texture")) return "TEXTURES"; if (type.equals("hdr")) return ""; if (type.equals("skin")) return laby ? "SKIN" : "SKIN PACK"; if (type.equals("seed")) return "SEED"; return type.equals("world") ? "WORLD" : type.equals("addon") ? "ADDON" : type.equals("pack") ? "PACK" : type.equals("template") ? "TEMPLATE" : "FILE"; }
+    String typeLabel() { if (type.equals("texture")) return "TEXTURES"; if (type.equals("hdr")) return ""; if (type.equals("skin")) return laby ? "SKIN" : "SKIN PACK"; if (type.equals("seed")) return "SEED"; if (type.equals("command")) return "COMMAND"; return type.equals("world") ? "WORLD" : type.equals("addon") ? "ADDON" : type.equals("pack") ? "PACK" : type.equals("template") ? "TEMPLATE" : "FILE"; }
 }

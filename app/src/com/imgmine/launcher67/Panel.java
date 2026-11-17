@@ -1,6 +1,7 @@
 package com.imgmine.launcher67;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.*;
@@ -29,8 +30,8 @@ final class Panel {
     private ListView list;
     private TextView state, clear;
     private EditText search;
-    private TextView[] chips = new TextView[6];
-    private static final String[] KEYS = {"", "addon", "world", "texture", "skin", "seed"};
+    private TextView[] chips = new TextView[7];
+    private static final String[] KEYS = {"", "addon", "world", "texture", "skin", "seed", "command"};
     private boolean shown;
     private int cw, ch, typeFilter;
     private List<Addon> all = new ArrayList<>(), view = new ArrayList<>();
@@ -52,7 +53,10 @@ final class Panel {
     private List<Addon> labyFeed = new ArrayList<>();
     private boolean labyDone;
     // SEEDS tab state (WiseHosting, Bedrock-only)
-    private HorizontalScrollView seedRow;
+    private HorizontalScrollView seedRow, cmdRow;
+    private String cmdCat = "chat";
+    private final List<Addon> cmdFeed = new ArrayList<>();
+    private boolean cmdLoaded;
     private String seedTag;
     private boolean seedDone;
     private List<Addon> seedFeed = new ArrayList<>();
@@ -210,13 +214,13 @@ final class Panel {
 
         // type chips
         LinearLayout cr = new LinearLayout(ctx);
-        String[] names = {"ALL", "ADDONS", "WORLDS", "TEXTURES", "SKINS", "SEEDS"};
+        String[] names = {"ALL", "ADDONS", "WORLDS", "TEXTURES", "SKINS", "SEEDS", "COMMANDS"};
         for (int i = 0; i < names.length; i++) {
             final int k = i;
             TextView c = text(names[i], 12, Ui.MUTE);
             c.setGravity(Gravity.CENTER);
             c.setPadding(Ui.dp(9), Ui.dp(5), Ui.dp(9), Ui.dp(7));
-            c.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { typeFilter = k; chipStyle(); resetNet(); refilter(true); netSearch(); } });
+            c.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { typeFilter = k; chipStyle(); if (k == 6) loadCmds(); resetNet(); refilter(true); netSearch(); } });
             chips[i] = c;
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             lp.rightMargin = Ui.dp(5);
@@ -252,6 +256,22 @@ final class Panel {
         LinearLayout.LayoutParams slp2 = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         slp2.setMargins(Ui.dp(2), 0, Ui.dp(2), Ui.dp(6));
         card.addView(seedRow, slp2);
+
+        // command subcategory chips (visible only on the COMMANDS tab)
+        LinearLayout cr2 = new LinearLayout(ctx);
+        for (final String[] cc : new String[][]{{"CHAT", "chat"}, {"COMMAND BLOCK", "block"}}) {
+            TextView c = text(cc[0], 12, Ui.MUTE);
+            c.setGravity(Gravity.CENTER);
+            c.setPadding(Ui.dp(9), Ui.dp(5), Ui.dp(9), Ui.dp(7));
+            c.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { cmdCat = cc[1]; cmdChipStyle(); refilter(true); } });
+            c.setTag(cc[1]);
+            cr2.addView(c, chipLp());
+        }
+        cmdRow = new HorizontalScrollView(ctx);
+        cmdRow.setHorizontalScrollBarEnabled(false);
+        cmdRow.addView(cr2);
+        cmdRow.setVisibility(View.GONE);
+        card.addView(cmdRow, slp2);
 
         // list + state
         FrameLayout body = new FrameLayout(ctx);
@@ -295,6 +315,29 @@ final class Panel {
         return lp;
     }
 
+    private void cmdChipStyle() {
+        if (cmdRow == null) return;
+        LinearLayout sr = (LinearLayout) cmdRow.getChildAt(0);
+        for (int i = 0; i < sr.getChildCount(); i++) {
+            TextView c = (TextView) sr.getChildAt(i);
+            c.setTextColor(cmdCat.equals((String) c.getTag()) ? Ui.GREEN : Ui.MUTE);
+        }
+    }
+
+    /** Loads the bundled command templates once; local asset, no network. */
+    private void loadCmds() {
+        if (cmdLoaded) return;
+        cmdLoaded = true;
+        new Thread(new Runnable() { public void run() {
+            final List<Addon> rows = new ArrayList<>();
+            for (Cmds.Entry e : Cmds.all(ctx)) rows.add(Cmds.toAddon(e));
+            main.post(new Runnable() { public void run() {
+                cmdFeed.clear(); cmdFeed.addAll(rows);
+                cmdChipStyle(); refilter(false);
+            } });
+        } }).start();
+    }
+
     private void seedChipStyle() {
         if (seedRow == null) return;
         LinearLayout sr = (LinearLayout) seedRow.getChildAt(0);
@@ -307,6 +350,7 @@ final class Panel {
 
     private void chipStyle() {
         if (seedRow != null) seedRow.setVisibility(typeFilter == 5 ? View.VISIBLE : View.GONE);
+        if (cmdRow != null) cmdRow.setVisibility(typeFilter == 6 ? View.VISIBLE : View.GONE);
         for (int i = 0; i < chips.length; i++) {
             boolean on = i == typeFilter;
             chips[i].setTextColor(on ? Ui.GREEN : Ui.MUTE);
@@ -496,7 +540,10 @@ final class Panel {
         return h;
     }
 
-    private boolean tabHas(Addon a) { return typeFilter == 0 || KEYS[typeFilter].equals(a.type); }
+    private boolean tabHas(Addon a) {
+        if ("command".equals(a.type)) return typeFilter == 6;
+        return typeFilter != 6 && (typeFilter == 0 || KEYS[typeFilter].equals(a.type));
+    }
 
     private void refilter(boolean toTop) {
         String qs = search == null ? "" : search.getText().toString();
@@ -505,6 +552,7 @@ final class Panel {
         List<Addon> typed = new ArrayList<>();
         for (Addon a : all) if (tabHas(a)) typed.add(a);
         List<Addon> db = Fuzzy.search(typed, qs);
+        if (searching && typeFilter == 6) db = Fuzzy.search(cmdFeed, qs);
         if (searching) {
             if (!db.isEmpty()) { view.add(header("67 DATABASE")); view.addAll(db); }
             if (!labyAll.isEmpty() && (typeFilter == 0 || typeFilter == 4)) { view.add(header("LABY SKINS")); view.addAll(labyAll); }
@@ -518,6 +566,11 @@ final class Panel {
             view.addAll(db);
             if (typeFilter == 4 && !labyFeed.isEmpty()) { view.add(header("LABY SKINS - POPULAR")); view.addAll(labyFeed); }
             if (typeFilter == 5 && !seedFeed.isEmpty()) { view.add(header("WISEHOSTING - BEDROCK SEEDS")); view.addAll(seedFeed); }
+            if (typeFilter == 6) {
+                List<Addon> cd = new ArrayList<>();
+                for (Addon a : cmdFeed) if (cmdCat.equals(a.cmd.cat)) cd.add(a);
+                if (!cd.isEmpty()) { view.add(header(cmdCat.equals("chat") ? "CHAT COMMANDS" : "COMMAND BLOCK")); view.addAll(cd); }
+            }
             List<Addon> fd = new ArrayList<>();
             for (Addon a : feed) if (tabHas(a)) fd.add(a);
             if (!fd.isEmpty()) {
@@ -603,7 +656,7 @@ final class Panel {
         col.addView(btns);
         h.row = new LinearLayout(ctx);
         h.row.addView(wrap, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        h.dl.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { if ("seed".equals(h.a.type)) copySeed(h.a); else download(h.a); } });
+        h.dl.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { if ("seed".equals(h.a.type)) copySeed(h.a); else if ("command".equals(h.a.type)) editCopyCmd(h.a); else download(h.a); } });
         h.q.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (h.a == null) return;
@@ -659,15 +712,20 @@ final class Panel {
         h.img.setTag(null);
         h.img.setScaleType(ImageView.ScaleType.CENTER_CROP);
         h.img.setImageDrawable(Images.art(a.name, ctx.getResources()));
-        if (a.banner != null) Images.load(h.img, a.banner, a.icon);
+        if ("command".equals(a.type)) {
+            h.img.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            try { h.img.setImageDrawable(new android.graphics.drawable.BitmapDrawable(ctx.getResources(), android.graphics.BitmapFactory.decodeStream(ctx.getAssets().open("icons/" + a.page + ".png")))); }
+            catch (Exception ignored) { }
+        } else if (a.banner != null) Images.load(h.img, a.banner, a.icon);
         boolean o = open.contains(a.id);
         if (a.desc.trim().length() == 0) o = false;
         boolean seedRow = "seed".equals(a.type);
-        h.desc.setVisibility(o || (seedRow && a.desc.trim().length() > 0) ? View.VISIBLE : View.GONE);
+        boolean cmdRow2 = "command".equals(a.type);
+        h.desc.setVisibility(cmdRow2 || o || (seedRow && a.desc.trim().length() > 0) ? View.VISIBLE : View.GONE);
         h.desc.setMaxLines(o ? Integer.MAX_VALUE : 2);
         h.desc.setEllipsize(o ? null : TextUtils.TruncateAt.END);
         h.desc.setText(a.desc);
-        h.q.setVisibility(a.desc.trim().length() > 0 || seedRow ? View.VISIBLE : View.GONE);
+        h.q.setVisibility(cmdRow2 ? View.GONE : (a.desc.trim().length() > 0 || seedRow ? View.VISIBLE : View.GONE));
         h.q.setText(o ? "-" : "?");
         btn(h.dl, a);
     }
@@ -700,6 +758,14 @@ final class Panel {
             b.dot = false;
             b.setAlpha(1f);
             b.setText("COPY SEED");
+            b.invalidate();
+            return;
+        }
+        if ("command".equals(a.type)) {
+            b.pct = -1;
+            b.dot = false;
+            b.setAlpha(1f);
+            b.setText("EDIT + COPY");
             b.invalidate();
             return;
         }
@@ -737,6 +803,48 @@ final class Panel {
             ctx.startActivity(it);
             hide();
         } catch (Exception ignored) {}
+    }
+
+    /** Edit-before-copy dialog for a bundled command template. Never executes anything. */
+    private void editCopyCmd(final Addon a) {
+        if (a == null || a.cmd == null) return;
+        LinearLayout box = new LinearLayout(ctx);
+        box.setOrientation(LinearLayout.VERTICAL);
+        int pad = Ui.dp(18);
+        box.setPadding(pad, Ui.dp(12), pad, 0);
+        final android.widget.EditText et = new android.widget.EditText(ctx);
+        et.setText(a.cmd.c);
+        et.setTextColor(Ui.INK);
+        et.setTextSize(14);
+        et.setBackgroundColor(0x00000000);
+        box.addView(et, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        StringBuilder info = new StringBuilder();
+        if (a.cmd.note != null && a.cmd.note.length() > 0) info.append(a.cmd.note);
+        if (a.cmd.cat.equals("chat") && !a.cmd.cb) {
+            if (info.length() > 0) info.append("\n");
+            info.append("Chat only - not for command blocks.");
+        }
+        if (a.cmd.warn) {
+            if (info.length() > 0) info.append("\n");
+            info.append("WARNING: can destroy things or affect other players. Check the target before pasting.");
+        }
+        if (info.length() > 0) {
+            TextView nt = text(info.toString(), 12, a.cmd.warn ? 0xFFFF9F68 : Ui.MUTE);
+            nt.setPadding(0, Ui.dp(8), 0, 0);
+            box.addView(nt);
+        }
+        new AlertDialog.Builder(ctx)
+            .setTitle(a.name)
+            .setView(box)
+            .setPositiveButton("Copy", new android.content.DialogInterface.OnClickListener() {
+                public void onClick(android.content.DialogInterface d, int w) {
+                    android.content.ClipboardManager cm = (android.content.ClipboardManager) ctx.getSystemService(Context.CLIPBOARD_SERVICE);
+                    cm.setPrimaryClip(android.content.ClipData.newPlainText("Minecraft command", et.getText().toString()));
+                    Toast.makeText(ctx, "Command copied", Toast.LENGTH_SHORT).show();
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
     }
 
     /** Copies the exact seed string to the clipboard, fetching the detail page first if needed. */

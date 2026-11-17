@@ -392,8 +392,27 @@ def validate():
     print("validation: kept", len(kept), "dropped", len(dropped))
     E[:] = kept
 
+def iconof(e):
+    c = e["c"]
+    if e["cat"] == "block": return "ic_cmd"
+    if c.startswith("/give"): return "ic_give"
+    if c.startswith("/summon"): return "ic_summon"
+    if c.startswith("/effect"): return "ic_effect"
+    if c.startswith("/enchant"): return "ic_enchant"
+    if c.startswith(("/setblock", "/fill", "/clone")): return "ic_block"
+    if c.startswith("/locate"): return "ic_locate"
+    if c.startswith(("/tp", "/teleport")): return "ic_tp"
+    if c.startswith("/gamerule"): return "ic_rule"
+    if c.startswith("/scoreboard"): return "ic_score"
+    if c.startswith(("/particle", "/playsound", "/stopsound")): return "ic_fx"
+    if c.startswith(("/title", "/tellraw", "/say", "/tell", "/me", "/msg")): return "ic_text"
+    if c.startswith(("/weather", "/time", "/toggledownfall")): return "ic_weather"
+    return "ic_misc"
+
 def main():
     validate()
+    for e in E:
+        e["icon"] = iconof(e)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     # stable ids
     for i, e in enumerate(E):
