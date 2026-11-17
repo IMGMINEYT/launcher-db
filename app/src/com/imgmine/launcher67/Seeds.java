@@ -67,8 +67,8 @@ final class Seeds {
                 d.type = "seed";
                 d.page = "https://wisehosting.com/minecraft-seeds/" + slug;
                 Matcher im = IMG.matcher(body);
-                if (im.find()) d.banner = "https://wisehosting.com/_next/image?url="
-                    + java.net.URLEncoder.encode(im.group(1), "UTF-8") + "&w=640&q=75";
+                if (im.find()) d.banner = "https://images.weserv.nl/?url="
+                    + im.group(1).replaceFirst("^https?://", "").replace("%", "%25") + "&w=640&output=jpg";
                 String txt = TAGSTRIP.matcher(body).replaceAll("|").replace('\u00a0', ' ');
                 String[] toks = txt.split("\\|+");
                 String name = "", ver = "";
