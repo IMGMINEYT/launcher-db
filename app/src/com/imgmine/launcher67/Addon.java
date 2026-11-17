@@ -3,9 +3,12 @@ package com.imgmine.launcher67;
 final class Addon {
     String id = "", name = "", desc = "", banner, download = "", type = "file", filename = "", source;
     long size, added;
-    boolean icon, cf;
-    String page = "", author = "";
+    boolean icon, cf, nine, laby, slim;
+    String page = "", author = "", labyHash = "";
     String lname = "", ldesc = "";
+    java.util.List<String> vers;   // MCPEDL declared supported versions; null = not checked or none found
+
+    String srcLabel() { return cf ? "MCPEDL" : nine ? "9MINECRAFT" : laby ? "LABY" : ""; }
 
     String safeFile() {
         String ext = ".mcaddon";
@@ -26,5 +29,5 @@ final class Addon {
         return Math.max(1, size / 1024) + " KB";
     }
 
-    String typeLabel() { if (type.equals("texture")) return "TEXTURES"; if (type.equals("hdr")) return ""; if (type.equals("skin")) return "SKIN PACK"; return type.equals("world") ? "WORLD" : type.equals("addon") ? "ADDON" : type.equals("pack") ? "PACK" : type.equals("template") ? "TEMPLATE" : "FILE"; }
+    String typeLabel() { if (type.equals("texture")) return "TEXTURES"; if (type.equals("hdr")) return ""; if (type.equals("skin")) return laby ? "SKIN" : "SKIN PACK"; if (type.equals("seed")) return "SEED"; return type.equals("world") ? "WORLD" : type.equals("addon") ? "ADDON" : type.equals("pack") ? "PACK" : type.equals("template") ? "TEMPLATE" : "FILE"; }
 }

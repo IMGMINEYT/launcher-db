@@ -89,7 +89,21 @@ final class Images {
         } catch (Exception e) { return "x" + u.hashCode(); }
     }
 
+    private static final java.util.Set<String> INFLIGHT = java.util.Collections.synchronizedSet(new java.util.HashSet<String>());
+
     private static Bitmap fetch(String url) {
+        if (!INFLIGHT.add(url)) {   // same picture already loading: poll the memory cache briefly
+            for (int i = 0; i < 30; i++) {
+                try { Thread.sleep(150); } catch (Exception ignored) {}
+                Bitmap b = MEM.get(url);
+                if (b != null) return b;
+            }
+            return null;
+        }
+        try { return fetchOne(url); } finally { INFLIGHT.remove(url); }
+    }
+
+    private static Bitmap fetchOne(String url) {
         try {
             File f = new File(dir, key(url));
             if (!f.exists() || f.length() == 0) {

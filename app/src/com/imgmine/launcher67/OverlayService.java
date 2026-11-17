@@ -55,7 +55,7 @@ public class OverlayService extends Service {
             boolean bg = t == android.app.usage.UsageEvents.Event.MOVE_TO_BACKGROUND;
             if (!fg && !bg) continue;
             String pk = e.getPackageName();
-            if (Downloader.MC.equals(pk)) { mcFg = fg; any = true; }
+            if (Downloader.MC.equals(pk) || McVer.PREVIEW.equals(pk)) { mcFg = fg; any = true; }
             else if (fg && !pk.equals(getPackageName()) && !pk.startsWith("com.android.systemui") && !pk.contains("inputmethod")) { mcFg = false; any = true; }
         }
         lastQ = now;

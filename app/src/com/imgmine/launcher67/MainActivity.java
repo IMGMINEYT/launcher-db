@@ -14,7 +14,7 @@ import android.view.ViewGroup;
 import android.widget.*;
 
 public class MainActivity extends Activity {
-    private TextView allow, notif, start, stop, hint, dnsNote, usage;
+    private TextView allow, notif, start, stop, hint, dnsNote, usage, mcInfo;
     private LinearLayout promoBox;
 
     private boolean canOverlay() { return Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(this); }
@@ -55,8 +55,13 @@ public class MainActivity extends Activity {
 
         TextView sub = label("Addons for Minecraft Bedrock, one tap away over your game.", 14, Ui.MUTE);
         sub.setTypeface(null);
-        sub.setPadding(0, Ui.dp(12), 0, Ui.dp(26));
+        sub.setPadding(0, Ui.dp(12), 0, Ui.dp(10));
         col.addView(sub);
+
+        mcInfo = label("", 12, Ui.MUTE);
+        mcInfo.setTypeface(null);
+        mcInfo.setPadding(0, 0, 0, Ui.dp(16));
+        col.addView(mcInfo);
 
         col.addView(step("1", "Allow display over other apps", true));
         allow = Ui.button(this, "ALLOW", Ui.GOLD, 0xFF1B1400);
@@ -136,10 +141,11 @@ public class MainActivity extends Activity {
         }
         Intent s = new Intent(this, OverlayService.class);
         if (Build.VERSION.SDK_INT >= 26) startForegroundService(s); else startService(s);
-        Intent mc = getPackageManager().getLaunchIntentForPackage(Downloader.MC);
+        Intent mc = getPackageManager().getLaunchIntentForPackage(McVer.MC);
+        if (mc == null) mc = getPackageManager().getLaunchIntentForPackage(McVer.PREVIEW);
         if (mc == null) {
             Toast.makeText(this, "Minecraft is not installed on this phone.", Toast.LENGTH_LONG).show();
-            try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + Downloader.MC))); } catch (Exception ignored) {}
+            try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + McVer.MC))); } catch (Exception ignored) {}
         } else {
             startActivity(mc);
         }
@@ -199,6 +205,9 @@ public class MainActivity extends Activity {
         usage.setText(us ? "USAGE ACCESS ON" : "ALLOW USAGE ACCESS");
         usage.setAlpha(us ? 0.5f : 1f);
         dnsNote.setVisibility(adBlockDns() ? View.VISIBLE : View.GONE);
+        String mv = McVer.status(this);
+        mcInfo.setText(mv);
+        mcInfo.setTextColor(McVer.raw(this) == null && McVer.previewRaw(this) == null ? Ui.RED : Ui.MUTE);
         stop.setVisibility(OverlayService.running ? View.VISIBLE : View.GONE);
         if (Build.VERSION.SDK_INT >= 33) {
             boolean n = checkSelfPermission("android.permission.POST_NOTIFICATIONS") == PackageManager.PERMISSION_GRANTED;

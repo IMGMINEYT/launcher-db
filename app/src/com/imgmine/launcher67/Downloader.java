@@ -129,7 +129,15 @@ final class Downloader {
         i.setDataAndType(u, "application/octet-stream");
         i.setClipData(ClipData.newRawUri("addon", u));
         i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-        i.setPackage(MC);
+        try {
+            c.getPackageManager().getPackageInfo(MC, 0);
+            i.setPackage(MC);
+        } catch (Exception e) {
+            try {
+                c.getPackageManager().getPackageInfo(McVer.PREVIEW, 0);
+                i.setPackage(McVer.PREVIEW);
+            } catch (Exception ignored) {}
+        }
         try {
             c.startActivity(i);
             return;

@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.*;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -21,10 +23,11 @@ final class Panel {
     private final WindowManager wm;
     private final SharedPreferences sp;
     private final Runnable onClosed;
+    private final Handler main = new Handler(Looper.getMainLooper());
     private FrameLayout root;
     private LinearLayout card;
     private ListView list;
-    private TextView state, count, clear;
+    private TextView state, clear;
     private EditText search;
     private TextView[] chips = new TextView[7];
     private static final String[] KEYS = {"", "addon", "world", "pack", "template", "texture", "skin"};
@@ -36,10 +39,22 @@ final class Panel {
     private final Set<String> done = new HashSet<>();
     private BaseAdapter adapter;
     private boolean loading;
+    private String userVer;
 
-    /** Button that fills with progress while downloading. */
+    // endless feed state (no search text): MCPEDL pages per type id
+    private final Map<Integer, Integer> nextPage = new HashMap<>();
+    private final Set<Integer> endedTypes = new HashSet<>();
+    private final Set<String> seenIds = new HashSet<>();
+    private int ninePage = 1;
+    private boolean nineEnded, feedLoading;
+    private List<Addon> feed = new ArrayList<>();   // MCPEDL/9mc items, in arrival order
+    private List<Addon> labyFeed = new ArrayList<>();
+    private boolean labyDone;
+
+    /** Button that fills with progress while downloading; red dot when the addon declares no support for the user's game version. */
     private final class PBtn extends TextView {
         int pct = -1;
+        boolean dot;
         PBtn(Context c) { super(c); }
         @Override protected void onDraw(Canvas c) {
             if (pct >= 0) {
@@ -49,6 +64,14 @@ final class Panel {
                 c.drawRect(in, in, in + (getWidth() - 2 * in) * pct / 100f, getHeight() - in, p);
             }
             super.onDraw(c);
+            if (dot) {
+                Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+                int r = Ui.dp(4), x = getWidth() - r - Ui.dp(2), y = r + Ui.dp(1);
+                p.setColor(0xFF000000);
+                c.drawCircle(x, y, r, p);
+                p.setColor(Ui.RED);
+                c.drawCircle(x, y, r - Ui.dp(1.5f), p);
+            }
         }
     }
 
@@ -120,11 +143,7 @@ final class Panel {
         head.setPadding(Ui.dp(8), Ui.dp(2), Ui.dp(2), Ui.dp(2));
         head.addView(text("::", 16, Ui.MUTE));
         TextView t = text("  67 LAUNCHER", 16, Ui.GREEN);
-        head.addView(t);
-        count = text("", 12, Ui.MUTE);
-        count.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
-        count.setPadding(0, 0, Ui.dp(8), 0);
-        head.addView(count, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        head.addView(t, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         TextView x = Ui.button(ctx, "X", Ui.RED, 0xFFFFFFFF);
         x.setPadding(0, Ui.dp(2), 0, Ui.dp(4));
         x.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { hide(); } });
@@ -157,7 +176,7 @@ final class Panel {
         sb.addView(new Mag(ctx), new LinearLayout.LayoutParams(Ui.dp(16), Ui.dp(16)));
         search = new EditText(ctx);
         search.setBackground(null);
-        search.setHint("Search addons");
+        search.setHint("Search addons, worlds, skins");
         search.setHintTextColor(0xFF6B7480);
         search.setTextColor(Ui.INK);
         search.setTypeface(Ui.PX);
@@ -168,7 +187,7 @@ final class Panel {
         search.addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int a, int b, int c) {}
             public void onTextChanged(CharSequence s, int a, int b, int c) {}
-            public void afterTextChanged(Editable e) { clear.setVisibility(e.length() > 0 ? View.VISIBLE : View.INVISIBLE); refilter(true); cfSearch(); }
+            public void afterTextChanged(Editable e) { clear.setVisibility(e.length() > 0 ? View.VISIBLE : View.INVISIBLE); refilter(true); netSearch(); }
         });
         search.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             public boolean onEditorAction(TextView v, int a, KeyEvent e) { hideKeys(); return true; }
@@ -191,7 +210,7 @@ final class Panel {
             TextView c = text(names[i], 12, Ui.MUTE);
             c.setGravity(Gravity.CENTER);
             c.setPadding(Ui.dp(9), Ui.dp(5), Ui.dp(9), Ui.dp(7));
-            c.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { typeFilter = k; chipStyle(); cfAll = new ArrayList<>(); cfGen++; refilter(true); cfSearch(); } });
+            c.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { typeFilter = k; chipStyle(); resetNet(); refilter(true); netSearch(); } });
             chips[i] = c;
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             lp.rightMargin = Ui.dp(5);
@@ -220,7 +239,9 @@ final class Panel {
         list.setAdapter(adapter);
         list.setOnScrollListener(new AbsListView.OnScrollListener() {
             public void onScrollStateChanged(AbsListView v, int s) { if (s != SCROLL_STATE_IDLE) hideKeys(); }
-            public void onScroll(AbsListView v, int a, int b, int c) {}
+            public void onScroll(AbsListView v, int first, int visible, int total) {
+                if (total > 0 && first + visible >= total - 6) loadMore();
+            }
         });
         body.addView(list, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         state = text("", 15, Ui.MUTE);
@@ -250,10 +271,18 @@ final class Panel {
         loading = true;
         if (all.isEmpty()) setState("Loading addons...");
         Api.fetch(ctx.getApplicationContext(), new Api.CB() {
-            public void ok(List<Addon> l) { loading = false; all = l; refilter(false); Images.prefetch(all, 24); }
+            public void ok(List<Addon> l) {
+                loading = false;
+                all = l;
+                for (Addon a : l) seenIds.add(a.id);
+                refilter(false);
+                Images.prefetch(all, 24);
+                loadMore();
+            }
             public void fail() {
                 loading = false;
                 if (all.isEmpty()) setState("Cannot load addons.\nCheck internet, tap to retry.");
+                loadMore();
             }
         });
     }
@@ -263,32 +292,118 @@ final class Panel {
         state.setVisibility(s.length() == 0 ? View.GONE : View.VISIBLE);
     }
 
-    private List<Addon> cfAll = new ArrayList<>();
-    private int cfGen;
-    private final Runnable cfRun = new Runnable() { public void run() { cfNow(); } };
-
-    private void cfSearch() {
-        search.removeCallbacks(cfRun);
-                if (search.getText().toString().trim().length() < 2 && typeFilter != 6) {
-            if (!cfAll.isEmpty()) { cfAll = new ArrayList<>(); refilter(false); }
-            return;
+    /** MCPEDL type ids feeding the current tab. */
+    private int[] feedTypes() {
+        switch (typeFilter) {
+            case 1: return new int[]{1};
+            case 2: return new int[]{2};
+            case 5: return new int[]{3};
+            case 6: return new int[]{6};
+            case 0: return new int[]{1, 2};
+            default: return new int[0];
         }
-        search.postDelayed(cfRun, 600);
     }
 
-    private void cfNow() {
-        final String q = search.getText().toString();
-        final int gen = ++cfGen;
-        final boolean sk = typeFilter == 6;
+    private void resetNet() {
+        cfAll = new ArrayList<>();
+        nineAll = new ArrayList<>();
+        labyAll = new ArrayList<>();
+        srchGen++;
+    }
+
+    /** Next feed page for the current tab; safe to call often, it gates itself. */
+    private void loadMore() {
+        if (feedLoading || search.getText().toString().trim().length() >= 2) return;
+        int[] types = feedTypes();
+        int pick = -1;
+        for (int t : types) if (!endedTypes.contains(t)) { pick = t; break; }
+        final boolean nineMore = (typeFilter == 0 || typeFilter == 1) && !nineEnded;
+        final boolean labyMore = typeFilter == 6 && !labyDone;
+        if (pick < 0 && !nineMore && !labyMore) return;
+        feedLoading = true;
+        final int typeId = pick;
+        final int page = typeId < 0 ? 0 : nextPage.containsKey(typeId) ? nextPage.get(typeId) : 1;
         new Thread(new Runnable() {
             public void run() {
-                final List<Addon> r = Mc.search(q, sk);
-                search.post(new Runnable() { public void run() {
-                    if (gen != cfGen || r == null) return;
-                    cfAll = r;
-                    refilter(false);
-                    Images.prefetch(r, 16);
-                } });
+                Mc.Page mp = typeId < 0 ? null : Mc.browse(typeId, page);
+                NineMc.Page np = nineMore ? NineMc.browse(ninePage) : null;
+                final List<Addon> lb;
+                if (labyMore && !labyDone) lb = Laby.search("", 30); else lb = null;
+                final Mc.Page fmp = mp;
+                final NineMc.Page fnp = np;
+                main.post(new Runnable() {
+                    public void run() {
+                        feedLoading = false;
+                        if (fmp != null) {
+                            if (fmp.more) nextPage.put(typeId, page + 1); else endedTypes.add(typeId);
+                            int added = 0;
+                            for (Addon a : fmp.items) if (seenIds.add(a.id)) { feed.add(a); added++; }
+                            if (added == 0 && !fmp.more) endedTypes.add(typeId);
+                        } else if (typeId >= 0) endedTypes.add(typeId);
+                        if (fnp != null) {
+                            ninePage++;
+                            nineEnded = !fnp.more;
+                            for (Addon a : fnp.items) if (seenIds.add(a.id)) feed.add(a);
+                        }
+                        if (lb != null) {
+                            labyDone = true;
+                            labyFeed = lb;
+                            for (Addon a : lb) seenIds.add(a.id);
+                        }
+                        refilter(false);
+                        List<Addon> warm = new ArrayList<>();
+                        int n = 0;
+                        for (int i = feed.size() - 1; i >= 0 && n < 16; i--) { warm.add(feed.get(i)); n++; }
+                        Images.prefetch(warm, 16);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    // ---------- search across sources ----------
+    private List<Addon> cfAll = new ArrayList<>(), nineAll = new ArrayList<>(), labyAll = new ArrayList<>();
+    private int srchGen;
+    private final Runnable srchRun = new Runnable() { public void run() { srchNow(); } };
+
+    private void netSearch() {
+        search.removeCallbacks(srchRun);
+        String q = search.getText().toString().trim();
+        if (q.length() < 2) {
+            if (!cfAll.isEmpty() || !nineAll.isEmpty() || !labyAll.isEmpty()) { resetNet(); refilter(false); }
+            return;
+        }
+        search.postDelayed(srchRun, 600);
+    }
+
+    private void srchNow() {
+        final String q = search.getText().toString();
+        final int gen = ++srchGen;
+        final int tab = typeFilter;
+        new Thread(new Runnable() {
+            public void run() {
+                final List<Addon> cf = new ArrayList<>();
+                if (tab != 3 && tab != 4) {
+                    for (int t : tab == 6 ? new int[]{6} : tab == 0 ? new int[]{1, 2, 3} : feedTypes()) {
+                        Mc.Page p = Mc.query(q, t, 1);
+                        if (p != null) cf.addAll(p.items);
+                    }
+                }
+                NineMc.Page npg = (tab == 0 || tab == 1 || tab == 2) ? NineMc.search(q, 1) : null;
+                final List<Addon> nn = npg == null ? null : npg.items;
+                final List<Addon> lb = (tab == 6 || tab == 0) ? Laby.search(q, 20) : null;
+                main.post(new Runnable() {
+                    public void run() {
+                        if (gen != srchGen) return;
+                        cfAll = cf;
+                        nineAll = nn == null ? new ArrayList<Addon>() : nn;
+                        labyAll = lb == null ? new ArrayList<Addon>() : lb;
+                        refilter(false);
+                        List<Addon> warm = new ArrayList<>(cfAll);
+                        warm.addAll(labyAll);
+                        Images.prefetch(warm, 16);
+                    }
+                });
             }
         }).start();
     }
@@ -301,31 +416,39 @@ final class Panel {
         return h;
     }
 
+    private boolean tabHas(Addon a) { return typeFilter == 0 || KEYS[typeFilter].equals(a.type); }
+
     private void refilter(boolean toTop) {
-        List<Addon> typed = new ArrayList<>();
-        for (Addon a : all) {
-            if (typeFilter > 0 && !KEYS[typeFilter].equals(a.type)) continue;
-            typed.add(a);
-        }
         String qs = search == null ? "" : search.getText().toString();
-        List<Addon> db = Fuzzy.search(typed, qs);
-        List<Addon> cf = new ArrayList<>();
-        if (qs.trim().length() >= 2 || typeFilter == 6) {
-            for (Addon a : cfAll) if (a.type.equals("skin") == (typeFilter == 6) && (typeFilter == 0 || KEYS[typeFilter].equals(a.type))) cf.add(a);
-        }
+        boolean searching = qs.trim().length() >= 2;
         view = new ArrayList<>();
-        if (!cf.isEmpty()) {
+        List<Addon> typed = new ArrayList<>();
+        for (Addon a : all) if (tabHas(a)) typed.add(a);
+        List<Addon> db = Fuzzy.search(typed, qs);
+        if (searching) {
             if (!db.isEmpty()) { view.add(header("67 DATABASE")); view.addAll(db); }
-            view.add(header("MCPEDL"));
-            view.addAll(cf);
-        } else view.addAll(db);
-        int n = db.size() + cf.size();
-        count.setText(Ui.fix(all.isEmpty() && cf.isEmpty() ? "" : n + (n == 1 ? " addon" : " addons")));
+            List<Addon> cf = new ArrayList<>();
+            for (Addon a : cfAll) if (tabHas(a)) cf.add(a);
+            if (!cf.isEmpty()) { view.add(header("MCPEDL")); view.addAll(cf); }
+            List<Addon> nn = new ArrayList<>();
+            for (Addon a : nineAll) if (tabHas(a)) nn.add(a);
+            if (!nn.isEmpty()) { view.add(header("9MINECRAFT")); view.addAll(nn); }
+            if (!labyAll.isEmpty() && (typeFilter == 0 || typeFilter == 6)) { view.add(header("LABY SKINS")); view.addAll(labyAll); }
+        } else {
+            view.addAll(db);
+            List<Addon> fd = new ArrayList<>();
+            for (Addon a : feed) if (tabHas(a)) fd.add(a);
+            if (!fd.isEmpty()) {
+                if (!db.isEmpty()) view.add(header(typeFilter == 0 ? "MCPEDL + 9MINECRAFT - LATEST" : "LATEST"));
+                view.addAll(fd);
+            }
+            if (typeFilter == 6 && !labyFeed.isEmpty()) { view.add(header("LABY SKINS - POPULAR")); view.addAll(labyFeed); }
+        }
         if (view.isEmpty() && !all.isEmpty()) {
             String q = qs.trim();
             setState(q.length() > 0 ? "Nothing found for\n\"" + q + "\"" : "Nothing in this tab yet.");
         } else if (view.isEmpty()) {
-            if (!loading) setState("No addons yet.\nCheck back soon.");
+            if (!loading) setState(feedLoading ? "Loading..." : "No addons yet.\nCheck back soon.");
         } else setState("");
         adapter.notifyDataSetChanged();
         if (toTop) list.setSelection(0);
@@ -420,11 +543,24 @@ final class Panel {
         b.setSingleLine(true);
     }
 
+    private boolean redDot(Addon a) {
+        return a.vers != null && !a.vers.isEmpty() && userVer != null && !a.vers.contains(userVer);
+    }
+
     private void bind(Holder h, Addon a) {
         h.a = a;
         h.name.setText(Ui.fix(a.name));
         String sz = a.sizeText();
-        h.meta.setText(Ui.fix((a.cf ? "MCPEDL  " : "") + a.typeLabel() + (sz.length() > 0 ? "  -  " + sz : "") + (a.cf && a.author.length() > 0 ? "\nby " + a.author : "")));
+        StringBuilder meta = new StringBuilder();
+        if (a.srcLabel().length() > 0) meta.append(a.srcLabel()).append("  ");
+        meta.append(a.typeLabel());
+        if (sz.length() > 0) meta.append("  -  ").append(sz);
+        if (a.vers != null && !a.vers.isEmpty()) {
+            meta.append("\nMC ").append(a.vers.get(0));
+            for (int i = 1; i < a.vers.size() && i < 3; i++) meta.append(", ").append(a.vers.get(i));
+        }
+        if (a.cf && a.author.length() > 0) meta.append(a.vers != null && !a.vers.isEmpty() ? "  by " : "\nby ").append(a.author);
+        h.meta.setText(Ui.fix(meta.toString()));
         h.img.setTag(null);
         h.img.setScaleType(ImageView.ScaleType.CENTER_CROP);
         h.img.setImageDrawable(Images.art(a.name, ctx.getResources()));
@@ -434,9 +570,14 @@ final class Panel {
         h.desc.setVisibility(o ? View.VISIBLE : View.GONE);
         h.desc.setText(a.desc);
         h.q.setVisibility(a.desc.trim().length() > 0 ? View.VISIBLE : View.GONE);
-        if (a.desc.trim().length() == 0) o = false;
         h.q.setText(o ? "-" : "?");
         btn(h.dl, a);
+        if (a.cf && a.vers == null && userVer != null) {
+            final String id = a.id;
+            Mc.loadInfo(a, main, new Runnable() {
+                public void run() { refreshVer(id); }
+            });
+        }
     }
 
     private void btn(PBtn b, Addon a) {
@@ -449,6 +590,7 @@ final class Panel {
             b.pct = -1;
             b.setText(done.contains(a.id) || Downloader.have(ctx, a) ? "INSTALL" : "DOWNLOAD");
         }
+        b.dot = redDot(a);
         b.invalidate();
     }
 
@@ -456,6 +598,13 @@ final class Panel {
         for (int i = 0; i < list.getChildCount(); i++) {
             Holder h = (Holder) list.getChildAt(i).getTag(R.id.holder);
             if (h != null && h.a != null && h.a.id.equals(id)) btn(h.dl, h.a);
+        }
+    }
+
+    private void refreshVer(String id) {
+        for (int i = 0; i < list.getChildCount(); i++) {
+            Holder h = (Holder) list.getChildAt(i).getTag(R.id.holder);
+            if (h != null && h.a != null && h.a.id.equals(id)) bind(h, h.a);
         }
     }
 
@@ -470,28 +619,18 @@ final class Panel {
 
     private void download(final Addon a) {
         if (a == null || prog.containsKey(a.id)) return;
-        if (a.cf && a.download.length() == 0) {
-            if (done.contains(a.id) || Downloader.have(ctx, a)) { Downloader.install(ctx, a.safeFile()); hide(); return; }
-            prog.put(a.id, -1);
-            refreshRow(a.id);
-            final Addon fa = a;
-            new Thread(new Runnable() { public void run() {
-                final String[] f = Mc.fileFor(fa);
-                search.post(new Runnable() { public void run() {
-                    prog.remove(fa.id);
-                    if (f == null) { refreshRow(fa.id); openPage(fa); return; }
-                    fa.download = f[0];
-                    fa.filename = f[1];
-                    download(fa);
-                } });
-            } }).start();
-            return;
-        }
+        if (a.laby) { labyDownload(a); return; }
+        if (a.nine && a.download.length() == 0) { nineDownload(a); return; }
+        if (a.cf && a.download.length() == 0) { cfDownload(a); return; }
         if (done.contains(a.id) || Downloader.have(ctx, a)) {
             Downloader.install(ctx, a.safeFile());
             hide();
             return;
         }
+        startFile(a);
+    }
+
+    private void startFile(final Addon a) {
         prog.put(a.id, -1);
         refreshRow(a.id);
         Downloader.start(ctx.getApplicationContext(), a.download, a.safeFile(), new Downloader.Listener() {
@@ -499,11 +638,93 @@ final class Panel {
             public void done(boolean ok) {
                 prog.remove(a.id);
                 if (ok) done.add(a.id);
-                else if (a.cf) { a.download = ""; openPage(a); }
+                else if (a.cf || a.nine) { a.download = ""; openPage(a); }
                 refreshRow(a.id);
                 if (ok && shown) hide();
             }
         });
+    }
+
+    private void cfDownload(final Addon a) {
+        if (done.contains(a.id) || Downloader.have(ctx, a)) { Downloader.install(ctx, a.safeFile()); hide(); return; }
+        prog.put(a.id, -1);
+        refreshRow(a.id);
+        new Thread(new Runnable() {
+            public void run() {
+                Mc.Info info = Mc.pageInfo(a);
+                final String[] f = Mc.pickFile(info, userVer);
+                if (info != null) a.vers = info.versions;
+                main.post(new Runnable() {
+                    public void run() {
+                        prog.remove(a.id);
+                        if (f == null) { refreshRow(a.id); openPage(a); return; }
+                        a.download = f[0];
+                        a.filename = f[1];
+                        refreshRow(a.id);
+                        download(a);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void nineDownload(final Addon a) {
+        if (done.contains(a.id) || Downloader.have(ctx, a)) { Downloader.install(ctx, a.safeFile()); hide(); return; }
+        prog.put(a.id, -1);
+        refreshRow(a.id);
+        new Thread(new Runnable() {
+            public void run() {
+                final String u = NineMc.fileFor(a);
+                main.post(new Runnable() {
+                    public void run() {
+                        prog.remove(a.id);
+                        if (u == null) { refreshRow(a.id); openPage(a); return; }
+                        a.download = u;
+                        a.filename = NineMc.fileName(u);
+                        refreshRow(a.id);
+                        download(a);
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void labyDownload(final Addon a) {
+        if (done.contains(a.id) || Downloader.have(ctx, a)) { Downloader.install(ctx, a.safeFile()); hide(); return; }
+        prog.put(a.id, -1);
+        refreshRow(a.id);
+        new Thread(new Runnable() {
+            public void run() {
+                boolean ok = false;
+                try {
+                    byte[] png = Laby.skinPng(a);
+                    if (png != null) {
+                        byte[] pack = SkinPack.build(a.name, png, a.slim);
+                        java.io.File dir = new java.io.File(ctx.getApplicationContext().getFilesDir(), "dl");
+                        dir.mkdirs();
+                        java.io.FileOutputStream fo = new java.io.FileOutputStream(new java.io.File(dir, a.safeFile()));
+                        fo.write(pack);
+                        fo.close();
+                        ok = true;
+                    }
+                } catch (Exception ignored) {}
+                final boolean fok = ok;
+                main.post(new Runnable() {
+                    public void run() {
+                        prog.remove(a.id);
+                        if (fok) {
+                            done.add(a.id);
+                            refreshRow(a.id);
+                            Downloader.install(ctx, a.safeFile());
+                            if (shown) hide();
+                        } else {
+                            refreshRow(a.id);
+                            openPage(a);
+                        }
+                    }
+                });
+            }
+        }).start();
     }
 
     // ---------- window ----------
@@ -551,11 +772,17 @@ final class Panel {
             return;
         }
         shown = true;
+        userVer = McVer.userVersion(ctx);
         if (all.isEmpty()) {
             List<Addon> c = Api.cached(ctx);
-            if (c != null) { all = c; refilter(false); Images.prefetch(all, 24); }
+            if (c != null) {
+                all = c;
+                for (Addon a : c) seenIds.add(a.id);
+                refilter(false);
+                Images.prefetch(all, 24);
+            }
         }
-        if (all.isEmpty() || System.currentTimeMillis() - Api.lastFetch > 10000) fetch();
+        if (all.isEmpty() || System.currentTimeMillis() - Api.lastFetch > 10000) fetch(); else loadMore();
         root.requestFocus();
     }
 
