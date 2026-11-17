@@ -53,8 +53,14 @@ final class Panel {
     private List<Addon> labyFeed = new ArrayList<>();
     private boolean labyDone;
     // SEEDS tab state (WiseHosting, Bedrock-only)
-    private HorizontalScrollView seedRow, cmdRow;
-    private String cmdCat = "chat";
+    private HorizontalScrollView seedRow, cmdRow, allRow;
+    private int allMode;
+    private final java.util.Map<Integer,java.util.List<Addon>> sortedFeed=new java.util.HashMap<>();
+    private final java.util.Map<Integer,Integer> sortedPage=new java.util.HashMap<>();
+    private final java.util.Set<Integer> sortedEnded=new java.util.HashSet<>();
+    private final java.util.Set<String> failedSources=new java.util.HashSet<>();
+    private final java.util.Set<String> sourceBusy=new java.util.HashSet<>();
+    private String cmdCat = "daily";
     private final List<Addon> cmdFeed = new ArrayList<>();
     private boolean cmdLoaded;
     private String seedTag;
@@ -97,7 +103,7 @@ final class Panel {
         }
     }
 
-    private final class Holder { LinearLayout row; ImageView img; TextView name, meta, desc, q; PBtn dl; Addon a; }
+    private final class Holder { LinearLayout row; ImageView img; TextView name, meta, desc, q, ist; android.widget.ProgressBar ibar; PBtn dl; Addon a; }
 
     Panel(Context c, Runnable onClosed) {
         this.ctx = c;
@@ -157,6 +163,18 @@ final class Panel {
         TextView x = Ui.button(ctx, "X", Ui.RED, 0xFFFFFFFF);
         x.setPadding(0, Ui.dp(2), 0, Ui.dp(4));
         x.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { hide(); } });
+        TextView dlv = Ui.button(ctx, "\u2B07", Ui.GREEN, 0xFF0F1216);
+        dlv.setPadding(0,Ui.dp(2),0,Ui.dp(4));
+        dlv.setTypeface(android.graphics.Typeface.DEFAULT);dlv.setTextSize(20);
+        dlv.setContentDescription("Downloads");
+        dlv.setOnClickListener(new View.OnClickListener() { public void onClick(View v) {
+            try {
+                android.content.Intent i = new android.content.Intent(ctx, DlActivity.class);
+                i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                ctx.startActivity(i);hide();
+            } catch (Exception ignored) {}
+        } });
+        head.addView(dlv, new LinearLayout.LayoutParams(Ui.dp(36), Ui.dp(32)));
         head.addView(x, new LinearLayout.LayoutParams(Ui.dp(36), Ui.dp(32)));
         card.addView(head, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(40)));
         final float[] d = new float[4];
@@ -259,7 +277,7 @@ final class Panel {
 
         // command subcategory chips (visible only on the COMMANDS tab)
         LinearLayout cr2 = new LinearLayout(ctx);
-        for (final String[] cc : new String[][]{{"CHAT", "chat"}, {"COMMAND BLOCK", "block"}}) {
+        for (final String[] cc : new String[][]{{"DAILY USE", "daily"}, {"CHAT", "chat"}, {"COMMAND BLOCK", "block"}}) {
             TextView c = text(cc[0], 12, Ui.MUTE);
             c.setGravity(Gravity.CENTER);
             c.setPadding(Ui.dp(9), Ui.dp(5), Ui.dp(9), Ui.dp(7));
@@ -272,6 +290,14 @@ final class Panel {
         cmdRow.addView(cr2);
         cmdRow.setVisibility(View.GONE);
         card.addView(cmdRow, slp2);
+
+        LinearLayout ar=new LinearLayout(ctx);
+        final String[] opts={"ALL FEED","LATEST","POPULAR (ALL TIME)","REFRESH"};
+        for(int ai=0;ai<opts.length;ai++){
+            final int mode=ai;TextView ac=text(opts[ai],12,Ui.MUTE);ac.setPadding(Ui.dp(9),Ui.dp(5),Ui.dp(9),Ui.dp(7));
+            ac.setOnClickListener(v->{if(mode==3){refreshSorted();return;}allMode=mode;allChipStyle();refilter(true);loadMore();});ar.addView(ac,chipLp());
+        }
+        allRow=new HorizontalScrollView(ctx);allRow.setHorizontalScrollBarEnabled(false);allRow.addView(ar);card.addView(allRow,slp2);allChipStyle();
 
         // list + state
         FrameLayout body = new FrameLayout(ctx);
@@ -289,7 +315,7 @@ final class Panel {
         foot = text("", 13, Ui.MUTE);
         foot.setGravity(Gravity.CENTER);
         foot.setPadding(0, Ui.dp(14), 0, Ui.dp(14));
-        foot.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { if (feedFailed) { feedFailed = false; loadMore(); } } });
+        foot.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { if (feedFailed) { failedSources.clear();feedFailed = false; loadMore(); } } });
         list.addFooterView(foot, null, true);
         list.setOnScrollListener(new AbsListView.OnScrollListener() {
             public void onScrollStateChanged(AbsListView v, int s) {
@@ -305,7 +331,7 @@ final class Panel {
         state = text("", 15, Ui.MUTE);
         state.setGravity(Gravity.CENTER);
         state.setPadding(Ui.dp(20), 0, Ui.dp(20), 0);
-        state.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { if (!loading && all.isEmpty()) fetch(); } });
+        state.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { if(feedFailed){failedSources.clear();feedFailed=false;loadMore();}else if (!loading && all.isEmpty()) fetch(); } });
         body.addView(state, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
 
@@ -351,6 +377,7 @@ final class Panel {
     private void chipStyle() {
         if (seedRow != null) seedRow.setVisibility(typeFilter == 5 ? View.VISIBLE : View.GONE);
         if (cmdRow != null) cmdRow.setVisibility(typeFilter == 6 ? View.VISIBLE : View.GONE);
+        if(allRow!=null)allRow.setVisibility(typeFilter==0?View.VISIBLE:View.GONE);
         for (int i = 0; i < chips.length; i++) {
             boolean on = i == typeFilter;
             chips[i].setTextColor(on ? Ui.GREEN : Ui.MUTE);
@@ -404,87 +431,66 @@ final class Panel {
     }
 
     private void resetNet() {
+        failedSources.clear();feedFailed=false;
         cfAll = new ArrayList<>();
         nineAll = new ArrayList<>();
         labyAll = new ArrayList<>();
         srchGen++;
     }
 
-    /** Next feed round for the current tab: one page from every open source. Errors retry on the next scroll, never end a source. */
-    private void loadMore() {
-        if (feedLoading || search.getText().toString().trim().length() >= 2) return;
-        final int[] types = feedTypes();
-        final boolean nineMore = (typeFilter == 0 || typeFilter == 1) && !nineEnded;
-        final boolean labyMore = typeFilter == 4 && !labyDone;
-        final boolean seedMore = typeFilter == 5 && !seedDone;
-        boolean any = nineMore || labyMore || seedMore;
-        for (int t : types) if (!endedTypes.contains(t)) { any = true; break; }
-        if (!any) { if (foot != null) foot.setText(""); return; }
-        feedLoading = true;
-        main.post(new Runnable() { public void run() { if (foot != null) foot.setText("Loading more..."); } });
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    final List<Addon> got = new ArrayList<>();
-                    final List<int[]> adv = new ArrayList<>();
-                    for (int t : types) {
-                        if (endedTypes.contains(t)) continue;
-                        int pg = nextPage.containsKey(t) ? nextPage.get(t) : 1;
-                        Mc.Page p = Mc.browse(t, pg);
-                        if (p == null) continue;
-                        got.addAll(p.items);
-                        adv.add(new int[]{t, pg, p.more ? 1 : 0});
-                    }
-                    // fetch independent sources in parallel; Mc.get/NineMc throttles stay per-class
-                    final NineMc.Page[] np = new NineMc.Page[1];
-                    final List<Addon>[] lb = new List[1];
-                    final List<Addon>[] sd = new List[1];
-                    Thread t9 = nineMore ? new Thread(new Runnable() { public void run() { np[0] = NineMc.browse(ninePage); } }) : null;
-                    Thread tl = labyMore ? new Thread(new Runnable() { public void run() { lb[0] = Laby.search("", 30); } }) : null;
-                    Thread ts = seedMore ? new Thread(new Runnable() { public void run() { sd[0] = Seeds.browse(seedTag); } }) : null;
-                    if (t9 != null) t9.start();
-                    if (tl != null) tl.start();
-                    if (ts != null) ts.start();
-                    if (t9 != null) t9.join();
-                    if (tl != null) tl.join();
-                    if (ts != null) ts.join();
-                    if (np[0] != null) got.addAll(np[0].items);
-                    final NineMc.Page fnp = np[0];
-                    main.post(new Runnable() {
-                        public void run() {
-                            try {
-                                for (int[] a : adv) {
-                                    if (a[2] == 1) nextPage.put(a[0], a[1] + 1); else endedTypes.add(a[0]);
-                                }
-                                for (Addon a : got) if (seenIds.add(a.id)) feed.add(a);
-                                if (fnp != null) { ninePage++; nineEnded = !fnp.more; }
-                                if (lb[0] != null) {
-                                    labyDone = true;
-                                    labyFeed = lb[0];
-                                    for (Addon a : lb[0]) seenIds.add(a.id);
-                                }
-                                if (sd[0] != null) {
-                                    seedDone = true;
-                                    seedFeed = sd[0];
-                                    for (Addon a : sd[0]) seenIds.add(a.id);
-                                }
-                                refilter(false);
-                                List<Addon> warm = new ArrayList<>();
-                                for (int i = feed.size() - 1; i >= 0 && warm.size() < 16; i--) warm.add(feed.get(i));
-                                Images.prefetch(warm, 16);
-                                feedFailed = got.isEmpty() && adv.isEmpty() && fnp == null && lb[0] == null && sd[0] == null;
-                                if (foot != null) foot.setText(feedFailed ? "Could not load more - tap to retry" : "");
-                            } finally { feedLoading = false; }
-                        }
-                    });
-                } catch (Exception e) {
-                    main.post(new Runnable() { public void run() {
-                        feedLoading = false; feedFailed = true;
-                        if (foot != null) foot.setText("Could not load more - tap to retry");
-                    } });
-                }
-            }
-        }).start();
+    private void allChipStyle(){if(allRow==null)return;LinearLayout row=(LinearLayout)allRow.getChildAt(0);for(int i=0;i<row.getChildCount();i++)((TextView)row.getChildAt(i)).setTextColor(i==allMode?Ui.GREEN:Ui.MUTE);}
+    private void refreshSorted(){
+        if(!sourceBusy.isEmpty()){Toast.makeText(ctx,"A source is already loading",Toast.LENGTH_SHORT).show();return;}
+        failedSources.clear();feedFailed=false;
+        if(allMode>0)Toast.makeText(ctx,allMode==1?"Refreshing latest (up to 1 minute cache)":"Refreshing popular (up to 5 minute cache)",Toast.LENGTH_SHORT).show();
+        // Source cache TTL is deliberately retained to respect host budgets.
+        if(allMode>0){sortedPage.remove(allMode);sortedEnded.remove(allMode);sortedFeed.remove(allMode);}
+        else{nextPage.clear();endedTypes.clear();nineEnded=false;ninePage=1;feed.clear();seenIds.clear();}
+        refilter(true);loadMore();
+    }
+    private void work(final String key,final String source,final Runnable action){
+        if(failedSources.contains(key)||!sourceBusy.add(key))return;feedLoading=true;if(foot!=null)foot.setText("Loading more...");
+        Net.worker(source).execute(()->{try{action.run();}catch(Exception e){main.post(()->{failedSources.add(key);feedFailed=true;});}
+            finally{main.post(()->{sourceBusy.remove(key);feedLoading=!sourceBusy.isEmpty();refilter(false);
+                if(foot!=null)foot.setText(feedLoading?"Loading more...":feedFailed?"Could not load more - tap to retry":"");
+            });}
+        });
+    }
+    /** Sources publish independently. A slow 9mc result cannot withhold a ready MCPEDL/Laby/seed page. */
+    private void loadMore(){
+        if(search==null||search.getText().toString().trim().length()>=2||typeFilter==6)return;
+        final int tab=typeFilter;
+        if(tab==0&&allMode>0){
+            final int mode=allMode;if(sortedEnded.contains(mode))return;
+            final int pg=sortedPage.containsKey(mode)?sortedPage.get(mode):1;
+            work("sort:"+mode,"mcpedl",()->{
+                final Mc.Page page=Mc.sorted(1,pg,mode==1?"created_at":"popularity_all");
+                main.post(()->{if(page==null){failedSources.add("sort:"+mode);feedFailed=true;return;}java.util.List<Addon> dst=sortedFeed.get(mode);if(dst==null){dst=new ArrayList<>();sortedFeed.put(mode,dst);}
+                    java.util.Set<String> ids=new java.util.HashSet<>();for(Addon x:dst)ids.add(x.id);for(Addon x:page.items)if(ids.add(x.id))dst.add(x);
+                    sortedPage.put(mode,pg+1);if(!page.more)sortedEnded.add(mode);refilter(false);
+                });
+            });return;
+        }
+        for(final int type:feedTypes())if(!endedTypes.contains(type)){
+            final int pg=nextPage.containsKey(type)?nextPage.get(type):1;
+            work("mc:"+type,"mcpedl",()->{
+                final Mc.Page page=Mc.browse(type,pg);main.post(()->{if(page==null){failedSources.add("mc:"+type);feedFailed=true;return;}
+                    for(Addon x:page.items)if(seenIds.add(x.id))feed.add(x);
+                    if(page.more)nextPage.put(type,pg+1);else endedTypes.add(type);refilter(false);
+                });
+            });
+        }
+        if((tab==0||tab==1)&&!nineEnded){final int pg=ninePage;
+            work("nine","9mc",()->{final NineMc.Page page=NineMc.browse(pg);main.post(()->{if(page==null){failedSources.add("nine");feedFailed=true;return;}
+                for(Addon x:page.items)if(seenIds.add(x.id))feed.add(x);ninePage=pg+1;nineEnded=!page.more;refilter(false);
+            });});
+        }
+        if(tab==4&&!labyDone)work("laby","laby",()->{final java.util.List<Addon> rows=Laby.search("",30);main.post(()->{if(rows==null){failedSources.add("laby");feedFailed=true;return;}labyFeed=rows;labyDone=true;refilter(false);});});
+        if(tab==5&&!seedDone){final String tag=seedTag;
+            work("seeds:"+tag,"seeds",()->{final java.util.List<Addon> rows=Seeds.browse(tag);main.post(()->{
+                if(!java.util.Objects.equals(tag,seedTag))return;if(rows==null){failedSources.add("seeds:"+tag);feedFailed=true;return;}seedFeed=rows;seedDone=true;refilter(false);
+            });});
+        }
     }
 
     // ---------- search across sources ----------
@@ -493,7 +499,7 @@ final class Panel {
     private final Runnable srchRun = new Runnable() { public void run() { srchNow(); } };
 
     private void netSearch() {
-        search.removeCallbacks(srchRun);
+        search.removeCallbacks(srchRun);srchGen++;
         String q = search.getText().toString().trim();
         if (q.length() < 2) {
             if (!cfAll.isEmpty() || !nineAll.isEmpty() || !labyAll.isEmpty()) { resetNet(); refilter(false); }
@@ -506,30 +512,22 @@ final class Panel {
         final String q = search.getText().toString();
         final int gen = ++srchGen;
         final int tab = typeFilter;
-        new Thread(new Runnable() {
-            public void run() {
-                final List<Addon> cf = new ArrayList<>();
-                for (int t : tab == 4 ? new int[]{6} : tab == 0 ? new int[]{1, 2, 3} : feedTypes()) {
-                    Mc.Page p = Mc.query(q, t, 1);
-                    if (p != null) cf.addAll(p.items);
-                }
-                NineMc.Page npg = (tab == 0 || tab == 1 || tab == 2) ? NineMc.search(q, 1) : null;
-                final List<Addon> nn = npg == null ? null : npg.items;
-                final List<Addon> lb = (tab == 4 || tab == 0) ? Laby.search(q, 20) : null;
-                main.post(new Runnable() {
-                    public void run() {
-                        if (gen != srchGen) return;
-                        cfAll = cf;
-                        nineAll = nn == null ? new ArrayList<Addon>() : nn;
-                        labyAll = lb == null ? new ArrayList<Addon>() : lb;
-                        refilter(false);
-                        List<Addon> warm = new ArrayList<>(cfAll);
-                        warm.addAll(labyAll);
-                        Images.prefetch(warm, 16);
-                    }
-                });
+        if(tab==6||tab==5)return;
+        cfAll=new ArrayList<>();nineAll=new ArrayList<>();labyAll=new ArrayList<>();
+        final int[] types=tab==4?new int[]{6}:tab==0?new int[]{1,2,3}:feedTypes();
+        Net.worker("mcpedl").execute(()->{
+            for(int type:types){if(gen!=srchGen)return;Mc.Page page=Mc.query(q,type,1);
+                if(page!=null)main.post(()->{if(gen!=srchGen)return;cfAll.addAll(page.items);refilter(false);Images.prefetch(page.items,6);});
             }
-        }).start();
+        });
+        if(tab==0||tab==1||tab==2)Net.worker("9mc").execute(()->{
+            if(gen!=srchGen)return;NineMc.Page page=NineMc.search(q,1);
+            main.post(()->{if(gen!=srchGen)return;nineAll=page==null?new ArrayList<>():page.items;refilter(false);});
+        });
+        if(tab==0||tab==4)Net.worker("laby").execute(()->{
+            if(gen!=srchGen)return;List<Addon> rows=Laby.search(q,20);
+            main.post(()->{if(gen!=srchGen)return;labyAll=rows==null?new ArrayList<>():rows;refilter(false);Images.prefetch(labyAll,8);});
+        });
     }
 
     private Addon header(String t) {
@@ -552,7 +550,7 @@ final class Panel {
         List<Addon> typed = new ArrayList<>();
         for (Addon a : all) if (tabHas(a)) typed.add(a);
         List<Addon> db = Fuzzy.search(typed, qs);
-        if (searching && typeFilter == 6) db = Fuzzy.search(cmdFeed, qs);
+        if (searching && typeFilter == 6){List<Addon> commands=new ArrayList<>();for(Addon a:cmdFeed)if(cmdCat.equals("daily")?a.cmd.daily:cmdCat.equals(a.cmd.cat))commands.add(a);db=Fuzzy.search(commands,qs);}
         if (searching) {
             if (!db.isEmpty()) { view.add(header("67 DATABASE")); view.addAll(db); }
             if (!labyAll.isEmpty() && (typeFilter == 0 || typeFilter == 4)) { view.add(header("LABY SKINS")); view.addAll(labyAll); }
@@ -568,8 +566,8 @@ final class Panel {
             if (typeFilter == 5 && !seedFeed.isEmpty()) { view.add(header("WISEHOSTING - BEDROCK SEEDS")); view.addAll(seedFeed); }
             if (typeFilter == 6) {
                 List<Addon> cd = new ArrayList<>();
-                for (Addon a : cmdFeed) if (cmdCat.equals(a.cmd.cat)) cd.add(a);
-                if (!cd.isEmpty()) { view.add(header(cmdCat.equals("chat") ? "CHAT COMMANDS" : "COMMAND BLOCK")); view.addAll(cd); }
+                for (Addon a : cmdFeed) if ((cmdCat.equals("daily")?a.cmd.daily:cmdCat.equals(a.cmd.cat))) cd.add(a);
+                if (!cd.isEmpty()) { view.add(header(cmdCat.equals("daily")?"DAILY USE":cmdCat.equals("chat") ? "CHAT COMMANDS" : "COMMAND BLOCK")); view.addAll(cd); }
             }
             List<Addon> fd = new ArrayList<>();
             for (Addon a : feed) if (tabHas(a)) fd.add(a);
@@ -578,11 +576,15 @@ final class Panel {
                 view.addAll(fd);
             }
         }
+        if(!searching&&typeFilter==0&&allMode>0){
+            view.clear();java.util.List<Addon> ranked=sortedFeed.get(allMode);
+            if(ranked!=null&&!ranked.isEmpty()){view.add(header(allMode==1?"MCPEDL - NEWEST":"MCPEDL - POPULAR ALL TIME (DOWNLOADS)"));view.addAll(ranked);}
+        }
         if (view.isEmpty() && !all.isEmpty()) {
             String q = qs.trim();
-            setState(q.length() > 0 ? "Nothing found for\n\"" + q + "\"" : "Nothing in this tab yet.");
+            setState(q.length() > 0 ? "Nothing found for\n\"" + q + "\"" : feedFailed?"A source could not load.\nTap here to retry.":feedLoading?"Loading...":"Nothing in this tab yet.");
         } else if (view.isEmpty()) {
-            if (!loading) setState(feedLoading ? "Loading..." : "No addons yet.\nCheck back soon.");
+            if (!loading) setState(feedLoading ? "Loading..." : feedFailed?"A source could not load.\nTap here to retry.":"No addons yet.\nCheck back soon.");
         } else setState("");
         adapter.notifyDataSetChanged();
         if (toTop) list.setSelection(0);
@@ -622,6 +624,22 @@ final class Panel {
         box.setBackgroundColor(0xFF0E1115);
         h.img = new ImageView(ctx);
         box.addView(h.img, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        h.ist = new TextView(ctx);
+        h.ist.setTextSize(9);
+        h.ist.setTextColor(0xFFCDD4DC);
+        h.ist.setGravity(Gravity.CENTER);
+        h.ist.setVisibility(View.GONE);
+        box.addView(h.ist, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        h.ibar = new android.widget.ProgressBar(ctx,null,android.R.attr.progressBarStyleHorizontal);
+        h.ibar.setMax(100);
+        h.ibar.setVisibility(View.GONE);
+        FrameLayout.LayoutParams bl = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(5));
+        bl.gravity = Gravity.BOTTOM;
+        box.addView(h.ibar, bl);
+        h.img.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { onImageTap(h); } });
+        h.ist.setOnClickListener(new View.OnClickListener() { public void onClick(View v) {
+            if (h.a != null && "RETRY".contentEquals(h.ist.getText())) bind(h, h.a);
+        } });
         row.addView(box, new LinearLayout.LayoutParams(Ui.dp(112), Ui.dp(63)));
 
         LinearLayout col = new LinearLayout(ctx);
@@ -663,13 +681,13 @@ final class Panel {
                 if ("seed".equals(h.a.type) && h.a.desc.trim().length() == 0) {
                     h.q.setText("...");
                     final Addon a = h.a;
-                    new Thread(new Runnable() { public void run() {
+                    Net.worker("seeds").execute(new Runnable() { public void run() {
                         Seeds.fillDetail(a);
                         main.post(new Runnable() { public void run() {
                             open.add(a.id);
                             refilter(false);
                         } });
-                    } }).start();
+                    } });
                     return;
                 }
                 if (!open.remove(h.a.id)) open.add(h.a.id);
@@ -686,7 +704,7 @@ final class Panel {
         b.setBackground(Ui.buttonBg(fill));
         b.setPadding(Ui.dp(6), Ui.dp(4), Ui.dp(6), Ui.dp(6));
         b.setClickable(true);
-        b.setSingleLine(true);
+        b.setMaxLines(1);b.setEllipsize(TextUtils.TruncateAt.END);b.setHorizontallyScrolling(false);
     }
 
     private boolean redDot(Addon a) {
@@ -707,16 +725,46 @@ final class Panel {
             meta.append("\nMC ").append(a.vers.get(0));
             for (int i = 1; i < a.vers.size() && i < 3; i++) meta.append(", ").append(a.vers.get(i));
         }
+        if(a.downloadCount>0)meta.append("\n").append(String.format(java.util.Locale.US,"%,d",a.downloadCount)).append(" downloads");
         if (a.cf && a.author.length() > 0) meta.append(a.vers != null && !a.vers.isEmpty() ? "  by " : "\nby ").append(a.author);
         h.meta.setText(Ui.fix(meta.toString()));
         h.img.setTag(null);
         h.img.setScaleType(ImageView.ScaleType.CENTER_CROP);
         h.img.setImageDrawable(Images.art(a.name, ctx.getResources()));
+        h.ibar.setVisibility(View.GONE);
+        FrameLayout.LayoutParams bl2 = (FrameLayout.LayoutParams) h.ibar.getLayoutParams();
+        bl2.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        h.ibar.setLayoutParams(bl2);
         if ("command".equals(a.type)) {
+            h.ist.setVisibility(View.GONE);
             h.img.setScaleType(ImageView.ScaleType.FIT_CENTER);
             try { h.img.setImageDrawable(new android.graphics.drawable.BitmapDrawable(ctx.getResources(), android.graphics.BitmapFactory.decodeStream(ctx.getAssets().open("icons/" + a.page + ".png")))); }
             catch (Exception ignored) { }
-        } else if (a.banner != null) Images.load(h.img, a.banner, a.icon);
+        } else if (a.banner == null) {
+            h.ist.setText("NO IMAGE");
+            h.ist.setVisibility(View.VISIBLE);
+        } else {
+            h.ist.setText("Loading");
+            h.ibar.setIndeterminate(true);h.ibar.setVisibility(View.VISIBLE);
+            h.ist.setVisibility(View.VISIBLE);
+            final Holder hh = h;
+            Images.load(h.img, a.banner, a.icon, new Images.State() {
+                public void progress(int pct) {
+                    if (hh.a == null || hh.a != a) return;
+                    if (pct >= 0) {
+                        hh.ist.setText(pct + "%");
+                        hh.ibar.setVisibility(View.VISIBLE);
+                        hh.ibar.setIndeterminate(false);hh.ibar.setProgress(Math.min(100,pct));
+                    } else {hh.ist.setText("Loading");hh.ibar.setIndeterminate(true);hh.ibar.setVisibility(View.VISIBLE);}
+                }
+                public void loaded(){if(hh.a==a){hh.ist.setVisibility(View.GONE);hh.ibar.setVisibility(View.GONE);}}
+                public void failed() {
+                    if (hh.a == null || hh.a != a) return;
+                    hh.ibar.setVisibility(View.GONE);
+                    hh.ist.setText("RETRY");
+                }
+            });
+        }
         boolean o = open.contains(a.id);
         if (a.desc.trim().length() == 0) o = false;
         boolean seedRow = "seed".equals(a.type);
@@ -742,15 +790,15 @@ final class Panel {
             } else if ("seed".equals(h.a.type) && h.a.seed == null && seedTried.add(h.a.id)) {
                 final Addon a = h.a;
                 final String id = a.id;
-                new Thread(new Runnable() { public void run() {
+                Net.worker("seeds").execute(new Runnable() { public void run() {
                     boolean ok = Seeds.fillDetail(a);
                     if (!ok) seedTried.remove(a.id);   // allow retry on a later idle
                     main.post(new Runnable() { public void run() { refreshVer(id); } });
-                } }).start();
+                } });
             }
         }
     }
-    private final Set<String> seedTried = new HashSet<>();
+    private final Set<String> seedTried = java.util.Collections.synchronizedSet(new HashSet<String>());
 
     private void btn(PBtn b, Addon a) {
         if ("seed".equals(a.type)) {
@@ -768,6 +816,12 @@ final class Panel {
             b.setText("EDIT + COPY");
             b.invalidate();
             return;
+        }
+        Downloader.Task dt=Downloader.task(ctx,a.safeFile());
+        if(dt!=null){
+            if(dt.state==Downloader.DONE)prog.remove(a.id);
+            else if(dt.state==Downloader.PAUSED||dt.state==Downloader.CANCELED||dt.state==Downloader.FAILED)prog.remove(a.id);
+            else prog.put(a.id,dt.pct());
         }
         Integer p = prog.get(a.id);
         if (p != null) {
@@ -805,6 +859,38 @@ final class Panel {
         } catch (Exception ignored) {}
     }
 
+    /** Tap on a row image: retry when failed, otherwise open the fullscreen viewer. */
+    private void overlayWindow(android.app.Dialog d){
+        if(!(ctx instanceof android.app.Activity)&&d.getWindow()!=null)d.getWindow().setType(android.os.Build.VERSION.SDK_INT>=26?WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY:WindowManager.LayoutParams.TYPE_PHONE);
+    }
+    private void onImageTap(Holder h) {
+        if (h.a == null) return;
+        if ("RETRY".contentEquals(h.ist.getText())) { bind(h, h.a); return; }
+        if (h.a.banner == null || "command".equals(h.a.type)) return;
+        if (h.ist.getVisibility() == View.VISIBLE) return;   // still loading or failed
+        final android.app.Dialog d = new android.app.Dialog(ctx, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+        FrameLayout root = new FrameLayout(ctx);
+        final ImageView big = new ImageView(ctx);
+        big.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        root.addView(big, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        TextView cx = Ui.button(ctx, "X", Ui.RED, 0xFFFFFFFF);
+        FrameLayout.LayoutParams xl = new FrameLayout.LayoutParams(Ui.dp(40), Ui.dp(36));
+        xl.gravity = Gravity.TOP | Gravity.RIGHT;
+        xl.topMargin = Ui.dp(10); xl.rightMargin = Ui.dp(10);
+        root.addView(cx, xl);
+        cx.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { d.dismiss(); } });
+        d.setContentView(root);
+        android.graphics.drawable.Drawable cur = h.img.getDrawable();
+        if (cur instanceof android.graphics.drawable.BitmapDrawable){android.graphics.drawable.BitmapDrawable bd=(android.graphics.drawable.BitmapDrawable)cur;if(bd.getBitmap().getWidth()<=128)bd.setFilterBitmap(false);}
+        if (cur != null) big.setImageDrawable(cur);
+        overlayWindow(d);d.show();
+        Images.load(big, h.a.banner, false, new Images.State() {
+            public void progress(int pct) {}
+            public void loaded(){big.setScaleType(ImageView.ScaleType.FIT_CENTER);}
+            public void failed() {}
+        });
+    }
+
     /** Edit-before-copy dialog for a bundled command template. Never executes anything. */
     private void editCopyCmd(final Addon a) {
         if (a == null || a.cmd == null) return;
@@ -833,7 +919,7 @@ final class Panel {
             nt.setPadding(0, Ui.dp(8), 0, 0);
             box.addView(nt);
         }
-        new AlertDialog.Builder(ctx)
+        AlertDialog cd = new AlertDialog.Builder(ctx)
             .setTitle(a.name)
             .setView(box)
             .setPositiveButton("Copy", new android.content.DialogInterface.OnClickListener() {
@@ -843,21 +929,21 @@ final class Panel {
                     Toast.makeText(ctx, "Command copied", Toast.LENGTH_SHORT).show();
                 }
             })
-            .setNegativeButton("Cancel", null)
-            .show();
+            .setNegativeButton("Cancel", null).create();
+        overlayWindow(cd);cd.show();
     }
 
     /** Copies the exact seed string to the clipboard, fetching the detail page first if needed. */
     private void copySeed(final Addon a) {
         if (a.seed != null) { copySeedText(a); return; }
         Toast.makeText(ctx, "Loading seed...", Toast.LENGTH_SHORT).show();
-        new Thread(new Runnable() { public void run() {
+        Net.worker("seeds").execute(new Runnable() { public void run() {
             final boolean ok = Seeds.fillDetail(a);
             main.post(new Runnable() { public void run() {
                 if (ok) copySeedText(a);
                 else Toast.makeText(ctx, "Could not load this seed. Try again.", Toast.LENGTH_SHORT).show();
             } });
-        } }).start();
+        } });
     }
 
     private void copySeedText(Addon a) {
@@ -882,7 +968,7 @@ final class Panel {
     private void startFile(final Addon a) {
         prog.put(a.id, -1);
         refreshRow(a.id);
-        Downloader.start(ctx.getApplicationContext(), a.download, a.safeFile(), new Downloader.Listener() {
+        Downloader.start(ctx.getApplicationContext(), a.download, a.safeFile(), a.name, new Downloader.Listener() {
             public void progress(int pct) { prog.put(a.id, pct); refreshRow(a.id); }
             public void done(boolean ok) {
                 prog.remove(a.id);
@@ -905,7 +991,7 @@ final class Panel {
         if (done.contains(a.id) || Downloader.have(ctx, a)) { Downloader.install(ctx, a.safeFile()); hide(); return; }
         prog.put(a.id, -1);
         refreshRow(a.id);
-        new Thread(new Runnable() {
+        Net.worker("mcpedl").execute(new Runnable() {
             public void run() {
                 Mc.Info info = Mc.pageInfo(a);
                 final String[] f = Mc.pickFile(info, userVer);
@@ -926,14 +1012,14 @@ final class Panel {
                     }
                 });
             }
-        }).start();
+        });
     }
 
     private void nineDownload(final Addon a) {
         if (done.contains(a.id) || Downloader.have(ctx, a)) { Downloader.install(ctx, a.safeFile()); hide(); return; }
         prog.put(a.id, -1);
         refreshRow(a.id);
-        new Thread(new Runnable() {
+        Net.worker("9mc").execute(new Runnable() {
             public void run() {
                 final String u = NineMc.fileFor(a);
                 main.post(new Runnable() {
@@ -947,25 +1033,21 @@ final class Panel {
                     }
                 });
             }
-        }).start();
+        });
     }
 
     private void labyDownload(final Addon a) {
         if (done.contains(a.id) || Downloader.have(ctx, a)) { Downloader.install(ctx, a.safeFile()); hide(); return; }
         prog.put(a.id, -1);
         refreshRow(a.id);
-        new Thread(new Runnable() {
+        Net.worker("laby").execute(new Runnable() {
             public void run() {
                 boolean ok = false;
                 try {
                     byte[] png = Laby.skinPng(a);
                     if (png != null) {
                         byte[] pack = SkinPack.build(a.name, png, a.slim);
-                        java.io.File dir = new java.io.File(ctx.getApplicationContext().getFilesDir(), "dl");
-                        dir.mkdirs();
-                        java.io.FileOutputStream fo = new java.io.FileOutputStream(new java.io.File(dir, a.safeFile()));
-                        fo.write(pack);
-                        fo.close();
+                        Downloader.saveLocal(ctx.getApplicationContext(),a.safeFile(),a.name,pack);
                         ok = true;
                     }
                 } catch (Exception ignored) {}
@@ -985,7 +1067,7 @@ final class Panel {
                     }
                 });
             }
-        }).start();
+        });
     }
 
     // ---------- window ----------
@@ -1043,7 +1125,8 @@ final class Panel {
                 Images.prefetch(all, 24);
             }
         }
-        if (all.isEmpty() || System.currentTimeMillis() - Api.lastFetch > 10000) fetch(); else loadMore();
+        if (all.isEmpty() || System.currentTimeMillis() - Api.lastFetch > 60000) fetch();
+        loadMore();
         root.requestFocus();
     }
 

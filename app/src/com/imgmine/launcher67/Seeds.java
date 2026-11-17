@@ -30,12 +30,7 @@ final class Seeds {
     };
 
     private static String get(String url) throws Exception {
-        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-        c.setConnectTimeout(7000);
-        c.setReadTimeout(10000);
-        c.setRequestProperty("User-Agent", UA);
-        if (c.getResponseCode() != 200) throw new java.io.IOException("http " + c.getResponseCode());
-        return new String(Api.readAll(c.getInputStream(), 2 << 20), "UTF-8");
+        return new String(Net.get(url, 4 << 20, 600000L, UA), "UTF-8");
     }
 
     private static final Pattern CARD = Pattern.compile(

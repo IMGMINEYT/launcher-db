@@ -2,7 +2,7 @@ package com.imgmine.launcher67;
 
 final class Addon {
     String id = "", name = "", desc = "", banner, download = "", type = "file", filename = "", source;
-    long size, added;
+    long size, added, downloadCount;
     boolean icon, cf, nine, laby, slim;
     String page = "", author = "", labyHash = "";
     String seed, seedCoords;          // WiseHosting seed string + coords; null until detail loaded

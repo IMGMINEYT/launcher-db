@@ -16,18 +16,7 @@ final class NineMc {
     private static long lastCall;
 
     private static String get(String url, int max) throws Exception {
-        synchronized (NineMc.class) {
-            long w = 700 - (System.currentTimeMillis() - lastCall);
-            if (w > 0) Thread.sleep(w);
-            lastCall = System.currentTimeMillis();
-        }
-        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-        c.setConnectTimeout(7000);
-        c.setReadTimeout(10000);
-        c.setRequestProperty("User-Agent", UA);
-        c.setRequestProperty("Accept", "text/html");
-        if (c.getResponseCode() != 200) throw new java.io.IOException("http " + c.getResponseCode());
-        return new String(Api.readAll(c.getInputStream(), max), "UTF-8");
+        return new String(Net.get(url,max,600000L,UA),"UTF-8");
     }
 
     /** One page of PE posts plus whether another page may exist. null on error. */

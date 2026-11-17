@@ -10,7 +10,7 @@ import org.json.JSONObject;
 final class Cmds {
     static final class Entry {
         String id, cat, n, c, note, icon;
-        boolean cb, warn;
+        boolean cb, warn, daily;
     }
 
     private static List<Entry> all;
@@ -36,6 +36,7 @@ final class Cmds {
                 e.c = j.optString("c");
                 e.cb = j.optBoolean("cb");
                 e.warn = j.optBoolean("warn");
+                e.daily=j.optBoolean("daily");
                 e.note = j.optString("note", "");
                 e.icon = j.optString("icon", "ic_misc");
                 out.add(e);

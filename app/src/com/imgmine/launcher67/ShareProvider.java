@@ -17,13 +17,14 @@ public class ShareProvider extends ContentProvider {
         String n = u.getLastPathSegment();
         if (n == null || n.contains("/") || n.contains("..")) throw new FileNotFoundException();
         File f = new File(new File(getContext().getFilesDir(), "dl"), n);
-        if (!f.isFile()) throw new FileNotFoundException();
+        if (!f.isFile() || !Downloader.isPack(n)) throw new FileNotFoundException();
         return f;
     }
 
     @Override public boolean onCreate() { return true; }
 
     @Override public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
+        if(!"r".equals(mode))throw new FileNotFoundException("Read only");
         return ParcelFileDescriptor.open(fileFor(uri), ParcelFileDescriptor.MODE_READ_ONLY);
     }
 

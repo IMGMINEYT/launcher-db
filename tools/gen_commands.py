@@ -40,7 +40,7 @@ add("chat", "Stop rain/snow cycle", "/toggledownfall", True, CHEAT)
 add("chat", "Set your spawn here", "/spawnpoint @s ~ ~ ~", False, "")
 add("chat", "Clear your spawn point", "/clearspawnpoint @s", False, "")
 add("chat", "Set world spawn here", "/setworldspawn ~ ~ ~", True, CHEAT)
-add("chat", "Where am I (coords)", "/execute @s ~ ~ ~ tellraw @s {\"rawtext\":[{\"text\":\"Check your position in settings or use /tp ~ ~ ~\"}]}", False, "Shows a chat note; Bedrock prints coords with /tp ~ ~ ~")
+add("chat", "Where am I (coords)", "/execute as @s at @s run tellraw @s {\"rawtext\":[{\"text\":\"Check your position in settings or use /tp ~ ~ ~\"}]}", False, "Shows a chat note; Bedrock prints coords with /tp ~ ~ ~")
 add("chat", "Say something as server", "/say Hello everyone!", True, "")
 add("chat", "Narrate an action", "/me is building a castle", True, "")
 add("chat", "Private message a player", "/tell PlayerName hi, come see my base", True, "Replace PlayerName")
@@ -178,7 +178,7 @@ ENCH = ["sharpness", "smite", "bane_of_arthropods", "knockback", "fire_aspect", 
         "loyalty", "impaling", "riptide", "channeling", "mending", "multishot", "quick_charge",
         "piercing", "density", "breach", "wind_burst", "soul_speed", "swift_sneak", "lure", "luck_of_the_sea", "binding", "vanishing", "lunge"]
 for en in ENCH:
-    add("chat", "Enchant held item: " + en.replace("_", " "), "/enchant @s " + en + " 3", False,
+    add("chat", "Enchant held item: " + en.replace("_", " "), "/enchant @s " + en + " 1", False,
         CHEAT + "; hold the item first; level must fit the enchant")
 
 # ---- blocks: /setblock + /fill ----
@@ -394,25 +394,66 @@ def validate():
 
 def iconof(e):
     c = e["c"]
-    if e["cat"] == "block": return "ic_cmd"
-    if c.startswith("/give"): return "ic_give"
-    if c.startswith("/summon"): return "ic_summon"
-    if c.startswith("/effect"): return "ic_effect"
-    if c.startswith("/enchant"): return "ic_enchant"
-    if c.startswith(("/setblock", "/fill", "/clone")): return "ic_block"
-    if c.startswith("/locate"): return "ic_locate"
-    if c.startswith(("/tp", "/teleport")): return "ic_tp"
-    if c.startswith("/gamerule"): return "ic_rule"
-    if c.startswith("/scoreboard"): return "ic_score"
-    if c.startswith(("/particle", "/playsound", "/stopsound")): return "ic_fx"
-    if c.startswith(("/title", "/tellraw", "/say", "/tell", "/me", "/msg")): return "ic_text"
-    if c.startswith(("/weather", "/time", "/toggledownfall")): return "ic_weather"
-    return "ic_misc"
+    words=c.replace("minecraft:","").split()
+    token=words[2] if c.startswith("/give ") and len(words)>2 else ""
+    if token:
+        material=token.split("_")[0]
+        slot=next((x for x in ("sword","pickaxe","axe","shovel","hoe","helmet","chestplate","leggings","boots") if token.endswith("_"+x)),None)
+        if slot and material in ("wooden","stone","iron","golden","diamond","netherite","leather","chainmail","gold"):
+            motif={"pickaxe":"pick","shovel":"tool","hoe":"tool","chestplate":"armor"}.get(slot,slot)
+            return "ic_"+motif+"_"+material
+        for dye in ("light_blue","light_gray","white","orange","magenta","yellow","lime","pink","gray","cyan","purple","blue","brown","green","red","black"):
+            if token.startswith(dye+"_"):
+                for motif in ("wool","glass","bed"):
+                    if motif in token:return "ic_"+motif+"_"+dye
+                if "carpet" in token:return "ic_wool_"+dye
+        tests=[("pickaxe","ic_pick"),("sword","ic_sword"),("_axe","ic_axe"),("shovel","ic_tool"),("hoe","ic_tool"),
+          ("helmet","ic_armor"),("chestplate","ic_armor"),("leggings","ic_armor"),("boots","ic_armor"),("armor","ic_armor"),
+          ("trident","ic_trident"),("bow","ic_bow"),("arrow","ic_bow"),("shield","ic_shield"),("elytra","ic_elytra"),
+          ("_spawn_egg","ic_egg_red" if any(x in token for x in ["zombie","creeper","skeleton","wither","warden","spider","blaze","phantom","pillager","ravager"]) else "ic_egg_green"),
+          ("bucket","ic_bucket"),("wool","ic_wool"),("carpet","ic_wool"),("glass","ic_glass"),("bed","ic_bed"),("music_disc","ic_disc"),
+          ("rail","ic_rail"),("torch","ic_light"),("lantern","ic_light"),("candle","ic_light"),("glow","ic_light"),
+          ("ore","ic_ore"),("log","ic_wood"),("planks","ic_wood"),("wood","ic_wood"),("sapling","ic_tree"),("leaves","ic_tree"),
+          ("flower","ic_flower"),("tulip","ic_flower"),("orchid","ic_flower"),("poppy","ic_flower"),("dandelion","ic_flower"),
+          ("redstone","ic_redstone"),("repeater","ic_redstone"),("comparator","ic_redstone"),("piston","ic_redstone"),("observer","ic_redstone"),("button","ic_redstone"),
+          ("boat","ic_boat"),("raft","ic_boat"),("ingot","ic_ingot"),("nugget","ic_ingot"),("stair","ic_stairs"),("slab","ic_stairs"),("door","ic_door"),("fence","ic_door"),
+          ("bread","ic_food"),("apple","ic_food"),("carrot","ic_food"),("potato","ic_food"),("cooked","ic_food"),("stew","ic_food"),("berries","ic_food"),("cookie","ic_food"),("cake","ic_food"),
+          ("potion","ic_effect"),("book","ic_enchant"),("pearl","ic_tp"),("eye","ic_tp"),("compass","ic_locate"),("map","ic_locate"),("diamond","ic_give"),("emerald","ic_give")]
+        for part,ic in tests:
+            if part in token:return ic
+        return "ic_block"  # remaining give templates are crafting/building materials
+    if c.startswith("/gamemode creative"):return "ic_block"
+    if c.startswith("/gamemode survival"):return "ic_sword_iron"
+    if c.startswith("/gamemode spectator"):return "ic_elytra"
+    if c.startswith("/time set night"):return "ic_night"
+    if c.startswith("/time set day"):return "ic_day"
+    if c.startswith("/weather rain"):return "ic_rain"
+    if c.startswith("/weather clear"):return "ic_day"
+    if c.startswith("/effect") and any(x in c for x in ("instant_health","regeneration","health_boost")):return "ic_health"
+    if c.startswith("/effect") and "speed" in c:return "ic_speed"
+    if c.startswith("/summon"): return "ic_summon_red" if e.get("warn") else "ic_summon"
+    if "effect " in c:return "ic_effect"
+    if "enchant " in c:return "ic_enchant"
+    if c.startswith(("/setblock","/fill","/clone")):return "ic_block"
+    if c.startswith("/locate"):return "ic_locate"
+    if c.startswith(("/tp","/teleport")):return "ic_tp"
+    if c.startswith("/gamerule"):return "ic_rule"
+    if c.startswith("/scoreboard"):return "ic_score"
+    if c.startswith(("/particle","/playsound","/stopsound")):return "ic_fx"
+    if c.startswith(("/title","/tellraw","/say","/tell","/me","/msg")):return "ic_text"
+    if c.startswith(("/weather","/time","/toggledownfall")):return "ic_weather"
+    return "ic_cmd" if e["cat"]=="block" else "ic_misc"
+
+def daily(e):
+    c=e["c"]
+    if e.get("warn") or e["cat"]!="chat":return False
+    return c.startswith(("/time set day","/time set night","/weather clear","/weather rain","/gamemode survival","/gamemode creative","/difficulty normal","/difficulty peaceful","/spawnpoint","/tp @s","/locate structure minecraft:village","/effect @s night_vision","/effect @s clear","/effect @s water_breathing","/effect @s fire_resistance","/effect @s speed 60","/give @s minecraft:torch ","/give @s minecraft:bread ","/give @s minecraft:diamond_pickaxe ","/give @s minecraft:iron_sword ","/give @s minecraft:oak_planks ","/give @s minecraft:crafting_table ","/give @s minecraft:bed ","/give @s minecraft:compass ","/gamerule showcoordinates true"))
 
 def main():
     validate()
     for e in E:
         e["icon"] = iconof(e)
+        e["daily"] = daily(e)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     # stable ids
     for i, e in enumerate(E):

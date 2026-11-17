@@ -16,18 +16,7 @@ final class Laby {
     private static long lastCall;
 
     private static byte[] get(String url, int max) throws Exception {
-        synchronized (Laby.class) {
-            long w = 500 - (System.currentTimeMillis() - lastCall);
-            if (w > 0) Thread.sleep(w);
-            lastCall = System.currentTimeMillis();
-        }
-        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-        c.setConnectTimeout(6000);
-        c.setReadTimeout(9000);
-        c.setRequestProperty("User-Agent", UA);
-        c.setRequestProperty("Accept", "application/json,image/webp,image/png");
-        if (c.getResponseCode() != 200) throw new java.io.IOException("http " + c.getResponseCode());
-        return Api.readAll(c.getInputStream(), max);
+        return Net.get(url,max,600000L,UA);
     }
 
     /** Blocking. Single skins, most-used first. Empty query returns the trending list. null on error. */

@@ -18,18 +18,7 @@ final class Mc {
     private static long lastCall;
 
     static byte[] get(String url, int max) throws Exception {
-        synchronized (Mc.class) {   // be gentle: at most ~2 requests per second
-            long w = 500 - (System.currentTimeMillis() - lastCall);
-            if (w > 0) Thread.sleep(w);
-            lastCall = System.currentTimeMillis();
-        }
-        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-        c.setConnectTimeout(6000);
-        c.setReadTimeout(9000);
-        c.setRequestProperty("User-Agent", UA);
-        c.setRequestProperty("Accept", "application/json,text/html");
-        if (c.getResponseCode() != 200) throw new java.io.IOException("http " + c.getResponseCode());
-        return Api.readAll(c.getInputStream(), max);
+        return Net.get(url,max,300000L,UA);
     }
 
     /** One page of results plus whether another page exists. */
@@ -41,7 +30,7 @@ final class Mc {
 
     /** Blocking. Latest posts of one type, no search text. null on error. */
     static Page browse(int typeId, int page) {
-        return fetch("", typeId, page, typeName(typeId));
+        return fetch("", typeId, page, typeName(typeId), "updated_at");
     }
 
     /** Blocking. Search within one type. null on error. */
@@ -53,15 +42,18 @@ final class Mc {
         return typeId == 1 ? "addon" : typeId == 2 ? "world" : typeId == 6 ? "skin" : typeId == 4 ? "seed" : "texture";
     }
 
-    private static Page fetch(String q, int typeId, int page, String type) {
-        String ck = "p:" + typeId + ":" + page + ":" + q.toLowerCase(Locale.ROOT);
+    static Page sorted(int typeId,int page,String sort){return fetch("",typeId,page,typeName(typeId),sort);}
+    private static Page fetch(String q,int typeId,int page,String type){return fetch(q,typeId,page,type,"relevance");}
+    private static Page fetch(String q, int typeId, int page, String type, String sort) {
+        final long ttl="created_at".equals(sort)?60000L:"popularity_all".equals(sort)?300000L:TTL;
+        String ck = "p:" + typeId + ":" + page + ":" + q.toLowerCase(Locale.ROOT) + ":" + sort;
         synchronized (CACHE) {
             Object[] hit = CACHE.get(ck);
-            if (hit != null && System.currentTimeMillis() - (Long) hit[0] < TTL) return (Page) hit[1];
+            if (hit != null && System.currentTimeMillis() - (Long) hit[0] < ttl) return (Page) hit[1];
         }
         try {
-            String u = API + "q=" + URLEncoder.encode(q, "UTF-8") + "&type_id=" + typeId + "&page=" + page + "&per_page=20";
-            JSONObject r = new JSONObject(new String(get(u, 2 << 20), "UTF-8"));
+            String u = API + "q=" + URLEncoder.encode(q, "UTF-8") + "&type_id=" + typeId + "&page=" + page + "&per_page=20&sort=" + sort;
+            JSONObject r = new JSONObject(new String(Net.get(u,2<<20,ttl,UA), "UTF-8"));
             JSONObject meta = r.optJSONObject("meta");
             int pageCount = meta == null ? 1 : meta.optInt("page_count", 1);
             Page p = new Page(parse(r.optJSONArray("results"), type), page < pageCount);
@@ -90,6 +82,7 @@ final class Mc {
             if (j == null) continue;
             Addon d = new Addon();
             d.cf = true;
+            d.downloadCount=j.optLong("downloadCount");
             String slug = j.optString("slug");
             d.id = "mc" + j.optLong("id");
             d.name = j.optString("title");
@@ -124,7 +117,7 @@ final class Mc {
         synchronized (INFO) {
             if (INFO.containsKey(a.id) || !INFO_PENDING.add(a.id)) return;
         }
-        new Thread(new Runnable() {
+        Net.worker("mcpedl").execute(new Runnable() {
             public void run() {
                 Info i = pageInfo(a);
                 synchronized (INFO) {
@@ -133,7 +126,7 @@ final class Mc {
                 }
                 if (i != null && h != null && done != null) h.post(done);
             }
-        }).start();
+        });
     }
 
     /** Blocking. Reads the post page: all direct file links newest-first, plus declared supported versions. */
