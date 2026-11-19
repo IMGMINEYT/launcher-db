@@ -120,6 +120,13 @@ public class StreamWsTest {
         assertEquals("scriptevent tysc:clear", Ws.SCRIPT_CLEAR);
     }
 
+    @Test public void scriptLifetimeClamps1to10() {
+        assertEquals("scriptevent tysc:lifetime 5", Ws.scriptLifetime(5));
+        assertEquals("scriptevent tysc:lifetime 1", Ws.scriptLifetime(0));
+        assertEquals("scriptevent tysc:lifetime 1", Ws.scriptLifetime(-7));
+        assertEquals("scriptevent tysc:lifetime 10", Ws.scriptLifetime(99));
+    }
+
     @Test public void bundledAddonPassesPackChecks() throws Exception {
         java.io.File f = new java.io.File(System.getProperty("launcher.root"), "app/assets/streamchat.mcaddon");
         assertTrue("bundled addon exists", f.isFile());
@@ -158,8 +165,9 @@ public class StreamWsTest {
 
     private ServiceController<StreamChatService> ctl;
     private StreamChatService svc;
+    private java.util.List<String> drainedConfig;
 
-    @Before public void startService() {
+    @Before public void startService() throws Exception {
         ctl = Robolectric.buildService(StreamChatService.class);
         svc = ctl.create().get();
         long end = System.currentTimeMillis() + 5000;
@@ -168,9 +176,18 @@ public class StreamWsTest {
         }
         assertTrue("server port assigned", StreamChatService.port > 0);
         assertEquals("WAITING", StreamChatService.state);
+        // service startup enqueues the persisted display config (mode + lifetime); drain it so
+        // delivery tests see only their own messages. servicePushesConfigOnStart asserts the drain.
+        drainedConfig = ((Ws.ChatQueue) get(svc, "queue")).batch(10, 100000);
     }
 
-    @After public void stopService() { ctl.destroy(); StreamChatService.port = 0; StreamChatService.state = "OFF"; StreamChatService.ytQuotaStop = false; StreamChatService.ytState = "YT OFF"; }
+    @Test public void servicePushesConfigOnStart() {
+        assertEquals(2, drainedConfig.size());
+        assertEquals("scriptevent tysc:mode both", drainedConfig.get(0));
+        assertEquals("scriptevent tysc:lifetime 5", drainedConfig.get(1));
+    }
+
+    @After public void stopService() { ctl.destroy(); StreamChatService.port = 0; StreamChatService.state = "OFF"; StreamChatService.ytQuotaStop = false; StreamChatService.ytState = "YT OFF"; StreamChatService.lastCmdError = ""; }
 
     private Socket handshake() throws Exception {
         Socket c = new Socket("127.0.0.1", StreamChatService.port);
@@ -199,6 +216,23 @@ public class StreamWsTest {
         org.json.JSONObject p = new org.json.JSONObject(line.substring("scriptevent tysc:chat ".length()));
         assertEquals("tester", p.getString("n"));
         assertEquals("hello \"glitch\" :)", p.getString("t"));
+        c.close();
+    }
+
+    @Test public void serviceSurfacesCommandErrors() throws Exception {
+        Socket c = handshake();
+        StreamChatService.lastCmdError = "";
+        String resp = "{\"header\":{\"requestId\":\"x\",\"messagePurpose\":\"commandResponse\"},\"body\":{\"statusCode\":-2147352576,\"statusMessage\":\"No handler for event\"}}";
+        clientWrite(c.getOutputStream(), 1, resp.getBytes("UTF-8"), new byte[]{5, 6, 7, 8});
+        long end = System.currentTimeMillis() + 3000;
+        while (StreamChatService.lastCmdError.isEmpty() && System.currentTimeMillis() < end) Thread.sleep(20);
+        assertEquals("No handler for event", StreamChatService.lastCmdError);
+        // clean success responses do not raise the error surface
+        StreamChatService.lastCmdError = "";
+        String ok = "{\"header\":{\"requestId\":\"y\",\"messagePurpose\":\"commandResponse\"},\"body\":{\"statusCode\":0}}";
+        clientWrite(c.getOutputStream(), 1, ok.getBytes("UTF-8"), new byte[]{5, 6, 7, 8});
+        Thread.sleep(300);
+        assertEquals("", StreamChatService.lastCmdError);
         c.close();
     }
 

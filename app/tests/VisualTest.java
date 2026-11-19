@@ -38,21 +38,36 @@ public class VisualTest {
  }
 
 
- @Test public void renderStreamPanel()throws Exception{
-  org.robolectric.android.controller.ServiceController<StreamChatService> ctl=Robolectric.buildService(StreamChatService.class);
-  StreamChatService s=ctl.create().get();
-  String assetPath=System.getProperty("launcher.assetsApk");
-  s.getAssets().getClass().getMethod("addAssetPath",String.class).invoke(s.getAssets(),assetPath);
-  Ui.init(s);
-  Method rp=StreamChatService.class.getDeclaredMethod("removePanel");rp.setAccessible(true);rp.invoke(s);
-  Method ap=StreamChatService.class.getDeclaredMethod("addPanel");ap.setAccessible(true);ap.invoke(s);
-  StreamChatService.state="WAITING";StreamChatService.port=51234;
-  Field pf=StreamChatService.class.getDeclaredField("panel");pf.setAccessible(true);
-  View panel=(View)pf.get(s);assertNotNull(panel);
-  Field tf=StreamChatService.class.getDeclaredField("statusTick");tf.setAccessible(true);
-  ((Runnable)tf.get(s)).run();
-  render(panel,280,240,System.getProperty("launcher.renderDir", "build/test-renders")+"/v27-streampanel-native.png");
-  ctl.destroy();StreamChatService.state="OFF";StreamChatService.port=0;}
+ @Test public void renderBridgeScreen()throws Exception{
+  Activity c=Robolectric.buildActivity(Activity.class).setup().get();
+  c.getAssets().getClass().getMethod("addAssetPath",String.class).invoke(c.getAssets(),System.getProperty("launcher.assetsApk"));
+  Ui.init(c);Images.init(c);
+  StreamChatService.state="CONNECTED";StreamChatService.port=51234;StreamChatService.sent=3;StreamChatService.droppedTotal=0;StreamChatService.chatOn=true;StreamChatService.ytState="YT OFF";
+  Panel p=new Panel(c,()->{});
+  Method m=Panel.class.getDeclaredMethod("build");m.setAccessible(true);m.invoke(p);
+  Field f=Panel.class.getDeclaredField("card");f.setAccessible(true);View card=(View)f.get(p);
+  m=Panel.class.getDeclaredMethod("showScreen",int.class);m.setAccessible(true);m.invoke(p,2);
+  Field bf=Panel.class.getDeclaredField("bridgeView");bf.setAccessible(true);assertEquals(View.VISIBLE,((View)bf.get(p)).getVisibility());
+  ((ViewGroup)card.getParent()).removeView(card);c.setContentView(card);
+  render(card,460,740,System.getProperty("launcher.renderDir", "build/test-renders")+"/v28-bridgepanel-native.png");
+  StreamChatService.state="OFF";StreamChatService.port=0;StreamChatService.sent=0;}
+
+ @Test public void renderDownloadsScreen()throws Exception{
+  Activity c=Robolectric.buildActivity(Activity.class).setup().get();
+  c.getAssets().getClass().getMethod("addAssetPath",String.class).invoke(c.getAssets(),System.getProperty("launcher.assetsApk"));
+  Ui.init(c);Images.init(c);
+  Field tf=Downloader.class.getDeclaredField("TASKS");tf.setAccessible(true);Map<String,Downloader.Task> map=(Map)tf.get(null);map.clear();
+  String[] labels={"Resource pack - loading", "Village structures addon", "Skyblock survival world", "Nature texture pack", "Long addon title to check narrow screen wrapping"};int[] states={1,0,2,3,4};
+  for(int i=0;i<5;i++){Downloader.Task t=new Downloader.Task();t.key="sample"+i+".mcpack";t.name=t.key;t.label=labels[i];t.state=states[i];t.got=12000000;t.total=i==1?-1:24000000;t.bps=1300000;map.put(t.key,t);if(states[i]==3){File file=new File(c.getFilesDir(),"dl/"+t.key);file.getParentFile().mkdirs();try(java.io.RandomAccessFile out=new java.io.RandomAccessFile(file,"rw")){out.setLength(t.total);}}}
+  Panel p=new Panel(c,()->{});
+  Method m=Panel.class.getDeclaredMethod("build");m.setAccessible(true);m.invoke(p);
+  Field f=Panel.class.getDeclaredField("card");f.setAccessible(true);View card=(View)f.get(p);
+  m=Panel.class.getDeclaredMethod("showScreen",int.class);m.setAccessible(true);m.invoke(p,1);
+  Field df=Panel.class.getDeclaredField("dlView");df.setAccessible(true);assertEquals(View.VISIBLE,((View)df.get(p)).getVisibility());
+  Field lf=Panel.class.getDeclaredField("list");lf.setAccessible(true);assertEquals(View.GONE,((View)lf.get(p)).getVisibility());
+  ((ViewGroup)card.getParent()).removeView(card);c.setContentView(card);
+  render(card,460,740,System.getProperty("launcher.renderDir", "build/test-renders")+"/v28-downloadspanel-native.png");
+  m.invoke(p,0);assertEquals(View.VISIBLE,((View)lf.get(p)).getVisibility());}
 
  @Test public void renderMainScreen()throws Exception{
   Activity c=Robolectric.buildActivity(MainActivity.class).setup().get();
@@ -60,5 +75,5 @@ public class VisualTest {
   c.getAssets().getClass().getMethod("addAssetPath",String.class).invoke(c.getAssets(),assetPath);
   Ui.init(c);
   c.recreate();
-  render(c.findViewById(android.R.id.content),360,900,System.getProperty("launcher.renderDir", "build/test-renders")+"/v27-main-native.png");}
+  render(c.findViewById(android.R.id.content),360,1240,System.getProperty("launcher.renderDir", "build/test-renders")+"/v28-main-native.png");}
 }

@@ -145,6 +145,8 @@ final class Ws {
 
     /** Control commands are fixed strings with no untrusted content. */
     static String scriptMode(String mode) { return "scriptevent tysc:mode " + mode; }
+    /** Contract v1.2: bubble lifetime in seconds, clamped 1-10, persisted by the addon. */
+    static String scriptLifetime(int sec) { return "scriptevent tysc:lifetime " + Math.max(1, Math.min(10, sec)); }
     static final String SCRIPT_TEST = "scriptevent tysc:test";
     static final String SCRIPT_CLEAR = "scriptevent tysc:clear";
     static final String SCRIPT_PIN = "scriptevent tysc:pin";

@@ -13,23 +13,24 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-/** Bridge-test increment: local loopback WebSocket server (Minecraft connects via /connect),
- *  a bounded chat queue that sends tellraw batches, and a small floating control panel.
- *  YouTube feed is NOT in this increment; TEST sends a local sample line.
+/** Bridge increment: local loopback WebSocket server (Minecraft connects via /connect),
+ *  a bounded chat queue that sends commandRequest frames, plus the YouTube live-chat poller.
+ *  Controls live in the 67 ball panel (Panel bridge screen), not in a separate overlay.
  *  Binds 127.0.0.1 only. Chat text is JSON-encoded data, never a command. */
 public class StreamChatService extends Service {
+    static volatile boolean running;
     static volatile String state = "OFF";       // OFF, WAITING, CONNECTED
     static volatile int port;
     static volatile boolean chatOn = true;
     static volatile int sent, droppedTotal;
     static volatile String ytState = "YT OFF";
+    static volatile String lastCmdError = "";   // last non-zero commandResponse statusMessage, for the bridge screen
 
     private static final int MAX_INFLIGHT = 20;   // client errors near ~100 outstanding commands; stay far below
     private static final long INFLIGHT_TTL = 10000;
     private static final int QUEUE_CAP = 50;
     private static final int BATCH_LINES = 3, BATCH_CHARS = 4000, TICK_MS = 800;
 
-    private final Handler h = new Handler(Looper.getMainLooper());
     private final Ws.ChatQueue queue = new Ws.ChatQueue(QUEUE_CAP);
     private final Map<String, Long> inflight = new HashMap<>();
     private ServerSocket server;
@@ -38,10 +39,6 @@ public class StreamChatService extends Service {
     private Thread acceptThread, sendThread, ytThread;
     private String ytVideo, ytChatId, ytToken;
     static volatile boolean ytQuotaStop;   // cleared when the user saves new YouTube settings
-    private WindowManager wm;
-    private View panel;
-    private TextView statusView, portView, ytView;
-    private TextView toggleBtn;
 
     private static StreamChatService live;
     /** Test hook + panel feedback: queue one chat line (already plain text; escaped on send). */
@@ -64,27 +61,28 @@ public class StreamChatService extends Service {
     @Override public void onCreate() {
         super.onCreate();
         Ui.init(this);
-        wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         startForeground(3, notification());
         live = this;
+        running = true;
         openServer();
-        addPanel();
+        // push persisted display settings; they sit in the queue until Minecraft connects
+        queue.add(Ws.scriptMode(mode()));
+        queue.add(Ws.scriptLifetime(lifetime()));
         startSender();
         startYt();
     }
 
     @Override public int onStartCommand(Intent i, int flags, int id) {
         if (i != null && "stop".equals(i.getAction())) { stopSelf(); return START_NOT_STICKY; }
-        if (i != null && "panel".equals(i.getAction()) && panel == null) addPanel();
         return START_STICKY;
     }
 
     @Override public void onDestroy() {
         live = null;
+        running = false;
         state = "OFF";
         try { if (server != null) server.close(); } catch (Exception ignored) {}
         closeClient();
-        removePanel();
         super.onDestroy();
     }
 
@@ -147,17 +145,23 @@ public class StreamChatService extends Service {
         }
     }
 
-    /** Inbound protocol JSON: only used to release inflight slots. Never parsed into actions. */
+    /** Inbound protocol JSON: releases inflight slots and surfaces real command failures on the panel.
+     *  Parsed as data only; never turned into actions. */
     private void noteInbound(byte[] data) {
         try {
             String j = new String(data, "UTF-8");
             if (!j.contains("commandResponse")) return;
-            String marker = "\"requestId\":\"";
-            int i = j.indexOf(marker);
-            if (i < 0) return;
-            int e = j.indexOf('"', i + marker.length());
-            if (e < 0) return;
-            synchronized (inflight) { inflight.remove(j.substring(i + marker.length(), e)); }
+            org.json.JSONObject o = new org.json.JSONObject(j);
+            org.json.JSONObject head = o.optJSONObject("header");
+            if (head != null) {
+                String rid = head.optString("requestId", "");
+                synchronized (inflight) { inflight.remove(rid); }
+            }
+            org.json.JSONObject body = o.optJSONObject("body");
+            if (body != null && body.optInt("statusCode", 0) != 0) {
+                String msg = body.optString("statusMessage", "command failed");
+                lastCmdError = msg.length() > 100 ? msg.substring(0, 100) : msg;
+            }
         } catch (Exception ignored) {}
     }
 
@@ -262,133 +266,12 @@ public class StreamChatService extends Service {
         try { Thread.sleep(ms); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
     }
 
-    // ---------- floating mini control panel ----------
-
-    private void addPanel() {
-        if (panel != null) return;
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setBackground(Ui.panel(Ui.BG2));
-        card.setPadding(Ui.dp(10), Ui.dp(6), Ui.dp(10), Ui.dp(10));
-
-        LinearLayout head = new LinearLayout(this);
-        head.setGravity(Gravity.CENTER_VERTICAL);
-        TextView title = text("STREAM CHAT", 13, Ui.GREEN);
-        head.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView hide = text("X", 13, Ui.MUTE);
-        hide.setGravity(Gravity.CENTER);
-        hide.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { removePanel(); } });
-        head.addView(hide, new LinearLayout.LayoutParams(Ui.dp(30), Ui.dp(26)));
-        card.addView(head);
-
-        statusView = text("OFF", 12, Ui.MUTE);
-        statusView.setTypeface(null);
-        card.addView(statusView, wrap(4));
-        portView = text("", 11, Ui.MUTE);
-        portView.setTypeface(null);
-        card.addView(portView, wrap(2));
-        ytView = text("", 11, Ui.MUTE);
-        ytView.setTypeface(null);
-        card.addView(ytView, wrap(2));
-
-        LinearLayout row = new LinearLayout(this);
-        row.setGravity(Gravity.CENTER);
-        toggleBtn = Ui.button(this, "CHAT ON", Ui.CARD, Ui.INK);
-        toggleBtn.setTextSize(11);
-        toggleBtn.setOnClickListener(new View.OnClickListener() { public void onClick(View v) {
-            chatOn = !chatOn;
-            toggleBtn.setText(Ui.fix(chatOn ? "CHAT ON" : "CHAT OFF"));
-        }});
-        row.addView(toggleBtn, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView test = Ui.button(this, "TEST", Ui.GREEN, 0xFF0C1A0E);
-        test.setTextSize(11);
-        test.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { postTest(); } });
-        LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        tl.leftMargin = Ui.dp(6);
-        row.addView(test, tl);
-        card.addView(row, wrap(8));
-
-        LinearLayout row2 = new LinearLayout(this);
-        row2.setGravity(Gravity.CENTER);
-        final TextView modeBtn = Ui.button(this, "MODE: " + mode().toUpperCase(java.util.Locale.US), Ui.CARD, Ui.INK);
-        modeBtn.setTextSize(11);
-        modeBtn.setOnClickListener(new View.OnClickListener() { public void onClick(View v) {
-            String[] order = {"both", "bubble", "panel", "off"};
-            String cur = mode();
-            int i = 0;
-            for (int k = 0; k < order.length; k++) if (order[k].equals(cur)) i = k;
-            String next = order[(i + 1) % order.length];
-            getSharedPreferences("ui", MODE_PRIVATE).edit().putString("stream_mode", next).apply();
-            postControl(Ws.scriptMode(next));
-            modeBtn.setText(Ui.fix("MODE: " + next.toUpperCase(java.util.Locale.US)));
-        }});
-        row2.addView(modeBtn, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView clear = Ui.button(this, "CLEAR", Ui.CARD, Ui.INK);
-        clear.setTextSize(11);
-        clear.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { postControl(Ws.SCRIPT_CLEAR); } });
-        LinearLayout.LayoutParams cl = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        cl.leftMargin = Ui.dp(6);
-        row2.addView(clear, cl);
-        card.addView(row2, wrap(6));
-
-        final WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
-                Ui.dp(210), WindowManager.LayoutParams.WRAP_CONTENT,
-                Build.VERSION.SDK_INT >= 26 ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT);
-        lp.gravity = Gravity.TOP | Gravity.START;
-        lp.x = Ui.dp(12); lp.y = Ui.dp(120);
-        head.setOnTouchListener(new View.OnTouchListener() {
-            float dx, dy;
-            public boolean onTouch(View v, MotionEvent e) {
-                if (e.getAction() == MotionEvent.ACTION_DOWN) { dx = e.getRawX() - lp.x; dy = e.getRawY() - lp.y; return true; }
-                if (e.getAction() == MotionEvent.ACTION_MOVE) {
-                    lp.x = (int) (e.getRawX() - dx); lp.y = (int) (e.getRawY() - dy);
-                    try { wm.updateViewLayout(panel, lp); } catch (Exception ignored) {}
-                    return true;
-                }
-                return false;
-            }
-        });
-        wm.addView(card, lp);
-        panel = card;
-        h.post(statusTick);
-    }
-
-    private void removePanel() {
-        if (panel != null) {
-            try { wm.removeView(panel); } catch (Exception ignored) {}
-            panel = null;
-        }
-    }
-
-    private final Runnable statusTick = new Runnable() { public void run() {
-        if (panel == null) return;
-        String st = state;
-        statusView.setText(Ui.fix(st + (chatOn ? "" : "  (chat paused)") + "  sent " + sent + (droppedTotal > 0 ? "  dropped " + droppedTotal : "")));
-        statusView.setTextColor(st.equals("CONNECTED") ? Ui.GREEN : st.equals("WAITING") ? Ui.GOLD : Ui.RED);
-        portView.setText(Ui.fix(st.equals("OFF") ? "server stopped" : "in Minecraft: /connect 127.0.0.1:" + port));
-        ytView.setText(Ui.fix(ytState));
-        ytView.setTextColor(ytState.equals("YT LIVE") ? Ui.GREEN : ytState.startsWith("YT ERR") || ytState.startsWith("YT BAD") || ytState.startsWith("YT NOT") ? Ui.RED : Ui.MUTE);
-        h.postDelayed(this, 500);
-    }};
-
     private String mode() {
         return getSharedPreferences("ui", MODE_PRIVATE).getString("stream_mode", "both");
     }
 
-    private TextView text(String t, int sp, int color) {
-        TextView v = new TextView(this);
-        v.setText(Ui.fix(t));
-        v.setTypeface(Ui.PX);
-        v.setTextSize(sp);
-        v.setTextColor(color);
-        return v;
-    }
-
-    private LinearLayout.LayoutParams wrap(int top) {
-        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        p.topMargin = Ui.dp(top);
-        return p;
+    private int lifetime() {
+        return Math.max(1, Math.min(10, getSharedPreferences("ui", MODE_PRIVATE).getInt("stream_lifetime", 5)));
     }
 
     private Notification notification() {

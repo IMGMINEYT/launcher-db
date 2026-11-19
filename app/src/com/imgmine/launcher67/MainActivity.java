@@ -63,6 +63,7 @@ public class MainActivity extends Activity {
         mcInfo.setPadding(0, 0, 0, Ui.dp(16));
         col.addView(mcInfo);
 
+        col.addView(section("SETUP"));
         col.addView(step("1", "Allow display over other apps", true));
         allow = Ui.button(this, "ALLOW", Ui.GOLD, 0xFF1B1400);
         allow.setOnClickListener(new View.OnClickListener() {
@@ -88,6 +89,7 @@ public class MainActivity extends Activity {
             public void onClick(View v) { try { startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)); } catch (Exception ignored) {} }
         });
         col.addView(usage, wrap(0));
+        col.addView(section("FLOATING BALL"));
         col.addView(step(Build.VERSION.SDK_INT >= 33 ? "4" : "3", "Start", false));
         start = Ui.button(this, "START + OPEN MINECRAFT", Ui.GREEN, 0xFF0C1A0E);
         start.setTextSize(16);
@@ -103,9 +105,14 @@ public class MainActivity extends Activity {
         sl.topMargin = Ui.dp(12);
         col.addView(stop, sl);
 
-        // Stream-chat bridge (test increment): local loopback server + floating mini control panel.
-        col.addView(step("+", "Stream chat bridge (test)", false));
-        TextView bridge = Ui.button(this, "START BRIDGE + PANEL", Ui.CARD, Ui.INK);
+        hint = label("", 13, Ui.MUTE);
+        hint.setTypeface(null);
+        hint.setPadding(0, Ui.dp(12), 0, 0);
+        col.addView(hint);
+
+        // Stream-chat bridge: local loopback server; controls live in the 67 ball panel (chat icon).
+        col.addView(section("STREAM CHAT"));
+        TextView bridge = Ui.button(this, "START BRIDGE", Ui.CARD, Ui.INK);
         bridge.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (!canOverlay()) {
@@ -166,15 +173,39 @@ public class MainActivity extends Activity {
         ys.topMargin = Ui.dp(6);
         col.addView(ytSave, ys);
 
-        TextView bridgeNote = label("Steps: 1) install the addon and activate BOTH packs on a cheats-ON world. 2) In Minecraft settings turn WebSockets ON, encrypted websockets OFF. 3) Start bridge, then in Minecraft chat run /connect 127.0.0.1:PORT shown on the panel. 4) For live chat paste your YouTube live URL and API key above and SAVE. TEST sends a sample message without YouTube.", 12, Ui.MUTE);
+        // Bubble lifetime (contract v1.2 tysc:lifetime, clamped 1-10s, persisted by the addon)
+        LinearLayout lt = new LinearLayout(this);
+        lt.setGravity(Gravity.CENTER_VERTICAL);
+        TextView ltLabel = label("Bubble show time", 13, Ui.INK);
+        lt.addView(ltLabel, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        final TextView minus = Ui.button(this, "-", Ui.CARD, Ui.INK);
+        final TextView ltVal = label("", 14, Ui.GREEN);
+        ltVal.setGravity(Gravity.CENTER);
+        final TextView plus = Ui.button(this, "+", Ui.CARD, Ui.INK);
+        ltVal.setText(Ui.fix(prefs.getInt("stream_lifetime", 5) + "s"));
+        View.OnClickListener bump = new View.OnClickListener() {
+            public void onClick(View v) {
+                int cur = prefs.getInt("stream_lifetime", 5) + (v == plus ? 1 : -1);
+                cur = Math.max(1, Math.min(10, cur));
+                prefs.edit().putInt("stream_lifetime", cur).apply();
+                ltVal.setText(Ui.fix(cur + "s"));
+                StreamChatService.postControl(Ws.scriptLifetime(cur));
+            }
+        };
+        minus.setOnClickListener(bump);
+        plus.setOnClickListener(bump);
+        lt.addView(minus, new LinearLayout.LayoutParams(Ui.dp(44), ViewGroup.LayoutParams.WRAP_CONTENT));
+        lt.addView(ltVal, new LinearLayout.LayoutParams(Ui.dp(52), ViewGroup.LayoutParams.WRAP_CONTENT));
+        lt.addView(plus, new LinearLayout.LayoutParams(Ui.dp(44), ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout.LayoutParams ltp = wrap(0);
+        ltp.topMargin = Ui.dp(8);
+        col.addView(lt, ltp);
+
+        TextView bridgeNote = label("Steps: 1) install the addon and activate BOTH packs on a cheats-ON world. 2) In Minecraft settings turn WebSockets ON, encrypted websockets OFF. 3) START BRIDGE, open the world, tap the 67 ball, then the chat icon for bridge controls. 4) COPY the /connect command there and run it in Minecraft chat. 5) For live chat paste your YouTube live URL and API key above and SAVE. TEST sends a sample message without YouTube.", 12, Ui.MUTE);
         bridgeNote.setTypeface(null);
         bridgeNote.setPadding(0, Ui.dp(8), 0, 0);
         col.addView(bridgeNote);
 
-        hint = label("", 13, Ui.MUTE);
-        hint.setTypeface(null);
-        hint.setPadding(0, Ui.dp(18), 0, 0);
-        col.addView(hint);
         dnsNote = label("Ad-blocking Private DNS detected. Promos and support may not load or work while it is on.", 12, 0xFF1B1400);
         dnsNote.setTypeface(null);
         dnsNote.setBackground(Ui.panel(Ui.GOLD));
@@ -198,6 +229,12 @@ public class MainActivity extends Activity {
     private View step(String n, String text, boolean first) {
         TextView t = label(n + "   " + text, 15, Ui.INK);
         t.setPadding(0, first ? 0 : Ui.dp(20), 0, Ui.dp(8));
+        return t;
+    }
+
+    private View section(String name) {
+        TextView t = label(name, 13, Ui.GOLD);
+        t.setPadding(0, Ui.dp(26), 0, Ui.dp(2));
         return t;
     }
 
