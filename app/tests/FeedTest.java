@@ -4,6 +4,7 @@ import android.content.Context;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
 import android.widget.TextView;
+import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -99,8 +100,24 @@ public class FeedTest {
         assertTrue("no worlds loaded on WORLDS chip", worlds > 0);
     }
 
+    /** Skip loudly when laby.net rate-limits this runner (429, seen with multi-hour Retry-After);
+     *  an environmental unavailability, not a pass. Any other status proceeds to the real assertions. */
+    private static void labyPreflight() throws Exception {
+        java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL("https://laby.net/api/v3/search/textures/skin?order=most_used&size=1").openConnection();
+        c.setConnectTimeout(8000);
+        c.setReadTimeout(8000);
+        c.setRequestProperty("User-Agent", "67Launcher/2.0");
+        int code = c.getResponseCode();
+        if (code == 429) {
+            System.out.println("SKIPPING Laby assertions: laby.net rate-limits this runner (429, retry-after "
+                    + c.getHeaderField("Retry-After") + "s). Source availability NOT verified.");
+            Assume.assumeNoException(new Exception("laby.net 429 rate limit"));
+        }
+    }
+
     @Test
     public void skinsChipLabyFirst() throws Exception {
+        labyPreflight();
         Panel p = newPanel();
         chip(p, 4); // SKINS
         loadMore(p);
@@ -123,6 +140,7 @@ public class FeedTest {
 
     @Test
     public void skinsSearchHitsLaby() throws Exception {
+        labyPreflight();
         Panel p = newPanel();
         chip(p, 4); // SKINS
         EditText search = (EditText) get(p, "search");

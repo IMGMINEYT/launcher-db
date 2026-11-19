@@ -215,6 +215,21 @@ public class MainActivity extends Activity {
         stream.addView(bridgeNote);
         col.addView(stream, wrap(4));
 
+        // VIP card: entry point for the gated addon database (dark while Vip.ENABLED is false)
+        col.addView(section("VIP"));
+        LinearLayout vip = cardBox();
+        vipStatus = label(vipStatusText(), 12, Ui.MUTE);
+        vip.addView(vipStatus);
+        TextView vipBtn = Ui.button(this, "ENTER VIP CODE", Ui.CARD, Ui.INK);
+        vipBtn.setTextSize(12);
+        vipBtn.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { showVipDialog(); }
+        });
+        LinearLayout.LayoutParams vb = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        vb.topMargin = Ui.dp(8);
+        vip.addView(vipBtn, vb);
+        col.addView(vip, wrap(4));
+
         dnsNote = label("Ad-blocking Private DNS detected. Promos and support may not load or work while it is on.", 12, 0xFF1B1400);
         dnsNote.setTypeface(null);
         dnsNote.setBackground(Ui.panel(Ui.GOLD));
@@ -227,6 +242,45 @@ public class MainActivity extends Activity {
         col.addView(promoBox, wrap(Ui.dp(8)));
         Images.init(this);
         setContentView(sv);
+    }
+
+    private TextView vipStatus;
+
+    private String vipStatusText() {
+        if (!Vip.ENABLED) return "VIP addon database: not active in this build.";
+        String tok = Vip.token(this);
+        if (tok.length() == 0) return "Enter your VIP code to unlock the addon database.";
+        long exp = Vip.tokenExp(tok);
+        String day = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(new java.util.Date(exp * 1000));
+        return "VIP active until " + day + ".";
+    }
+
+    private void showVipDialog() {
+        if (!Vip.ENABLED) {
+            Toast.makeText(this, "VIP is not active in this build.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        final EditText in = input("VIP code", "");
+        in.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Enter VIP code")
+                .setView(in)
+                .setPositiveButton("UNLOCK", new android.content.DialogInterface.OnClickListener() {
+                    public void onClick(android.content.DialogInterface d, int w) {
+                        String code = in.getText().toString().trim();
+                        if (code.length() == 0) return;
+                        Vip.check(getApplicationContext(), code, new Vip.CB() {
+                            public void ok() {
+                                vipStatus.setText(vipStatusText());
+                                Toast.makeText(MainActivity.this, "VIP unlocked.", Toast.LENGTH_SHORT).show();
+                            }
+                            public void badCode() { Toast.makeText(MainActivity.this, "Wrong code.", Toast.LENGTH_LONG).show(); }
+                            public void error() { Toast.makeText(MainActivity.this, "VIP server unreachable. Try again later.", Toast.LENGTH_LONG).show(); }
+                        });
+                    }
+                })
+                .setNegativeButton("CANCEL", null)
+                .show();
     }
 
     private LinearLayout.LayoutParams wrap(int top) {

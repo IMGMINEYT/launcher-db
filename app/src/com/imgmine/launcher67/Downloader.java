@@ -49,7 +49,10 @@ final class Downloader {
     static void setWatch(Watch w) { watch=w; }
     static boolean safeName(String n) { return n!=null && n.matches("[A-Za-z0-9_][A-Za-z0-9_.-]{0,180}") && !n.contains("..") && !n.endsWith(".json"); }
     static boolean valid(String u) {
-        if(u==null || !u.startsWith("https://")) return false;
+        if(u==null)return false;
+        // VIP gate file endpoints carry opaque ids, not extensions: trust by origin, not suffix.
+        if(Vip.ENABLED&&Api.sameOrigin(Vip.GATE,u))return u.startsWith("https://")||Api.loopbackGate(u);
+        if(!u.startsWith("https://"))return false;
         String path=u.split("[?]",2)[0].toLowerCase(Locale.ROOT);
         return path.endsWith(".mcaddon") || path.endsWith(".mcpack") || path.endsWith(".mcworld") || path.endsWith(".mctemplate") || path.contains("/releases/download/");
     }
@@ -153,12 +156,15 @@ final class Downloader {
     private static HttpURLConnection open(Task t,long at)throws IOException{
         String u=t.url;
         for(int i=0;i<6;i++){
-            URL url=new URL(u);if(!"https".equals(url.getProtocol()))throw new IOException("HTTPS required");
+            URL url=new URL(u);
+            boolean gate=Vip.ENABLED&&Api.sameOrigin(Vip.GATE,u);
+            if(!"https".equals(url.getProtocol())&&!(gate&&Api.loopbackGate(u)))throw new IOException("HTTPS required");
             HttpURLConnection con=connections.connect(url);t.connection=con;
             con.setInstanceFollowRedirects(false);con.setConnectTimeout(10000);con.setReadTimeout(15000);
             con.setRequestProperty("User-Agent","67Launcher/2.6");con.setRequestProperty("Accept-Encoding","identity");
+            if(gate){String tok=app==null?"":Vip.token(app);if(tok.length()==0)throw new IOException("VIP token missing");con.setRequestProperty("X-VIP-Token",tok);}
             if(at>0){con.setRequestProperty("Range","bytes="+at+"-");con.setRequestProperty("If-Range",t.validator);}
-            int code=con.getResponseCode();if(code>=300&&code<400){String loc=con.getHeaderField("Location");con.disconnect();if(loc==null)throw new IOException("Missing redirect");u=new URL(url,loc).toString();continue;}
+            int code=con.getResponseCode();if(code>=300&&code<400){String loc=con.getHeaderField("Location");con.disconnect();if(loc==null)throw new IOException("Missing redirect");String next=new URL(url,loc).toString();if(gate&&!Api.sameOrigin(Vip.GATE,next))throw new IOException("Untrusted redirect");u=next;continue;}
             if(code!=200&&code!=206&&!(code==416&&at>0)){con.disconnect();throw new IOException("HTTP "+code);}
             return con;
         }throw new IOException("Too many redirects");
@@ -166,7 +172,9 @@ final class Downloader {
     private static void post(Task t){MAIN.post(()->{if(t.listener!=null)t.listener.progress(t.pct());});ping();}
     private static void ping(){Watch w=watch;if(w!=null)MAIN.post(w::changed);}
     private static File histFile(Context c){return new File(c.getFilesDir(),"dl/history.json");}
+    private static Context app;
     private static synchronized void load(Context c){
+        app=c.getApplicationContext();
         if(loaded)return;loaded=true;File dir=new File(c.getFilesDir(),"dl");dir.mkdirs();
         try(InputStream in=new java.io.FileInputStream(histFile(c))){
             JSONArray a=new JSONArray(new String(Api.readAll(in,4<<20),"UTF-8"));

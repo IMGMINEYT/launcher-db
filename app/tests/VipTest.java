@@ -229,4 +229,46 @@ public class VipTest {
         java.util.List<Addon> p = Api.parse("{\"addons\":[{\"id\":\"a2\",\"name\":\"Q\",\"download\":\"https://github.com/x/y.mcaddon\"}]}");
         assertEquals("https://github.com/x/y.mcaddon", p.get(0).download);
     }
+
+    @Test public void vipCatalogDropsOffOriginAndCleartext() throws Exception {
+        Vip.ENABLED = true;
+        // Same-origin gate URL accepted; other https hosts and cleartext dropped in VIP mode.
+        assertTrue(Api.acceptDownload("https://gate.test/vip/file/a1?s=x&e=1"));
+        assertFalse(Api.acceptDownload("https://evil.example/steal.mcaddon"));
+        assertFalse(Api.acceptDownload("http://gate.test/vip/file/a1"));        // scheme must match too
+        assertFalse(Api.acceptDownload("https://gate.test.evil.example/vip/file/a1"));
+        // ...and a hostile catalog entry is dropped wholesale, never followed.
+        java.util.List<Addon> l = Api.parse("{\"addons\":["
+                + "{\"id\":\"ok\",\"name\":\"A\",\"download\":\"/vip/file/ok?s=x&e=1\"},"
+                + "{\"id\":\"bad\",\"name\":\"B\",\"download\":\"https://evil.example/x.mcaddon\"}]}");
+        assertEquals(1, l.size());
+        assertEquals("ok", l.get(0).id);
+        // Public mode unchanged: https required, no origin restriction.
+        Vip.ENABLED = false;
+        assertTrue(Api.acceptDownload("https://github.com/x/y.mcaddon"));
+        assertFalse(Api.acceptDownload("http://github.com/x/y.mcaddon"));
+    }
+
+    @Test public void loopbackGateIsTheOnlyCleartextException() {
+        Vip.ENABLED = true;
+        Vip.GATE = "http://127.0.0.1:18931";
+        assertTrue(Api.sameOrigin(Vip.GATE, "http://127.0.0.1:18931/vip/file/a?s=x&e=1"));
+        assertTrue(Api.loopbackGate("http://127.0.0.1:18931/vip/file/a?s=x&e=1"));
+        assertTrue(Api.acceptDownload("http://127.0.0.1:18931/vip/file/a?s=x&e=1"));
+        assertFalse(Api.sameOrigin(Vip.GATE, "http://127.0.0.1:9999/vip/file/a"));  // port matters
+        Vip.GATE = "https://gate.test";
+        assertFalse(Api.loopbackGate("https://gate.test/vip/file/a"));
+    }
+
+    @Test public void downloaderValidTrustsGateByOrigin() {
+        Vip.ENABLED = true;
+        Vip.GATE = "https://gate.test";
+        // Gate file URLs carry opaque ids, not extensions: origin, not suffix, decides.
+        assertTrue(Downloader.valid("https://gate.test/vip/file/pack-one?s=x&e=1"));
+        assertFalse(Downloader.valid("https://evil.example/vip/file/pack-one?s=x&e=1"));
+        // Non-gate rules unchanged.
+        assertTrue(Downloader.valid("https://github.com/a/b/releases/download/t/pack.mcaddon"));
+        assertFalse(Downloader.valid("https://example.com/not-a-pack.txt"));
+        assertFalse(Downloader.valid("http://github.com/a/b/releases/download/t/pack.mcaddon"));
+    }
 }

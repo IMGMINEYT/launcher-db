@@ -76,6 +76,18 @@ the link can use it within its lifetime (24h, or until rotation).
 - Streams bytes from Telegram; single `Range` supported (200/206/416);
   max 3 concurrent streams (free-plan sizing).
 - Unsigned/invalid/gate-off requests get 404 (no catalog or metadata leak).
+- APP-SIDE HARDENING (implemented, dark): the app's downloader sends
+  `X-VIP-Token` on every gate-origin request and refuses redirects that
+  leave the gate origin. RECOMMENDED bot change (bot worker, via main):
+  REQUIRE a valid `X-VIP-Token` on /vip/file too, and drop the signed-URL
+  TTL from 24h to ~10 min (resume window only). That removes the
+  bearer-URL shareability weakness by design instead of asking the user
+  to accept it; the app's own downloader always carries the header, so no
+  capability is lost.
+- Origin rule (implemented, dark): in VIP mode the app accepts download
+  URLs only on the gate's exact origin (scheme+host+port); cleartext is
+  accepted only against a loopback test gate (127.0.0.1/localhost), never
+  in production.
 
 ### GET /vip/health
 `{"ok": true, "on": <bool>, "vault": <count>}` — no auth.
@@ -129,10 +141,20 @@ Unverified residuals:
 - Real-world concurrency: 256MB/25% CPU suggests 2–4 simultaneous streams;
   no documented request-rate limit found. Rate limiting is in the design;
   load behavior is unproven until deployed.
+- aiohttp behavior on the 256MB free plan (memory headroom under streams).
 - Observed Telegram throughput on this host was 500–700KB/s at best
   (2026-10 tests) → a 156MB pack ≈ 4–5 min minimum, far slower than the
   current GitHub CDN. A gate outage (99% uptime target, renewal lapses)
   blocks ALL gated DB access.
+
+Verification DONE since v2:
+- Cross-language end-to-end: the real Python rev2 gate (aiohttp, loopback,
+  fake vault) against the real Java client: health, wrong-code 401, token
+  mint/parse both directions, catalog with relative-URL resolution, full +
+  Range download (byte-accurate), forged-signature 404, no-auth 401. Plus a
+  Java mock-gate suite covering rotation/revokeall/gate-off kill semantics.
+  74 offline tests green (2 live Laby tests skip loudly under a runner-side
+  429 rate limit; laby.net itself is up).
 
 ## Honest scope statement
 

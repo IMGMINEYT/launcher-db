@@ -46,6 +46,39 @@ final class Api {
         finally { if (c != null) c.disconnect(); }
     }
 
+    /** Download URL acceptance. Public catalog: https only. VIP mode: the resolved URL
+     *  must be same-origin with the configured gate (https in production; plain http is
+     *  accepted only for a loopback test gate). Anything else is dropped, never followed. */
+    static boolean acceptDownload(String u) {
+        if (Vip.ENABLED) return sameOrigin(Vip.GATE, u);
+        return u.startsWith("https://");
+    }
+
+    /** Same scheme, host (case-insensitive) and effective port. */
+    static boolean sameOrigin(String base, String u) {
+        try {
+            java.net.URI b = new java.net.URI(base), x = new java.net.URI(u);
+            if (b.getScheme() == null || b.getHost() == null || x.getScheme() == null || x.getHost() == null) return false;
+            if (!b.getScheme().equalsIgnoreCase(x.getScheme())) return false;
+            if (!b.getHost().equalsIgnoreCase(x.getHost())) return false;
+            return effPort(b) == effPort(x);
+        } catch (Exception e) { return false; }
+    }
+
+    private static int effPort(java.net.URI u) {
+        if (u.getPort() >= 0) return u.getPort();
+        return "https".equalsIgnoreCase(u.getScheme()) ? 443 : 80;
+    }
+
+    /** True only for a gate explicitly configured on this machine (test builds). */
+    static boolean loopbackGate(String u) {
+        if (!sameOrigin(Vip.GATE, u)) return false;
+        try {
+            String h = new java.net.URI(Vip.GATE).getHost();
+            return "127.0.0.1".equals(h) || "localhost".equalsIgnoreCase(h);
+        } catch (Exception e) { return false; }
+    }
+
     static List<Addon> parse(String json) throws Exception {
         JSONObject o = new JSONObject(json);
         JSONArray a = o.optJSONArray("addons");
@@ -81,7 +114,7 @@ final class Api {
             String b = j.isNull("banner") ? "" : j.optString("banner");
             d.banner = b.startsWith("https://") ? b : null;
             try { d.added = f.parse(j.optString("added")).getTime(); } catch (Exception ignored) {}
-            if (d.name.length() == 0 || !d.download.startsWith("https://")) continue;
+            if (d.name.length() == 0 || !acceptDownload(d.download)) continue;
             if (d.id.length() == 0) d.id = "a" + i;
             d.lname = Fuzzy.norm(d.name);
             d.ldesc = Fuzzy.norm(d.desc);
