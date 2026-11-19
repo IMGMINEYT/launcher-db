@@ -63,8 +63,11 @@ public class MainActivity extends Activity {
         mcInfo.setPadding(0, 0, 0, Ui.dp(16));
         col.addView(mcInfo);
 
+        final android.content.SharedPreferences prefs = getSharedPreferences("ui", MODE_PRIVATE);
+
+        // SETUP card: the three permissions as compact label+button rows
         col.addView(section("SETUP"));
-        col.addView(step("1", "Allow display over other apps", true));
+        LinearLayout setup = cardBox();
         allow = Ui.button(this, "ALLOW", Ui.GOLD, 0xFF1B1400);
         allow.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -72,47 +75,49 @@ public class MainActivity extends Activity {
                 startActivity(i);
             }
         });
-        col.addView(allow, wrap(0));
-
+        setup.addView(permRow("1  Show the ball over other apps", allow));
         notif = Ui.button(this, "ALLOW NOTIFICATIONS", Ui.CARD, Ui.INK);
         if (Build.VERSION.SDK_INT >= 33) {
-            col.addView(step("2", "Show the Stop button (optional)", false));
             notif.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) { requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 7); }
             });
-            col.addView(notif, wrap(0));
+            setup.addView(permRow("2  Stop button in notifications", notif));
         }
-
-        col.addView(step(Build.VERSION.SDK_INT >= 33 ? "3" : "2", "Hide the ball when Minecraft is closed (Usage access)", false));
         usage = Ui.button(this, "ALLOW USAGE ACCESS", Ui.CARD, Ui.INK);
         usage.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { try { startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)); } catch (Exception ignored) {} }
         });
-        col.addView(usage, wrap(0));
-        col.addView(section("FLOATING BALL"));
-        col.addView(step(Build.VERSION.SDK_INT >= 33 ? "4" : "3", "Start", false));
-        start = Ui.button(this, "START + OPEN MINECRAFT", Ui.GREEN, 0xFF0C1A0E);
-        start.setTextSize(16);
-        start.setPadding(Ui.dp(14), Ui.dp(14), Ui.dp(14), Ui.dp(16));
-        start.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { go(); } });
-        col.addView(start, wrap(0));
+        setup.addView(permRow(Build.VERSION.SDK_INT >= 33 ? "3  Hide ball when Minecraft is closed" : "2  Hide ball when Minecraft is closed", usage));
+        col.addView(setup, wrap(4));
 
+        // FLOATING BALL card
+        col.addView(section("FLOATING BALL"));
+        LinearLayout ball = cardBox();
+        start = Ui.button(this, "START + OPEN MINECRAFT", Ui.GREEN, 0xFF0C1A0E);
+        start.setPadding(Ui.dp(14), Ui.dp(10), Ui.dp(14), Ui.dp(12));
+        start.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { go(); }
+        });
+        ball.addView(start, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         stop = Ui.button(this, "STOP FLOATING BALL", Ui.CARD, Ui.INK);
         stop.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { stopService(new Intent(MainActivity.this, OverlayService.class)); refresh(); }
         });
-        LinearLayout.LayoutParams sl = wrap(0);
-        sl.topMargin = Ui.dp(12);
-        col.addView(stop, sl);
-
-        hint = label("", 13, Ui.MUTE);
+        LinearLayout.LayoutParams sl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        sl.topMargin = Ui.dp(8);
+        ball.addView(stop, sl);
+        hint = label("", 12, Ui.MUTE);
         hint.setTypeface(null);
-        hint.setPadding(0, Ui.dp(12), 0, 0);
-        col.addView(hint);
+        hint.setPadding(0, Ui.dp(8), 0, 0);
+        ball.addView(hint);
+        col.addView(ball, wrap(4));
 
-        // Stream-chat bridge: local loopback server; controls live in the 67 ball panel (chat icon).
+        // STREAM CHAT card: bridge + addon + YouTube + bubble time
         col.addView(section("STREAM CHAT"));
-        TextView bridge = Ui.button(this, "START BRIDGE", Ui.CARD, Ui.INK);
+        LinearLayout stream = cardBox();
+        LinearLayout brRow = new LinearLayout(this);
+        TextView bridge = Ui.button(this, "START BRIDGE", Ui.GREEN, 0xFF0C1A0E);
+        bridge.setTextSize(12);
         bridge.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (!canOverlay()) {
@@ -124,32 +129,35 @@ public class MainActivity extends Activity {
                 if (Build.VERSION.SDK_INT >= 26) startForegroundService(i); else startService(i);
             }
         });
-        col.addView(bridge, wrap(0));
-        TextView bridgeStop = Ui.button(this, "STOP BRIDGE", Ui.CARD, Ui.INK);
+        brRow.addView(bridge, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.4f));
+        TextView bridgeStop = Ui.button(this, "STOP", Ui.CARD, Ui.INK);
+        bridgeStop.setTextSize(12);
         bridgeStop.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { stopService(new Intent(MainActivity.this, StreamChatService.class)); }
         });
-        LinearLayout.LayoutParams bs = wrap(0);
-        bs.topMargin = Ui.dp(8);
-        col.addView(bridgeStop, bs);
+        LinearLayout.LayoutParams bsl = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        bsl.leftMargin = Ui.dp(8);
+        brRow.addView(bridgeStop, bsl);
+        stream.addView(brRow);
         TextView addonBtn = Ui.button(this, "INSTALL STREAM CHAT ADDON", Ui.CARD, Ui.INK);
+        addonBtn.setTextSize(12);
         addonBtn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { installStreamAddon(); }
         });
-        LinearLayout.LayoutParams ab = wrap(0);
+        LinearLayout.LayoutParams ab = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         ab.topMargin = Ui.dp(8);
-        col.addView(addonBtn, ab);
-        final android.content.SharedPreferences prefs = getSharedPreferences("ui", MODE_PRIVATE);
+        stream.addView(addonBtn, ab);
         final EditText ytUrl = input("YouTube live URL", prefs.getString("stream_yt_url", ""));
-        LinearLayout.LayoutParams yu = wrap(0);
+        LinearLayout.LayoutParams yu = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         yu.topMargin = Ui.dp(8);
-        col.addView(ytUrl, yu);
-        final EditText ytKey = input("YouTube Data API key (free, from Google Cloud)", "");
+        stream.addView(ytUrl, yu);
+        final EditText ytKey = input("YouTube Data API key", "");
         ytKey.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        LinearLayout.LayoutParams yk = wrap(0);
+        LinearLayout.LayoutParams yk = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         yk.topMargin = Ui.dp(6);
-        col.addView(ytKey, yk);
+        stream.addView(ytKey, yk);
         TextView ytSave = Ui.button(this, "SAVE YOUTUBE", Ui.CARD, Ui.INK);
+        ytSave.setTextSize(12);
         ytSave.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 String k = ytKey.getText().toString().trim();
@@ -169,14 +177,14 @@ public class MainActivity extends Activity {
                 Toast.makeText(MainActivity.this, "Saved. Bridge picks it up within seconds.", Toast.LENGTH_SHORT).show();
             }
         });
-        LinearLayout.LayoutParams ys = wrap(0);
+        LinearLayout.LayoutParams ys = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         ys.topMargin = Ui.dp(6);
-        col.addView(ytSave, ys);
+        stream.addView(ytSave, ys);
 
-        // Bubble lifetime (contract v1.2 tysc:lifetime, clamped 1-10s, persisted by the addon)
+        // Bubble lifetime (contract tysc:lifetime, clamped 1-10s, persisted by the addon)
         LinearLayout lt = new LinearLayout(this);
         lt.setGravity(Gravity.CENTER_VERTICAL);
-        TextView ltLabel = label("Bubble show time", 13, Ui.INK);
+        TextView ltLabel = label("Bubble show time", 12, Ui.INK);
         lt.addView(ltLabel, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         final TextView minus = Ui.button(this, "-", Ui.CARD, Ui.INK);
         final TextView ltVal = label("", 14, Ui.GREEN);
@@ -197,14 +205,15 @@ public class MainActivity extends Activity {
         lt.addView(minus, new LinearLayout.LayoutParams(Ui.dp(44), ViewGroup.LayoutParams.WRAP_CONTENT));
         lt.addView(ltVal, new LinearLayout.LayoutParams(Ui.dp(52), ViewGroup.LayoutParams.WRAP_CONTENT));
         lt.addView(plus, new LinearLayout.LayoutParams(Ui.dp(44), ViewGroup.LayoutParams.WRAP_CONTENT));
-        LinearLayout.LayoutParams ltp = wrap(0);
+        LinearLayout.LayoutParams ltp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         ltp.topMargin = Ui.dp(8);
-        col.addView(lt, ltp);
+        stream.addView(lt, ltp);
 
         TextView bridgeNote = label("Steps: 1) install the addon and activate BOTH packs on a cheats-ON world. 2) In Minecraft settings turn WebSockets ON, encrypted websockets OFF. 3) START BRIDGE, open the world, tap the 67 ball, then the chat icon for bridge controls. 4) COPY the /connect command there and run it in Minecraft chat. 5) For live chat paste your YouTube live URL and API key above and SAVE. TEST sends a sample message without YouTube.", 12, Ui.MUTE);
         bridgeNote.setTypeface(null);
         bridgeNote.setPadding(0, Ui.dp(8), 0, 0);
-        col.addView(bridgeNote);
+        stream.addView(bridgeNote);
+        col.addView(stream, wrap(4));
 
         dnsNote = label("Ad-blocking Private DNS detected. Promos and support may not load or work while it is on.", 12, 0xFF1B1400);
         dnsNote.setTypeface(null);
@@ -226,16 +235,33 @@ public class MainActivity extends Activity {
         return p;
     }
 
-    private View step(String n, String text, boolean first) {
-        TextView t = label(n + "   " + text, 15, Ui.INK);
-        t.setPadding(0, first ? 0 : Ui.dp(20), 0, Ui.dp(8));
+    private View section(String name) {
+        TextView t = label(name, 13, Ui.GOLD);
+        t.setPadding(0, Ui.dp(22), 0, 0);
         return t;
     }
 
-    private View section(String name) {
-        TextView t = label(name, 13, Ui.GOLD);
-        t.setPadding(0, Ui.dp(26), 0, Ui.dp(2));
-        return t;
+    private LinearLayout cardBox() {
+        LinearLayout c = new LinearLayout(this);
+        c.setOrientation(LinearLayout.VERTICAL);
+        c.setBackground(Ui.panel(Ui.CARD));
+        c.setPadding(Ui.dp(12), Ui.dp(10), Ui.dp(12), Ui.dp(12));
+        return c;
+    }
+
+    /** Compact label + action row used inside cards. */
+    private View permRow(String text, TextView button) {
+        LinearLayout r = new LinearLayout(this);
+        r.setGravity(Gravity.CENTER_VERTICAL);
+        TextView t = label(text, 12, Ui.INK);
+        r.addView(t, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        button.setTextSize(11);
+        button.setPadding(Ui.dp(10), Ui.dp(6), Ui.dp(10), Ui.dp(8));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.leftMargin = Ui.dp(10);
+        r.addView(button, lp);
+        r.setPadding(0, Ui.dp(3), 0, Ui.dp(3));
+        return r;
     }
 
     private EditText input(String hintText, String value) {

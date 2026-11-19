@@ -65,9 +65,6 @@ public class StreamChatService extends Service {
         live = this;
         running = true;
         openServer();
-        // push persisted display settings; they sit in the queue until Minecraft connects
-        queue.add(Ws.scriptMode(mode()));
-        queue.add(Ws.scriptLifetime(lifetime()));
         startSender();
         startYt();
     }
@@ -128,6 +125,10 @@ public class StreamChatService extends Service {
                 client = s; clientOut = out;
             }
             state = "CONNECTED";
+            // replay persisted display settings the moment the session is ready, so a world
+            // that connects long after service start still gets mode + bubble lifetime
+            Ws.write(out, 1, Ws.commandRequest(Ws.scriptMode(mode()), Ws.newId()));
+            Ws.write(out, 1, Ws.commandRequest(Ws.scriptLifetime(lifetime()), Ws.newId()));
             while (true) {
                 Ws.Frame f = Ws.read(in);
                 if (f == null) break;

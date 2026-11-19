@@ -49,7 +49,9 @@ public class VisualTest {
   m=Panel.class.getDeclaredMethod("showScreen",int.class);m.setAccessible(true);m.invoke(p,2);
   Field bf=Panel.class.getDeclaredField("bridgeView");bf.setAccessible(true);assertEquals(View.VISIBLE,((View)bf.get(p)).getVisibility());
   ((ViewGroup)card.getParent()).removeView(card);c.setContentView(card);
-  render(card,460,740,System.getProperty("launcher.renderDir", "build/test-renders")+"/v28-bridgepanel-native.png");
+  // real overlay sizes: panel caps at 400x360dp portrait and stays small on a landscape phone
+  render(card,400,360,System.getProperty("launcher.renderDir", "build/test-renders")+"/v28-bridgepanel-portrait-native.png");
+  render(card,560,300,System.getProperty("launcher.renderDir", "build/test-renders")+"/v28-bridgepanel-landscape-native.png");
   StreamChatService.state="OFF";StreamChatService.port=0;StreamChatService.sent=0;}
 
  @Test public void renderDownloadsScreen()throws Exception{
@@ -66,7 +68,8 @@ public class VisualTest {
   Field df=Panel.class.getDeclaredField("dlView");df.setAccessible(true);assertEquals(View.VISIBLE,((View)df.get(p)).getVisibility());
   Field lf=Panel.class.getDeclaredField("list");lf.setAccessible(true);assertEquals(View.GONE,((View)lf.get(p)).getVisibility());
   ((ViewGroup)card.getParent()).removeView(card);c.setContentView(card);
-  render(card,460,740,System.getProperty("launcher.renderDir", "build/test-renders")+"/v28-downloadspanel-native.png");
+  render(card,400,360,System.getProperty("launcher.renderDir", "build/test-renders")+"/v28-downloadspanel-portrait-native.png");
+  render(card,560,300,System.getProperty("launcher.renderDir", "build/test-renders")+"/v28-downloadspanel-landscape-native.png");
   m.invoke(p,0);assertEquals(View.VISIBLE,((View)lf.get(p)).getVisibility());}
 
  @Test public void renderMainScreen()throws Exception{

@@ -165,9 +165,8 @@ public class StreamWsTest {
 
     private ServiceController<StreamChatService> ctl;
     private StreamChatService svc;
-    private java.util.List<String> drainedConfig;
 
-    @Before public void startService() throws Exception {
+    @Before public void startService() {
         ctl = Robolectric.buildService(StreamChatService.class);
         svc = ctl.create().get();
         long end = System.currentTimeMillis() + 5000;
@@ -176,15 +175,6 @@ public class StreamWsTest {
         }
         assertTrue("server port assigned", StreamChatService.port > 0);
         assertEquals("WAITING", StreamChatService.state);
-        // service startup enqueues the persisted display config (mode + lifetime); drain it so
-        // delivery tests see only their own messages. servicePushesConfigOnStart asserts the drain.
-        drainedConfig = ((Ws.ChatQueue) get(svc, "queue")).batch(10, 100000);
-    }
-
-    @Test public void servicePushesConfigOnStart() {
-        assertEquals(2, drainedConfig.size());
-        assertEquals("scriptevent tysc:mode both", drainedConfig.get(0));
-        assertEquals("scriptevent tysc:lifetime 5", drainedConfig.get(1));
     }
 
     @After public void stopService() { ctl.destroy(); StreamChatService.port = 0; StreamChatService.state = "OFF"; StreamChatService.ytQuotaStop = false; StreamChatService.ytState = "YT OFF"; StreamChatService.lastCmdError = ""; }
@@ -200,6 +190,14 @@ public class StreamWsTest {
         long end = System.currentTimeMillis() + 3000;
         while (!"CONNECTED".equals(StreamChatService.state) && System.currentTimeMillis() < end) Thread.sleep(20);
         assertEquals("CONNECTED", StreamChatService.state);
+        // every fresh session first receives the persisted display config (mode, then lifetime),
+        // written directly on session ready so late connections still get bubble settings
+        Ws.Frame c1 = Ws.read(c.getInputStream());
+        String l1 = new String(c1.data, "UTF-8");
+        assertTrue("first frame is mode config, got " + l1, l1.contains("scriptevent tysc:mode both"));
+        Ws.Frame c2 = Ws.read(c.getInputStream());
+        String l2 = new String(c2.data, "UTF-8");
+        assertTrue("second frame is lifetime config, got " + l2, l2.contains("scriptevent tysc:lifetime 5"));
         return c;
     }
 
