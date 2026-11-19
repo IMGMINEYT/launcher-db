@@ -225,7 +225,8 @@ public class VipTest {
         java.util.List<Addon> l = Api.parse("{\"addons\":[{\"id\":\"a1\",\"name\":\"P\",\"download\":\"/vip/file/a1?s=x&e=1\"}]}");
         assertEquals(1, l.size());
         assertEquals(Vip.GATE + "/vip/file/a1?s=x&e=1", l.get(0).download);
-        // Absolute URLs (public catalog) are untouched.
+        // Legacy public-parser compatibility only, never a production fetch fallback.
+        Vip.ENABLED = false;
         java.util.List<Addon> p = Api.parse("{\"addons\":[{\"id\":\"a2\",\"name\":\"Q\",\"download\":\"https://github.com/x/y.mcaddon\"}]}");
         assertEquals("https://github.com/x/y.mcaddon", p.get(0).download);
     }

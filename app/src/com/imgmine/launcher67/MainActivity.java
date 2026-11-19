@@ -216,7 +216,7 @@ public class MainActivity extends Activity {
     private String vipStatusText() {
         if (!Vip.ENABLED) return "Database hidden. VIP unlock service is not active yet.";
         String tok = Vip.token(this);
-        if (tok.length() == 0) return "Enter your VIP code to unlock the addon database.";
+        if (tok.length() == 0) return "Enter your VIP code to unlock. Protected catalog may be empty until approved files are added.";
         long exp = Vip.tokenExp(tok);
         String day = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(new java.util.Date(exp * 1000));
         return "VIP active until " + day + ".";

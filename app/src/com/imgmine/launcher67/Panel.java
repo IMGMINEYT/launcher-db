@@ -806,8 +806,8 @@ final class Panel {
         Api.fetch(ctx.getApplicationContext(), new Api.CB() {
             public void ok(List<Addon> l) {
                 loading = false;
-                all = l;
-                for (Addon a : l) seenIds.add(a.id);
+                all = Vip.feedLocked(ctx) ? new ArrayList<Addon>() : l;
+                for (Addon a : all) seenIds.add(a.id);
                 refilter(false);
                 Images.prefetch(all, 24);
                 loadMore();

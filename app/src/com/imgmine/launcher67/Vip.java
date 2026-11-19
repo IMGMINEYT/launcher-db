@@ -13,8 +13,8 @@ import org.json.JSONObject;
  * ENABLED means the real verified gate is configured, not a UI-only unlock.
  * App-side hiding does not protect already-public assets or existing copies. */
 final class Vip {
-    static boolean ENABLED = false; // non-final so tests can exercise the routing
-    static String GATE = "https://UNSET.apps.bot-hosting.cloud"; // set when the gate is deployed
+    static boolean ENABLED = true; // non-final so tests can exercise the routing
+    static String GATE = "https://sfv2l5lrrc.apps.bot-hosting.cloud"; // set when the gate is deployed
     private static final String ALIAS = "vip_gate_ks";
     private static final String PREF = "vip", KEY = "tok";
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
