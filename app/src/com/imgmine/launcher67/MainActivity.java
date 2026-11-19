@@ -14,8 +14,7 @@ import android.view.ViewGroup;
 import android.widget.*;
 
 public class MainActivity extends Activity {
-    private TextView allow, notif, start, stop, hint, dnsNote, usage, mcInfo;
-    private LinearLayout promoBox;
+    private TextView allow, notif, start, stop, hint, usage, mcInfo;
 
     private boolean canOverlay() { return Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(this); }
 
@@ -40,7 +39,7 @@ public class MainActivity extends Activity {
         sv.setFillViewport(true);
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
-        col.setPadding(Ui.dp(22), Ui.dp(40), Ui.dp(22), Ui.dp(28));
+        col.setPadding(Ui.dp(18), Ui.dp(24), Ui.dp(18), Ui.dp(24));
         sv.addView(col, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         LinearLayout logo = new LinearLayout(this);
@@ -49,7 +48,7 @@ public class MainActivity extends Activity {
         mark.setGravity(Gravity.CENTER);
         mark.setBackground(new Ui.Bevel(Ui.GREEN, 0xFF8BE592, Ui.GREEN_D, 0xFF000000));
         logo.addView(mark, new LinearLayout.LayoutParams(Ui.dp(56), Ui.dp(56)));
-        TextView title = label("  LAUNCHER", 30, Ui.INK);
+        TextView title = label("  LAUNCHER", 26, Ui.INK);
         logo.addView(title);
         col.addView(logo);
 
@@ -65,8 +64,30 @@ public class MainActivity extends Activity {
 
         final android.content.SharedPreferences prefs = getSharedPreferences("ui", MODE_PRIVATE);
 
+        // FLOATING BALL card
+        col.addView(section("START HERE"));
+        LinearLayout ball = cardBox();
+        start = Ui.button(this, "START + OPEN MINECRAFT", Ui.GREEN, 0xFF0C1A0E);
+        start.setPadding(Ui.dp(14), Ui.dp(10), Ui.dp(14), Ui.dp(12));
+        start.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { go(); }
+        });
+        ball.addView(start, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        stop = Ui.button(this, "STOP FLOATING BALL", Ui.CARD, Ui.INK);
+        stop.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { stopService(new Intent(MainActivity.this, OverlayService.class)); refresh(); }
+        });
+        LinearLayout.LayoutParams sl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        sl.topMargin = Ui.dp(8);
+        ball.addView(stop, sl);
+        hint = label("", 12, Ui.MUTE);
+        hint.setTypeface(null);
+        hint.setPadding(0, Ui.dp(8), 0, 0);
+        ball.addView(hint);
+        col.addView(ball, wrap(4));
+
         // SETUP card: the three permissions as compact label+button rows
-        col.addView(section("SETUP"));
+        col.addView(section("FIRST: ALLOW THESE"));
         LinearLayout setup = cardBox();
         allow = Ui.button(this, "ALLOW", Ui.GOLD, 0xFF1B1400);
         allow.setOnClickListener(new View.OnClickListener() {
@@ -90,31 +111,34 @@ public class MainActivity extends Activity {
         setup.addView(permRow(Build.VERSION.SDK_INT >= 33 ? "3  Hide ball when Minecraft is closed" : "2  Hide ball when Minecraft is closed", usage));
         col.addView(setup, wrap(4));
 
-        // FLOATING BALL card
-        col.addView(section("FLOATING BALL"));
-        LinearLayout ball = cardBox();
-        start = Ui.button(this, "START + OPEN MINECRAFT", Ui.GREEN, 0xFF0C1A0E);
-        start.setPadding(Ui.dp(14), Ui.dp(10), Ui.dp(14), Ui.dp(12));
-        start.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { go(); }
+        // VIP card: entry point for the gated addon database (dark while Vip.ENABLED is false)
+        col.addView(section("VIP"));
+        LinearLayout vip = cardBox();
+        vipStatus = label(vipStatusText(), 12, Ui.MUTE);
+        vip.addView(vipStatus);
+        TextView vipBtn = Ui.button(this, "ENTER VIP CODE", Ui.CARD, Ui.INK);
+        vipBtn.setTextSize(12);
+        vipBtn.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { showVipDialog(); }
         });
-        ball.addView(start, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        stop = Ui.button(this, "STOP FLOATING BALL", Ui.CARD, Ui.INK);
-        stop.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { stopService(new Intent(MainActivity.this, OverlayService.class)); refresh(); }
-        });
-        LinearLayout.LayoutParams sl = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        sl.topMargin = Ui.dp(8);
-        ball.addView(stop, sl);
-        hint = label("", 12, Ui.MUTE);
-        hint.setTypeface(null);
-        hint.setPadding(0, Ui.dp(8), 0, 0);
-        ball.addView(hint);
-        col.addView(ball, wrap(4));
+        LinearLayout.LayoutParams vb = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        vb.topMargin = Ui.dp(8);
+        vip.addView(vipBtn, vb);
+        col.addView(vip, wrap(4));
 
         // STREAM CHAT card: bridge + addon + YouTube + bubble time
-        col.addView(section("STREAM CHAT"));
-        LinearLayout stream = cardBox();
+        TextView streamToggle = Ui.button(this, "STREAM CHAT  +", Ui.CARD, Ui.INK);
+        streamToggle.setTextSize(14);
+        col.addView(streamToggle, wrap(12));
+        final LinearLayout stream = cardBox();
+        stream.setVisibility(prefs.getBoolean("stream_settings_open", false) ? View.VISIBLE : View.GONE);
+        streamToggle.setText(stream.getVisibility() == View.VISIBLE ? "STREAM CHAT  -" : "STREAM CHAT  +");
+        streamToggle.setOnClickListener(v -> {
+            boolean open = stream.getVisibility() != View.VISIBLE;
+            stream.setVisibility(open ? View.VISIBLE : View.GONE);
+            streamToggle.setText(open ? "STREAM CHAT  -" : "STREAM CHAT  +");
+            prefs.edit().putBoolean("stream_settings_open", open).apply();
+        });
         LinearLayout brRow = new LinearLayout(this);
         TextView bridge = Ui.button(this, "START BRIDGE", Ui.GREEN, 0xFF0C1A0E);
         bridge.setTextSize(12);
@@ -209,37 +233,12 @@ public class MainActivity extends Activity {
         ltp.topMargin = Ui.dp(8);
         stream.addView(lt, ltp);
 
-        TextView bridgeNote = label("Steps: 1) install the addon and activate BOTH packs on a cheats-ON world. 2) In Minecraft settings turn WebSockets ON, encrypted websockets OFF. 3) START BRIDGE, open the world, tap the 67 ball, then the chat icon for bridge controls. 4) COPY the /connect command there and run it in Minecraft chat. 5) For live chat paste your YouTube live URL and API key above and SAVE. TEST sends a sample message without YouTube.", 12, Ui.MUTE);
+        TextView bridgeNote = label("1) INSTALL STREAM CHAT ADDON above, activate BOTH packs on a cheats-ON world.\n2) Minecraft settings: WebSockets ON, encrypted websockets OFF.\n3) START BRIDGE, open the world, tap the 67 ball, then the chat icon.\n4) COPY the /connect command there, run it in Minecraft chat.\n5) For live chat: paste your YouTube live URL + API key above, SAVE. TEST works without YouTube.", 12, Ui.MUTE);
         bridgeNote.setTypeface(null);
         bridgeNote.setPadding(0, Ui.dp(8), 0, 0);
         stream.addView(bridgeNote);
         col.addView(stream, wrap(4));
 
-        // VIP card: entry point for the gated addon database (dark while Vip.ENABLED is false)
-        col.addView(section("VIP"));
-        LinearLayout vip = cardBox();
-        vipStatus = label(vipStatusText(), 12, Ui.MUTE);
-        vip.addView(vipStatus);
-        TextView vipBtn = Ui.button(this, "ENTER VIP CODE", Ui.CARD, Ui.INK);
-        vipBtn.setTextSize(12);
-        vipBtn.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) { showVipDialog(); }
-        });
-        LinearLayout.LayoutParams vb = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        vb.topMargin = Ui.dp(8);
-        vip.addView(vipBtn, vb);
-        col.addView(vip, wrap(4));
-
-        dnsNote = label("Ad-blocking Private DNS detected. Promos and support may not load or work while it is on.", 12, 0xFF1B1400);
-        dnsNote.setTypeface(null);
-        dnsNote.setBackground(Ui.panel(Ui.GOLD));
-        dnsNote.setPadding(Ui.dp(10), Ui.dp(8), Ui.dp(10), Ui.dp(8));
-        dnsNote.setVisibility(View.GONE);
-        LinearLayout.LayoutParams dl = wrap(Ui.dp(18));
-        col.addView(dnsNote, dl);
-        promoBox = new LinearLayout(this);
-        promoBox.setOrientation(LinearLayout.VERTICAL);
-        col.addView(promoBox, wrap(Ui.dp(8)));
         Images.init(this);
         setContentView(sv);
     }
@@ -371,46 +370,13 @@ public class MainActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         refresh();
-        showPromos(Api.promos);
         Api.cached(this);
         Api.fetch(getApplicationContext(), new Api.CB() {
-            public void ok(java.util.List<Addon> l) { showPromos(Api.promos); }
+            public void ok(java.util.List<Addon> l) { }
             public void fail() {}
         });
     }
 
-    private static final String[] BLOCK_DNS = {"adguard", "mullvad", "nextdns", "controld", "adblock", "blahdns", "dnswarden", "ads.", "libredns", "dns.sb", "rethinkdns", "ahadns", "adfree", "noads", "pi-hole", "pihole", "seby.io", "decloudus", "uncensoreddns"};
-
-    private boolean adBlockDns() {
-        try {
-            String host = Settings.Global.getString(getContentResolver(), "private_dns_specifier");
-            String mode = Settings.Global.getString(getContentResolver(), "private_dns_mode");
-            if (host == null || !"hostname".equals(mode)) return false;
-            host = host.toLowerCase();
-            for (String k : BLOCK_DNS) if (host.contains(k)) return true;
-        } catch (Exception ignored) {}
-        return false;
-    }
-
-    private void showPromos(java.util.List<String[]> pr) {
-        if (promoBox == null) return;
-        promoBox.removeAllViews();
-        for (final String[] p : pr) {
-            ImageView iv = new ImageView(this);
-            iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            iv.setBackground(Ui.panel(Ui.CARD));
-            iv.setPadding(Ui.dp(3), Ui.dp(3), Ui.dp(3), Ui.dp(3));
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(130));
-            lp.topMargin = Ui.dp(10);
-            promoBox.addView(iv, lp);
-            Images.load(iv, p[0], false);
-            if (p[1].length() > 0) iv.setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(p[1]))); } catch (Exception ignored) {}
-                }
-            });
-        }
-    }
 
     private void refresh() {
         boolean ok = canOverlay();
@@ -420,7 +386,6 @@ public class MainActivity extends Activity {
         boolean us = OverlayService.hasUsage(this);
         usage.setText(us ? "USAGE ACCESS ON" : "ALLOW USAGE ACCESS");
         usage.setAlpha(us ? 0.5f : 1f);
-        dnsNote.setVisibility(adBlockDns() ? View.VISIBLE : View.GONE);
         String mv = McVer.status(this);
         mcInfo.setText(mv);
         mcInfo.setTextColor(McVer.raw(this) == null && McVer.previewRaw(this) == null ? Ui.RED : Ui.MUTE);
