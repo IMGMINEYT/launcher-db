@@ -177,7 +177,7 @@ public class MainActivity extends Activity {
         stream.addView(ytSource, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         final TextView sourceNote = label("Tap SOURCE to switch. Phone-local is unverified on live streams. Stops on login, consent or access limits. No unlimited guarantee.", 12, Ui.MUTE);
         sourceNote.setTypeface(null); stream.addView(sourceNote);
-        final EditText ytUrl = input("YouTube live URL / @handle (local)", prefs.getString("stream_yt_url", ""));
+        final EditText ytUrl = input(localChoice[0] ? "YouTube live URL / @handle" : "YouTube live URL (API)", prefs.getString("stream_yt_url", ""));
         LinearLayout.LayoutParams yu = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         yu.topMargin = Ui.dp(8);
         stream.addView(ytUrl, yu);
@@ -192,6 +192,7 @@ public class MainActivity extends Activity {
                 localChoice[0] = !localChoice[0];
                 ytSource.setText(Ui.fix(localChoice[0] ? "SOURCE: PHONE-LOCAL (EXPERIMENTAL)" : "SOURCE: YOUTUBE API"));
                 ytKey.setVisibility(localChoice[0] ? View.GONE : View.VISIBLE);
+                ytUrl.setHint(localChoice[0] ? "YouTube live URL / @handle" : "YouTube live URL (API)");
             }
         });
         TextView ytSave = Ui.button(this, "SAVE YOUTUBE", Ui.CARD, Ui.INK);

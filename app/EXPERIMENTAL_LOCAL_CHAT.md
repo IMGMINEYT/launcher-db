@@ -6,7 +6,7 @@ The independently written `YtLocal` adapter uses Android-compatible `HttpURLConn
 
 ## Current evidence
 
-- 66 deterministic JVM/Robolectric tests passed after the candidate build, including 10 adapter tests and 9 integration tests.
+- 67 deterministic JVM/Robolectric tests passed after the candidate build, including 10 adapter tests and 10 integration tests.
 - A fixture source reached the real loopback TCP/WebSocket bridge with original Unicode preserved. This is not a real YouTube or Minecraft test.
 - Native main-screen pixels inspected for both selected sources; the compact 400x360 bridge was inspected with a stopped login state. COPY, TEST and internal screen navigation remain present.
 - Package/minSdk/signing identity checked on the candidate APK. No device installation or Minecraft runtime was available.

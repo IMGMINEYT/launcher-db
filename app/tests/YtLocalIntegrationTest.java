@@ -75,6 +75,10 @@ public class YtLocalIntegrationTest {
             assertEquals("Alice😀",payload.getString("n"));assertEquals("hello 👩🏽‍💻",payload.getString("t"));assertEquals(3,n[0]);
         } finally {socket.close();}
     }
+    @Test public void freshLifetimeRemainsFiveSeconds() throws Exception {
+        Activity a=Robolectric.buildActivity(MainActivity.class).setup().get();View root=a.findViewById(android.R.id.content);
+        assertNotNull(find(root,"5s"));assertFalse(sp.contains("stream_lifetime"));
+    }
     @Test public void stoppedLocalStatusFitsSmallBridgeOverlay() throws Exception {
         Activity a=Robolectric.buildActivity(Activity.class).setup().get();Ui.init(a);Images.init(a);
         StreamChatService.state="CONNECTED";StreamChatService.port=51234;StreamChatService.ytState=StreamChatService.localStatus("LOGIN_REQUIRED");
@@ -82,7 +86,7 @@ public class YtLocalIntegrationTest {
         Method screen=Panel.class.getDeclaredMethod("showScreen",int.class);screen.setAccessible(true);screen.invoke(panel,2);
         Field cf=Panel.class.getDeclaredField("card");cf.setAccessible(true);View card=(View)cf.get(panel);
         ((ViewGroup)card.getParent()).removeView(card);a.setContentView(card);
-        assertNotNull(find(card,"YT LOCAL LOGIN REQUIRED, STOPPED"));assertNotNull(find(card,"COPY"));assertNotNull(find(card,"TEST"));
+        assertNotNull(find(card,"YOUTUBE: LOCAL LOGIN REQUIRED, STOPPED"));assertNotNull(find(card,"BRIDGE: CONNECTED"));assertNotNull(find(card,"COPY"));assertNotNull(find(card,"TEST"));
         VisualTest.render(card,400,360,System.getProperty("launcher.renderDir","/tmp/yt-local-renders")+"/bridge-local-stopped.png");
         StreamChatService.state="OFF";StreamChatService.port=0;
     }

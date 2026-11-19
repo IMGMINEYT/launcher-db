@@ -715,10 +715,10 @@ final class Panel {
     private void refreshBridge() {
         if (brStatus == null) return;
         String st = StreamChatService.state;
-        brStatus.setText(Ui.fix(st + (StreamChatService.chatOn ? "" : "  (chat paused)") + "  sent " + StreamChatService.sent + (StreamChatService.droppedTotal > 0 ? "  dropped " + StreamChatService.droppedTotal : "")));
+        brStatus.setText(Ui.fix("BRIDGE: " + st + (StreamChatService.chatOn ? "" : "  (chat paused)") + "  sent " + StreamChatService.sent + (StreamChatService.droppedTotal > 0 ? "  dropped " + StreamChatService.droppedTotal : "")));
         brStatus.setTextColor(st.equals("CONNECTED") ? Ui.GREEN : st.equals("WAITING") ? Ui.GOLD : Ui.RED);
         brPort.setText(Ui.fix(st.equals("OFF") ? "bridge stopped - tap START BRIDGE" : "/connect 127.0.0.1:" + StreamChatService.port));
-        brYt.setText(Ui.fix(StreamChatService.ytState));
+        brYt.setText(Ui.fix("YOUTUBE: " + StreamChatService.ytState.replaceFirst("^YT ", "")));
         brYt.setTextColor((StreamChatService.ytState.equals("YT LIVE") || StreamChatService.ytState.equals("YT LOCAL LIVE")) ? Ui.GREEN : StreamChatService.ytState.startsWith("YT ERR") || StreamChatService.ytState.startsWith("YT BAD") || StreamChatService.ytState.startsWith("YT NOT") ? Ui.RED : Ui.MUTE);
         String ce = StreamChatService.lastCmdError;
         brErr.setText(Ui.fix(ce.isEmpty() ? "" : "last command error: " + ce));
