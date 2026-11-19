@@ -103,6 +103,40 @@ public class MainActivity extends Activity {
         sl.topMargin = Ui.dp(12);
         col.addView(stop, sl);
 
+        // Stream-chat bridge (test increment): local loopback server + floating mini control panel.
+        col.addView(step("+", "Stream chat bridge (test)", false));
+        TextView bridge = Ui.button(this, "START BRIDGE + PANEL", Ui.CARD, Ui.INK);
+        bridge.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                if (!canOverlay()) {
+                    Toast.makeText(MainActivity.this, "First allow display over other apps.", Toast.LENGTH_LONG).show();
+                    allow.performClick();
+                    return;
+                }
+                Intent i = new Intent(MainActivity.this, StreamChatService.class);
+                if (Build.VERSION.SDK_INT >= 26) startForegroundService(i); else startService(i);
+            }
+        });
+        col.addView(bridge, wrap(0));
+        TextView bridgeStop = Ui.button(this, "STOP BRIDGE", Ui.CARD, Ui.INK);
+        bridgeStop.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { stopService(new Intent(MainActivity.this, StreamChatService.class)); }
+        });
+        LinearLayout.LayoutParams bs = wrap(0);
+        bs.topMargin = Ui.dp(8);
+        col.addView(bridgeStop, bs);
+        TextView addonBtn = Ui.button(this, "INSTALL STREAM CHAT ADDON", Ui.CARD, Ui.INK);
+        addonBtn.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { installStreamAddon(); }
+        });
+        LinearLayout.LayoutParams ab = wrap(0);
+        ab.topMargin = Ui.dp(8);
+        col.addView(addonBtn, ab);
+        TextView bridgeNote = label("Steps: 1) install the addon and activate BOTH packs on a cheats-ON world. 2) In Minecraft settings turn WebSockets ON, encrypted websockets OFF. 3) Start bridge, then in Minecraft chat run /connect 127.0.0.1:PORT shown on the panel. Live YouTube chat is not in this build yet; TEST sends a sample message.", 12, Ui.MUTE);
+        bridgeNote.setTypeface(null);
+        bridgeNote.setPadding(0, Ui.dp(8), 0, 0);
+        col.addView(bridgeNote);
+
         hint = label("", 13, Ui.MUTE);
         hint.setTypeface(null);
         hint.setPadding(0, Ui.dp(18), 0, 0);
@@ -131,6 +165,24 @@ public class MainActivity extends Activity {
         TextView t = label(n + "   " + text, 15, Ui.INK);
         t.setPadding(0, first ? 0 : Ui.dp(20), 0, Ui.dp(8));
         return t;
+    }
+
+    /** Copies the bundled stream-chat addon into the app download library and hands it to Minecraft. */
+    private void installStreamAddon() {
+        try {
+            java.io.File dir = new java.io.File(getFilesDir(), "dl");
+            dir.mkdirs();
+            java.io.File out = new java.io.File(dir, "StreamChat.mcaddon");
+            java.io.InputStream in = getAssets().open("streamchat.mcaddon");
+            java.io.FileOutputStream fo = new java.io.FileOutputStream(out);
+            byte[] buf = new byte[16384];
+            int n;
+            while ((n = in.read(buf)) > 0) fo.write(buf, 0, n);
+            fo.close(); in.close();
+            Downloader.install(this, "StreamChat.mcaddon");
+        } catch (Exception e) {
+            Toast.makeText(this, "Addon copy failed", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void go() {

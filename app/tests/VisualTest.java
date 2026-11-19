@@ -37,4 +37,20 @@ public class VisualTest {
   android.app.Dialog dialog=org.robolectric.shadows.ShadowDialog.getLatestDialog();assertNotNull(dialog);render(dialog.findViewById(android.R.id.content),360,640,System.getProperty("launcher.renderDir", "build/test-renders")+"/v26-image-native.png");
  }
 
+
+ @Test public void renderStreamPanel()throws Exception{
+  org.robolectric.android.controller.ServiceController<StreamChatService> ctl=Robolectric.buildService(StreamChatService.class);
+  StreamChatService s=ctl.create().get();
+  String assetPath=System.getProperty("launcher.assetsApk");
+  s.getAssets().getClass().getMethod("addAssetPath",String.class).invoke(s.getAssets(),assetPath);
+  Ui.init(s);
+  Method rp=StreamChatService.class.getDeclaredMethod("removePanel");rp.setAccessible(true);rp.invoke(s);
+  Method ap=StreamChatService.class.getDeclaredMethod("addPanel");ap.setAccessible(true);ap.invoke(s);
+  StreamChatService.state="WAITING";StreamChatService.port=51234;
+  Field pf=StreamChatService.class.getDeclaredField("panel");pf.setAccessible(true);
+  View panel=(View)pf.get(s);assertNotNull(panel);
+  Field tf=StreamChatService.class.getDeclaredField("statusTick");tf.setAccessible(true);
+  ((Runnable)tf.get(s)).run();
+  render(panel,280,240,System.getProperty("launcher.renderDir", "build/test-renders")+"/v27-streampanel-native.png");
+  ctl.destroy();StreamChatService.state="OFF";StreamChatService.port=0;}
 }
