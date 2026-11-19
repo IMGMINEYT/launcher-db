@@ -132,7 +132,30 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams ab = wrap(0);
         ab.topMargin = Ui.dp(8);
         col.addView(addonBtn, ab);
-        TextView bridgeNote = label("Steps: 1) install the addon and activate BOTH packs on a cheats-ON world. 2) In Minecraft settings turn WebSockets ON, encrypted websockets OFF. 3) Start bridge, then in Minecraft chat run /connect 127.0.0.1:PORT shown on the panel. Live YouTube chat is not in this build yet; TEST sends a sample message.", 12, Ui.MUTE);
+        final android.content.SharedPreferences prefs = getSharedPreferences("ui", MODE_PRIVATE);
+        final EditText ytUrl = input("YouTube live URL", prefs.getString("stream_yt_url", ""));
+        LinearLayout.LayoutParams yu = wrap(0);
+        yu.topMargin = Ui.dp(8);
+        col.addView(ytUrl, yu);
+        final EditText ytKey = input("YouTube Data API key (free, from Google Cloud)", prefs.getString("stream_yt_key", ""));
+        LinearLayout.LayoutParams yk = wrap(0);
+        yk.topMargin = Ui.dp(6);
+        col.addView(ytKey, yk);
+        TextView ytSave = Ui.button(this, "SAVE YOUTUBE", Ui.CARD, Ui.INK);
+        ytSave.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                prefs.edit()
+                        .putString("stream_yt_url", ytUrl.getText().toString().trim())
+                        .putString("stream_yt_key", ytKey.getText().toString().trim())
+                        .apply();
+                Toast.makeText(MainActivity.this, "Saved. Bridge picks it up within seconds.", Toast.LENGTH_SHORT).show();
+            }
+        });
+        LinearLayout.LayoutParams ys = wrap(0);
+        ys.topMargin = Ui.dp(6);
+        col.addView(ytSave, ys);
+
+        TextView bridgeNote = label("Steps: 1) install the addon and activate BOTH packs on a cheats-ON world. 2) In Minecraft settings turn WebSockets ON, encrypted websockets OFF. 3) Start bridge, then in Minecraft chat run /connect 127.0.0.1:PORT shown on the panel. 4) For live chat paste your YouTube live URL and API key above and SAVE. TEST sends a sample message without YouTube.", 12, Ui.MUTE);
         bridgeNote.setTypeface(null);
         bridgeNote.setPadding(0, Ui.dp(8), 0, 0);
         col.addView(bridgeNote);
@@ -165,6 +188,19 @@ public class MainActivity extends Activity {
         TextView t = label(n + "   " + text, 15, Ui.INK);
         t.setPadding(0, first ? 0 : Ui.dp(20), 0, Ui.dp(8));
         return t;
+    }
+
+    private EditText input(String hintText, String value) {
+        EditText e = new EditText(this);
+        e.setHint(hintText);
+        e.setHintTextColor(Ui.MUTE);
+        e.setText(value);
+        e.setTextColor(Ui.INK);
+        e.setTextSize(13);
+        e.setSingleLine(true);
+        e.setBackground(Ui.panel(Ui.CARD));
+        e.setPadding(Ui.dp(12), Ui.dp(8), Ui.dp(12), Ui.dp(8));
+        return e;
     }
 
     /** Copies the bundled stream-chat addon into the app download library and hands it to Minecraft. */

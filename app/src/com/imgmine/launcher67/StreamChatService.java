@@ -22,6 +22,7 @@ public class StreamChatService extends Service {
     static volatile int port;
     static volatile boolean chatOn = true;
     static volatile int sent, droppedTotal;
+    static volatile String ytState = "YT OFF";
 
     private static final int MAX_INFLIGHT = 20;   // client errors near ~100 outstanding commands; stay far below
     private static final long INFLIGHT_TTL = 10000;
@@ -34,10 +35,11 @@ public class StreamChatService extends Service {
     private ServerSocket server;
     private volatile Socket client;
     private volatile OutputStream clientOut;
-    private Thread acceptThread, sendThread;
+    private Thread acceptThread, sendThread, ytThread;
+    private String ytVideo, ytChatId, ytToken;
     private WindowManager wm;
     private View panel;
-    private TextView statusView, portView;
+    private TextView statusView, portView, ytView;
     private TextView toggleBtn;
 
     private static StreamChatService live;
@@ -67,6 +69,7 @@ public class StreamChatService extends Service {
         openServer();
         addPanel();
         startSender();
+        startYt();
     }
 
     @Override public int onStartCommand(Intent i, int flags, int id) {
@@ -194,6 +197,53 @@ public class StreamChatService extends Service {
         }
     }
 
+    // ---------- YouTube live chat feed (official Data API; key from launcher settings) ----------
+
+    private void startYt() {
+        ytThread = new Thread(new Runnable() { public void run() {
+            while (live == StreamChatService.this) {
+                try { ytCycle(); } catch (Exception ignored) {}
+                try { Thread.sleep(5000); } catch (InterruptedException e) { return; }
+            }
+        } }, "yt-poll");
+        ytThread.start();
+    }
+
+    private void ytCycle() {
+        SharedPreferences sp = getSharedPreferences("ui", MODE_PRIVATE);
+        String url = sp.getString("stream_yt_url", "");
+        String key = sp.getString("stream_yt_key", "");
+        if (url.length() == 0 || key.length() == 0) { ytState = "YT OFF"; ytChatId = null; return; }
+        String vid = Yt.videoId(url);
+        if (vid == null) { ytState = "YT BAD URL"; ytChatId = null; return; }
+        if (!vid.equals(ytVideo)) { ytVideo = vid; ytChatId = null; ytToken = null; }
+        try {
+            if (ytChatId == null) {
+                ytState = "YT CONNECTING";
+                ytChatId = Yt.resolveChatId(vid, key);
+                ytToken = null;
+                if (ytChatId == null) { ytState = "YT NOT LIVE / KEY?"; sleep(30000); return; }
+            }
+            ytState = "YT LIVE";
+            while (live == this && ytChatId != null) {
+                Yt.PollResult r = Yt.poll(ytChatId, key, ytToken);
+                if (r.error != null) { ytState = "YT ERROR"; ytChatId = null; sleep(30000); return; }
+                ytToken = r.nextToken;
+                for (Yt.Msg m : r.msgs) queue.add(Ws.scriptChat(m.author, m.text));
+                droppedTotal = queue.dropped;
+                sleep(r.pollMs);
+            }
+        } catch (Exception e) {
+            ytState = "YT ERROR";
+            ytChatId = null;
+            sleep(30000);
+        }
+    }
+
+    private static void sleep(long ms) {
+        try { Thread.sleep(ms); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+    }
+
     // ---------- floating mini control panel ----------
 
     private void addPanel() {
@@ -219,6 +269,9 @@ public class StreamChatService extends Service {
         portView = text("", 11, Ui.MUTE);
         portView.setTypeface(null);
         card.addView(portView, wrap(2));
+        ytView = text("", 11, Ui.MUTE);
+        ytView.setTypeface(null);
+        card.addView(ytView, wrap(2));
 
         LinearLayout row = new LinearLayout(this);
         row.setGravity(Gravity.CENTER);
@@ -296,6 +349,8 @@ public class StreamChatService extends Service {
         statusView.setText(Ui.fix(st + (chatOn ? "" : "  (chat paused)") + "  sent " + sent + (droppedTotal > 0 ? "  dropped " + droppedTotal : "")));
         statusView.setTextColor(st.equals("CONNECTED") ? Ui.GREEN : st.equals("WAITING") ? Ui.GOLD : Ui.RED);
         portView.setText(Ui.fix(st.equals("OFF") ? "server stopped" : "in Minecraft: /connect 127.0.0.1:" + port));
+        ytView.setText(Ui.fix(ytState));
+        ytView.setTextColor(ytState.equals("YT LIVE") ? Ui.GREEN : ytState.startsWith("YT ERR") || ytState.startsWith("YT BAD") || ytState.startsWith("YT NOT") ? Ui.RED : Ui.MUTE);
         h.postDelayed(this, 500);
     }};
 
