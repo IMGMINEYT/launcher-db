@@ -70,6 +70,34 @@ final class Api {
         return "https".equalsIgnoreCase(u.getScheme()) ? 443 : 80;
     }
 
+    /** VIP mode: gate signed URLs live 10 minutes (contract v3). When a gate download
+     *  hits 404 (expired signature), re-fetch the catalog and return the fresh signed URL
+     *  for the same file id, or null when the file, token or catalog is unavailable.
+     *  Never returns an off-origin URL. */
+    static String refreshGateUrl(Context c, String stale) {
+        if (!Vip.ENABLED || !sameOrigin(Vip.GATE, stale)) return null;
+        String fid;
+        try {
+            String path = new URL(stale).getPath();
+            fid = path.substring(path.lastIndexOf('/') + 1);
+        } catch (Exception e) { return null; }
+        if (fid.length() == 0) return null;
+        String tok = Vip.token(c);
+        if (tok.length() == 0) return null;
+        byte[] b = gateCatalog(tok);
+        if (b == null) return null;
+        try {
+            JSONArray a = new JSONObject(new String(b, "UTF-8")).optJSONArray("addons");
+            for (int i = 0; a != null && i < a.length(); i++) {
+                JSONObject j = a.optJSONObject(i);
+                if (j == null || !fid.equals(j.optString("id"))) continue;
+                String d = j.optString("download");
+                if (d.startsWith("/")) d = Vip.GATE + d;
+                return acceptDownload(d) ? d : null;
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
     /** True only for a gate explicitly configured on this machine (test builds). */
     static boolean loopbackGate(String u) {
         if (!sameOrigin(Vip.GATE, u)) return false;

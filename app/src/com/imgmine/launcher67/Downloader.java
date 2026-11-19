@@ -119,8 +119,8 @@ final class Downloader {
             long at=tmp.isFile()?tmp.length():0;
             // No validator means we cannot prove partial bytes still match the remote object.
             if(at>0&&t.validator.isEmpty())at=0;
-            con=open(t,at);int code=con.getResponseCode();
-            if(at>0 && (code!=206 || !rangeMatches(con.getHeaderField("Content-Range"),at))){con.disconnect();at=0;con=open(t,0);code=con.getResponseCode();}
+            con=openFresh(t,at);int code=con.getResponseCode();
+            if(at>0 && (code!=206 || !rangeMatches(con.getHeaderField("Content-Range"),at))){con.disconnect();at=0;con=openFresh(t,0);code=con.getResponseCode();}
             if(t.stop)return false;
             String validator=con.getHeaderField("ETag");if(validator==null||validator.startsWith("W/"))validator=con.getHeaderField("Last-Modified");
             if(validator!=null)t.validator=validator;
@@ -153,6 +153,20 @@ final class Downloader {
     static long rangeTotal(String s){try{return Long.parseLong(s.substring(s.lastIndexOf('/')+1));}catch(Exception e){return -1;}}
     interface Connections{HttpURLConnection connect(URL u)throws IOException;}
     static Connections connections=u->(HttpURLConnection)u.openConnection();
+    /** Gate signed URLs expire after 10 minutes (contract v3): on a 404 from a gate URL,
+     *  refresh it once through the catalog and retry with the fresh URL. Non-gate URLs and
+     *  non-404 failures propagate unchanged. */
+    private static HttpURLConnection openFresh(Task t,long at)throws IOException{
+        try{return open(t,at);}
+        catch(IOException e){
+            String m=e.getMessage();
+            if(m==null||!m.contains("404")||!Vip.ENABLED||!Api.sameOrigin(Vip.GATE,t.url))throw e;
+            String fresh=Api.refreshGateUrl(app,t.url);
+            if(fresh==null)throw e;
+            t.url=fresh;
+            return open(t,at);
+        }
+    }
     private static HttpURLConnection open(Task t,long at)throws IOException{
         String u=t.url;
         for(int i=0;i<6;i++){

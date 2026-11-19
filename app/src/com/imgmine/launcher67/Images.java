@@ -136,7 +136,7 @@ final class Images {
                 for (final String u : urls) {
                     HttpURLConnection c = null;
                     try {
-                        c = (HttpURLConnection) new URL(u).openConnection();
+                        c = Net.connections.connect(new URL(u));
                         c.setConnectTimeout(4000);
                         c.setReadTimeout(6000);
                         c.setRequestProperty("User-Agent", "67Launcher/2.6");

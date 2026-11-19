@@ -13,6 +13,8 @@ final class Net {
     private static final ConcurrentHashMap<String,ExecutorService> WORKERS=new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String,Object> LOCKS=new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String,Long> LAST=new ConcurrentHashMap<>();
+    /** Per-origin 429 cooldown: origin -> epoch ms until which requests are refused without connecting. Honors Retry-After. */
+    private static final ConcurrentHashMap<String,Long> COOLDOWN=new ConcurrentHashMap<>();
     private static Object lock(String key){Object o=LOCKS.get(key);if(o!=null)return o;Object n=new Object();o=LOCKS.putIfAbsent(key,n);return o==null?n:o;}
     static void init(Context c){dir=new File(c.getCacheDir(),"http");dir.mkdirs();System.setProperty("http.keepAlive","true");}
     static ExecutorService worker(String source){ExecutorService ex=WORKERS.get(source);if(ex!=null)return ex;ExecutorService n=Executors.newFixedThreadPool(2);ex=WORKERS.putIfAbsent(source,n);if(ex!=null){n.shutdown();return ex;}return n;}
@@ -27,6 +29,14 @@ final class Net {
             File body=dir==null?null:new File(dir,key(url)+".bin"),meta=dir==null?null:new File(dir,key(url)+".json");
             JSONObject m=new JSONObject();if(meta!=null&&meta.isFile())try(InputStream in=new FileInputStream(meta)){m=new JSONObject(new String(Api.readAll(in,65536),"UTF-8"));}catch(Exception ignored){}
             if(body!=null&&body.isFile()&&System.currentTimeMillis()-m.optLong("at")<ttl){try(InputStream in=new FileInputStream(body)){return Api.readAll(in,max);}}
+            Long until=COOLDOWN.get(origin);
+            if(until!=null){
+                if(System.currentTimeMillis()<until.longValue()){
+                    if(body!=null&&body.isFile()){try(InputStream in=new FileInputStream(body)){return Api.readAll(in,max);}}
+                    throw new IOException("HTTP 429 (cooldown)");
+                }
+                COOLDOWN.remove(origin,until);
+            }
             synchronized(lock){long delay=1000-(System.currentTimeMillis()-(LAST.containsKey(origin)?LAST.get(origin):0L));if(delay>0)Thread.sleep(delay);LAST.put(origin,System.currentTimeMillis());}
             String u=url;
             for(int r=0;r<6;r++){
@@ -36,12 +46,25 @@ final class Net {
                 int code=c.getResponseCode();
                 if(code==304&&body!=null&&body.isFile()){m.put("at",System.currentTimeMillis());write(meta,m.toString().getBytes("UTF-8"));c.disconnect();try(InputStream in=new FileInputStream(body)){return Api.readAll(in,max);}}
                 if(code>=300&&code<400){String loc=c.getHeaderField("Location");c.disconnect();if(loc==null)throw new IOException("No redirect");u=new URL(x,loc).toString();continue;}
+                if(code==429){
+                    long retryAfter=retryAfterMs(c);c.disconnect();
+                    if(retryAfter>0)COOLDOWN.put(origin,System.currentTimeMillis()+retryAfter);
+                    if(body!=null&&body.isFile()){try(InputStream in=new FileInputStream(body)){return Api.readAll(in,max);}}
+                    throw new IOException("HTTP 429");
+                }
                 if(code!=200){c.disconnect();throw new IOException("HTTP "+code);}
                 byte[] data;try(InputStream in=c.getInputStream()){data=Api.readAll(in,max);}
                 try{if(body!=null){write(body,data);m.put("at",System.currentTimeMillis());m.put("etag",c.getHeaderField("ETag"));m.put("modified",c.getHeaderField("Last-Modified"));write(meta,m.toString().getBytes("UTF-8"));trim();}}catch(IOException cacheFailure){/* network data is still usable */}
                 return data;
             }throw new IOException("Too many redirects");
         }
+    }
+    private static long retryAfterMs(HttpURLConnection c){
+        String v=c.getHeaderField("Retry-After");
+        if(v==null)return 0;
+        try{long s=Long.parseLong(v.trim());return s<0?0:s*1000L;}catch(NumberFormatException ignored){}
+        long at=c.getHeaderFieldDate("Retry-After",-1);
+        return at<0?0:Math.max(0,at-System.currentTimeMillis());
     }
     static long contentLength(java.net.URLConnection c){try{return Long.parseLong(c.getHeaderField("Content-Length"));}catch(Exception e){return -1;}}
     private static long lastTrim;

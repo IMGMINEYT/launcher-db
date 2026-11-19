@@ -4,7 +4,6 @@ import android.content.Context;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
 import android.widget.TextView;
-import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -100,24 +99,51 @@ public class FeedTest {
         assertTrue("no worlds loaded on WORLDS chip", worlds > 0);
     }
 
-    /** Skip loudly when laby.net rate-limits this runner (429, seen with multi-hour Retry-After);
-     *  an environmental unavailability, not a pass. Any other status proceeds to the real assertions. */
-    private static void labyPreflight() throws Exception {
-        java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL("https://laby.net/api/v3/search/textures/skin?order=most_used&size=1").openConnection();
-        c.setConnectTimeout(8000);
-        c.setReadTimeout(8000);
-        c.setRequestProperty("User-Agent", "67Launcher/2.0");
-        int code = c.getResponseCode();
-        if (code == 429) {
-            System.out.println("SKIPPING Laby assertions: laby.net rate-limits this runner (429, retry-after "
-                    + c.getHeaderField("Retry-After") + "s). Source availability NOT verified.");
-            Assume.assumeNoException(new Exception("laby.net 429 rate limit"));
+    /** laby.net rate-limits this runner (429 with multi-hour Retry-After, observed 2026-11-19).
+     *  The suite makes NO live laby.net requests: this fixture serves the search API and answers 404 for
+     *  render/meta URLs, while every other host delegates to the real connection factory. Installed
+     *  JVM-wide and never restored, so lagging image-prefetch threads cannot reach laby.net after a test
+     *  ends. Source availability is therefore NOT verified by these tests. */
+    private static void labyFixture() {
+        if (Net.connections instanceof LabyFixtureFactory) return;
+        Net.connections = new LabyFixtureFactory(Net.connections);
+    }
+
+    static class LabyFixtureFactory implements Net.Connections {
+        final Net.Connections real;
+        LabyFixtureFactory(Net.Connections real) { this.real = real; }
+        public java.net.HttpURLConnection connect(java.net.URL u) throws java.io.IOException {
+            if (u.getHost().endsWith("laby.net")) return new LabyConn(u);
+            return real.connect(u);
+        }
+    }
+
+    static class LabyConn extends java.net.HttpURLConnection {
+        static final String FIXTURE = "{\"results\":["
+                + "{\"image_hash\":\"a1b2c3d4e5f6\",\"slim\":false,\"tags\":\"cape blue knight\",\"top_tags\":[\"cape\"]},"
+                + "{\"image_hash\":\"f6e5d4c3b2a1\",\"slim\":true,\"tags\":\"red hood\",\"top_tags\":[]},"
+                + "{\"image_hash\":\"001122334455\",\"slim\":false,\"tags\":\"green creeper style\",\"top_tags\":[\"creeper\"]}" 
+                + "]}";
+        final int status; final byte[] body;
+        LabyConn(java.net.URL u) {
+            super(u);
+            if (u.getPath() != null && u.getPath().startsWith("/api/v3/search/textures/skin")) {
+                status = 200; body = FIXTURE.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            } else { status = 404; body = new byte[0]; }
+        }
+        public void connect() {}
+        public void disconnect() {}
+        public boolean usingProxy() { return false; }
+        @Override public int getResponseCode() { return status; }
+        @Override public java.io.InputStream getInputStream() throws java.io.IOException {
+            if (status >= 400) throw new java.io.IOException("HTTP " + status);
+            return new java.io.ByteArrayInputStream(body);
         }
     }
 
     @Test
     public void skinsChipLabyFirst() throws Exception {
-        labyPreflight();
+        labyFixture();
         Panel p = newPanel();
         chip(p, 4); // SKINS
         loadMore(p);
@@ -140,7 +166,7 @@ public class FeedTest {
 
     @Test
     public void skinsSearchHitsLaby() throws Exception {
-        labyPreflight();
+        labyFixture();
         Panel p = newPanel();
         chip(p, 4); // SKINS
         EditText search = (EditText) get(p, "search");
