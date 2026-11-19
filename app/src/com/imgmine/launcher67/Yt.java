@@ -59,6 +59,8 @@ final class Yt {
         String nextToken;
         long pollMs = 10000;
         String error;
+        boolean quota;          // quota/limit exhaustion: caller must STOP, not retry forever
+        long retryAfterMs;      // from the Retry-After response header, 0 when absent
     }
 
     /** liveChatMessages.list response parse. Skips non-text events and retracted/offline messages. Fixture-testable. */
@@ -67,10 +69,19 @@ final class Yt {
         try {
             JSONObject o = new JSONObject(json);
             JSONObject err = o.optJSONObject("error");
-            if (err != null) { r.error = err.optString("message", "api error"); return r; }
+            if (err != null) {
+                r.error = err.optString("message", "api error");
+                JSONArray es = err.optJSONArray("errors");
+                if (es != null) for (int i = 0; i < es.length(); i++) {
+                    String reason = es.optJSONObject(i) == null ? "" : es.optJSONObject(i).optString("reason");
+                    if (reason.contains("quota") || reason.contains("dailyLimit") || reason.contains("rateLimit")) r.quota = true;
+                }
+                return r;
+            }
             r.nextToken = o.optString("nextPageToken", null);
+            // Server interval is a MINIMUM: never poll faster than asked, never clamp a long interval down.
             long ms = o.optLong("pollingIntervalMillis", 10000);
-            r.pollMs = Math.max(5000, Math.min(60000, ms));
+            r.pollMs = Math.max(5000, ms);
             JSONArray items = o.optJSONArray("items");
             if (items == null) return r;
             for (int i = 0; i < items.length(); i++) {
@@ -92,27 +103,34 @@ final class Yt {
         return r;
     }
 
-    private static String get(String u) throws IOException {
+    private static final class Resp { String body; long retryAfterMs; }
+
+    private static Resp get(String u) throws IOException {
         if (!u.startsWith("https://")) throw new IOException("HTTPS required");
         HttpURLConnection c = Net.connections.connect(new URL(u));
         c.setConnectTimeout(8000);
         c.setReadTimeout(8000);
         c.setRequestProperty("User-Agent", "67Launcher/2.7");
         int code = c.getResponseCode();
+        Resp r = new Resp();
+        try { r.retryAfterMs = Long.parseLong(c.getHeaderField("Retry-After")) * 1000; } catch (Exception ignored) {}
         InputStream in = code == 200 ? c.getInputStream() : c.getErrorStream();
-        String body = in == null ? "" : new String(Api.readAll(in, 1 << 20), "UTF-8");
+        r.body = in == null ? "" : new String(Api.readAll(in, 1 << 20), "UTF-8");
         c.disconnect();
-        return body;
+        return r;
     }
 
     static String resolveChatId(String videoId, String key) throws IOException {
         String u = "https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=" + videoId + "&key=" + key;
-        return parseChatId(get(u));
+        return parseChatId(get(u).body);
     }
 
     static PollResult poll(String chatId, String key, String pageToken) throws IOException {
         String u = "https://www.googleapis.com/youtube/v3/liveChatMessages?part=snippet,authorDetails&liveChatId=" + chatId + "&key=" + key;
         if (pageToken != null) u += "&pageToken=" + pageToken;
-        return parsePoll(get(u));
+        Resp resp = get(u);
+        PollResult r = parsePoll(resp.body);
+        r.retryAfterMs = resp.retryAfterMs;
+        return r;
     }
 }

@@ -137,17 +137,28 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams yu = wrap(0);
         yu.topMargin = Ui.dp(8);
         col.addView(ytUrl, yu);
-        final EditText ytKey = input("YouTube Data API key (free, from Google Cloud)", prefs.getString("stream_yt_key", ""));
+        final EditText ytKey = input("YouTube Data API key (free, from Google Cloud)", "");
+        ytKey.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
         LinearLayout.LayoutParams yk = wrap(0);
         yk.topMargin = Ui.dp(6);
         col.addView(ytKey, yk);
         TextView ytSave = Ui.button(this, "SAVE YOUTUBE", Ui.CARD, Ui.INK);
         ytSave.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                prefs.edit()
-                        .putString("stream_yt_url", ytUrl.getText().toString().trim())
-                        .putString("stream_yt_key", ytKey.getText().toString().trim())
-                        .apply();
+                String k = ytKey.getText().toString().trim();
+                android.content.SharedPreferences.Editor ed = prefs.edit()
+                        .putString("stream_yt_url", ytUrl.getText().toString().trim());
+                if (k.length() > 0) {
+                    try {
+                        ed.putString("stream_yt_key_enc", KeyBox.protect(MainActivity.this, k)).remove("stream_yt_key");
+                        ytKey.setText("");
+                    } catch (Exception e) {
+                        Toast.makeText(MainActivity.this, "Secure storage unavailable, key not saved.", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                }
+                ed.apply();
+                StreamChatService.ytQuotaStop = false;
                 Toast.makeText(MainActivity.this, "Saved. Bridge picks it up within seconds.", Toast.LENGTH_SHORT).show();
             }
         });

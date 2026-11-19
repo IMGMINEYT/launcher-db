@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import java.net.HttpURLConnection;
 
 @RunWith(RobolectricTestRunner.class) @Config(sdk=34)
 public class YtTest {
@@ -44,11 +45,48 @@ public class YtTest {
         assertEquals("hello :) \"gg\"", r.msgs.get(0).text);
     }
 
+    @Test public void quotaReasonStopsPolling() {
+        Yt.PollResult r = Yt.parsePoll("{\"error\":{\"message\":\"quota\",\"errors\":[{\"reason\":\"quotaExceeded\"}]}}");
+        assertTrue(r.quota);
+        Yt.PollResult ok = Yt.parsePoll("{\"error\":{\"message\":\"x\",\"errors\":[{\"reason\":\"keyInvalid\"}]}}");
+        assertFalse(ok.quota);
+        assertEquals("x", ok.error);
+    }
+
+    @Test public void retryAfterHeaderSurfaced() throws Exception {
+        Net.connections = u -> new HttpURLConnection(u) {
+            public void connect() {} public void disconnect() {} public boolean usingProxy() { return false; }
+            @Override public int getResponseCode() { return 429; }
+            @Override public String getHeaderField(String n) { return "Retry-After".equalsIgnoreCase(n) ? "120" : null; }
+            @Override public java.io.InputStream getErrorStream() {
+                return new java.io.ByteArrayInputStream("{\"error\":{\"message\":\"rate\",\"errors\":[{\"reason\":\"rateLimitExceeded\"}]}}".getBytes());
+            }
+        };
+        try {
+            Yt.PollResult r = Yt.poll("chat123", "k", null);
+            assertEquals(120000, r.retryAfterMs);
+            assertTrue(r.quota);
+        } finally { Net.connections = u -> (HttpURLConnection) u.openConnection(); }
+    }
+
+    @Test public void keyBoxCryptoRoundtrip() throws Exception {
+        javax.crypto.KeyGenerator g = javax.crypto.KeyGenerator.getInstance("AES");
+        g.init(256);
+        javax.crypto.SecretKey k = g.generateKey();   // software key: same crypto path, device uses Android Keystore
+        String enc = KeyBox.encrypt(k, "AIza-test-key-123");
+        assertFalse(enc.contains("AIza"));            // never stored readable
+        assertEquals("AIza-test-key-123", KeyBox.decrypt(k, enc));
+        String enc2 = KeyBox.encrypt(k, "AIza-test-key-123");
+        assertFalse(enc.equals(enc2));                // fresh IV per message
+        try { KeyBox.decrypt(k, enc.substring(0, enc.length() - 4) + "AAAA"); fail(); }
+        catch (Exception expected) {}                  // tampering rejected by GCM tag
+    }
+
     @Test public void parsePollErrorAndBigInterval() {
         Yt.PollResult err = Yt.parsePoll("{\"error\":{\"message\":\"quotaExceeded\"}}");
         assertEquals("quotaExceeded", err.error);
         Yt.PollResult slow = Yt.parsePoll("{\"pollingIntervalMillis\":999999,\"items\":[]}");
-        assertEquals(60000, slow.pollMs);                   // clamped down to 60s
+        assertEquals(999999, slow.pollMs);                  // long server intervals respected, never clamped down
         Yt.PollResult bad = Yt.parsePoll("{broken");
         assertNotNull(bad.error);
     }

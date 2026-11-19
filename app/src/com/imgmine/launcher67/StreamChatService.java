@@ -37,6 +37,7 @@ public class StreamChatService extends Service {
     private volatile OutputStream clientOut;
     private Thread acceptThread, sendThread, ytThread;
     private String ytVideo, ytChatId, ytToken;
+    static volatile boolean ytQuotaStop;   // cleared when the user saves new YouTube settings
     private WindowManager wm;
     private View panel;
     private TextView statusView, portView, ytView;
@@ -212,8 +213,19 @@ public class StreamChatService extends Service {
     private void ytCycle() {
         SharedPreferences sp = getSharedPreferences("ui", MODE_PRIVATE);
         String url = sp.getString("stream_yt_url", "");
-        String key = sp.getString("stream_yt_key", "");
-        if (url.length() == 0 || key.length() == 0) { ytState = "YT OFF"; ytChatId = null; return; }
+        String key;
+        try {
+            key = KeyBox.unprotect(this, sp.getString("stream_yt_key_enc", ""));
+            // one-time migration from the early plaintext field, then remove it
+            String legacy = sp.getString("stream_yt_key", "");
+            if (legacy.length() > 0) {
+                sp.edit().putString("stream_yt_key_enc", KeyBox.protect(this, legacy)).remove("stream_yt_key").apply();
+                key = legacy;
+            }
+        } catch (Exception e) { ytState = "YT KEY STORAGE ERROR"; return; }
+        if (url.length() == 0) { ytState = "YT OFF"; ytChatId = null; return; }
+        if (ytQuotaStop) { ytState = "YT QUOTA STOP"; return; }
+        if (key.length() == 0) { ytState = "YT NO KEY"; ytChatId = null; return; }
         String vid = Yt.videoId(url);
         if (vid == null) { ytState = "YT BAD URL"; ytChatId = null; return; }
         if (!vid.equals(ytVideo)) { ytVideo = vid; ytChatId = null; ytToken = null; }
@@ -227,7 +239,13 @@ public class StreamChatService extends Service {
             ytState = "YT LIVE";
             while (live == this && ytChatId != null) {
                 Yt.PollResult r = Yt.poll(ytChatId, key, ytToken);
-                if (r.error != null) { ytState = "YT ERROR"; ytChatId = null; sleep(30000); return; }
+                if (r.quota) { ytState = "YT QUOTA STOP"; ytQuotaStop = true; ytChatId = null; return; }
+                if (r.error != null) {
+                    ytState = "YT ERROR";
+                    ytChatId = null;
+                    sleep(r.retryAfterMs > 0 ? r.retryAfterMs : 30000);
+                    return;
+                }
                 ytToken = r.nextToken;
                 for (Yt.Msg m : r.msgs) queue.add(Ws.scriptChat(m.author, m.text));
                 droppedTotal = queue.dropped;

@@ -170,7 +170,7 @@ public class StreamWsTest {
         assertEquals("WAITING", StreamChatService.state);
     }
 
-    @After public void stopService() { ctl.destroy(); StreamChatService.port = 0; StreamChatService.state = "OFF"; }
+    @After public void stopService() { ctl.destroy(); StreamChatService.port = 0; StreamChatService.state = "OFF"; StreamChatService.ytQuotaStop = false; StreamChatService.ytState = "YT OFF"; }
 
     private Socket handshake() throws Exception {
         Socket c = new Socket("127.0.0.1", StreamChatService.port);
