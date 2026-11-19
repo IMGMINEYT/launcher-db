@@ -53,4 +53,12 @@ public class VisualTest {
   ((Runnable)tf.get(s)).run();
   render(panel,280,240,System.getProperty("launcher.renderDir", "build/test-renders")+"/v27-streampanel-native.png");
   ctl.destroy();StreamChatService.state="OFF";StreamChatService.port=0;}
+
+ @Test public void renderMainScreen()throws Exception{
+  Activity c=Robolectric.buildActivity(MainActivity.class).setup().get();
+  String assetPath=System.getProperty("launcher.assetsApk");
+  c.getAssets().getClass().getMethod("addAssetPath",String.class).invoke(c.getAssets(),assetPath);
+  Ui.init(c);
+  c.recreate();
+  render(c.findViewById(android.R.id.content),360,900,System.getProperty("launcher.renderDir", "build/test-renders")+"/v27-main-native.png");}
 }
