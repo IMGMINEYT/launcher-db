@@ -152,15 +152,46 @@ final class Ws {
     static final String SCRIPT_PIN = "scriptevent tysc:pin";
     static final String SCRIPT_UNPIN = "scriptevent tysc:unpin";
 
-    /** Strip control chars and the section sign (color-code injection) without touching normal punctuation. */
+    /** Strip control/color injection, then cap without splitting surrogate pairs or common
+     * emoji clusters (ZWJ, modifiers, variation selectors, regional flags and keycaps).
+     * The limit remains UTF-16 units for the existing payload budget. */
     static String stripCtl(String s, int max) {
-        StringBuilder o = new StringBuilder(Math.min(s.length(), max));
-        for (int i = 0; i < s.length() && o.length() < max; i++) {
-            char c = s.charAt(i);
-            if (c < 0x20 || c == 0x7F || c == '\u00A7') continue;
-            o.append(c);
+        if(s==null||max<=0)return "";
+        StringBuilder clean=new StringBuilder();
+        for(int i=0;i<s.length();){
+            int cp=s.codePointAt(i);i+=Character.charCount(cp);
+            if(cp<0x20||cp==0x7f||cp==0xa7||(cp>=0xd800&&cp<=0xdfff))continue;
+            clean.appendCodePoint(cp);
         }
-        return o.toString();
+        String text=clean.toString();int end=0;
+        while(end<text.length()){
+            int next=clusterEnd(text,end);
+            if(next>max)break;
+            end=next;
+        }
+        return text.substring(0,end);
+    }
+    private static boolean extend(int cp){
+        int t=Character.getType(cp);
+        return t==Character.NON_SPACING_MARK||t==Character.COMBINING_SPACING_MARK||t==Character.ENCLOSING_MARK
+            ||(cp>=0xfe00&&cp<=0xfe0f)||(cp>=0xe0100&&cp<=0xe01ef)
+            ||(cp>=0x1f3fb&&cp<=0x1f3ff)||(cp>=0xe0020&&cp<=0xe007f);
+    }
+    private static int clusterEnd(String s,int at){
+        int first=s.codePointAt(at),i=at+Character.charCount(first);
+        if(first>=0x1f1e6&&first<=0x1f1ff&&i<s.length()){
+            int cp=s.codePointAt(i);if(cp>=0x1f1e6&&cp<=0x1f1ff)i+=Character.charCount(cp);
+        }
+        while(i<s.length()){
+            int cp=s.codePointAt(i);
+            if(extend(cp)){i+=Character.charCount(cp);continue;}
+            if(cp==0x200d){
+                int j=i+1;if(j>=s.length())return j;
+                i=j+Character.charCount(s.codePointAt(j));continue;
+            }
+            break;
+        }
+        return i;
     }
 
     /** Bounded drop-oldest queue with batching, sized for the client's ~100-outstanding-command limit. */
