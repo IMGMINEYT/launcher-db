@@ -177,7 +177,7 @@ final class Panel {
         TextView x = Ui.button(ctx, "X", Ui.RED, 0xFFFFFFFF);
         x.setPadding(0, Ui.dp(2), 0, Ui.dp(4));
         x.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { hide(); } });
-        TextView brg = Ui.button(ctx, "\uD83D\uDCAC", Ui.GREEN, 0xFF0F1216);
+        TextView brg = Ui.button(ctx, "\uD83D\uDCAC", 0xFFAD2424, 0xFFFFFFFF);
         brg.setPadding(0,Ui.dp(2),0,Ui.dp(4));
         brg.setTypeface(android.graphics.Typeface.DEFAULT);brg.setTextSize(16);
         brg.setContentDescription("Stream chat bridge controls");

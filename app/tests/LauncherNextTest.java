@@ -47,6 +47,17 @@ public class LauncherNextTest {
         sp.edit().putString("stream_yt_key_enc","saved").commit();assertEquals("api",YtUi.source(sp));
         sp.edit().putString("stream_yt_source","local").commit();assertEquals("local",YtUi.source(sp));sp.edit().putString("stream_yt_source","api").commit();assertEquals("api",YtUi.source(sp));
     }
+    @Test public void bundledAddonIsSavedByteExactInExistingDownloadLibrary() throws Exception {
+        c.getAssets().getClass().getMethod("addAssetPath",String.class).invoke(c.getAssets(),System.getProperty("launcher.assetsApk"));
+        byte[] expected;try(java.io.InputStream in=c.getAssets().open("streamchat.mcaddon")){expected=Api.readAll(in,16<<20);}
+        Downloader.saveLocal(c,"existing.mcpack","Existing history",new byte[]{1,2,3});
+        YtUi.installAddon(c);
+        java.io.File out=new java.io.File(c.getFilesDir(),"dl/StreamChat.mcaddon");
+        assertArrayEquals(expected,java.nio.file.Files.readAllBytes(out.toPath()));assertNotNull(Downloader.task(c,"existing.mcpack"));
+        assertNotNull(Downloader.task(c,"StreamChat.mcaddon"));
+        Intent intent=org.robolectric.Shadows.shadowOf(a).getNextStartedActivity();assertNotNull(intent);
+        assertEquals("content",intent.getData().getScheme());assertEquals(Intent.ACTION_VIEW,intent.getAction());
+    }
     @Test public void bridgeContainsSourceAndBundledAddonAndScrollsInsideSameOverlay()throws Exception{
         Panel p=new Panel(c,()->{});call(p,"build",new Class[]{});call(p,"showScreen",new Class[]{int.class},2);
         View root=(View)field(p,"card");((ViewGroup)root.getParent()).removeView(root);a.setContentView(root);
