@@ -719,7 +719,7 @@ final class Panel {
         brStatus.setTextColor(st.equals("CONNECTED") ? Ui.GREEN : st.equals("WAITING") ? Ui.GOLD : Ui.RED);
         brPort.setText(Ui.fix(st.equals("OFF") ? "bridge stopped - tap START BRIDGE" : "/connect 127.0.0.1:" + StreamChatService.port));
         brYt.setText(Ui.fix(StreamChatService.ytState));
-        brYt.setTextColor(StreamChatService.ytState.equals("YT LIVE") ? Ui.GREEN : StreamChatService.ytState.startsWith("YT ERR") || StreamChatService.ytState.startsWith("YT BAD") || StreamChatService.ytState.startsWith("YT NOT") ? Ui.RED : Ui.MUTE);
+        brYt.setTextColor((StreamChatService.ytState.equals("YT LIVE") || StreamChatService.ytState.equals("YT LOCAL LIVE")) ? Ui.GREEN : StreamChatService.ytState.startsWith("YT ERR") || StreamChatService.ytState.startsWith("YT BAD") || StreamChatService.ytState.startsWith("YT NOT") ? Ui.RED : Ui.MUTE);
         String ce = StreamChatService.lastCmdError;
         brErr.setText(Ui.fix(ce.isEmpty() ? "" : "last command error: " + ce));
         brErr.setVisibility(ce.isEmpty() ? View.GONE : View.VISIBLE);

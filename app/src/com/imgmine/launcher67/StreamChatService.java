@@ -40,7 +40,18 @@ public class StreamChatService extends Service {
     private String ytVideo, ytChatId, ytToken;
     static volatile boolean ytQuotaStop;   // cleared when the user saves new YouTube settings
 
-    private static StreamChatService live;
+    private static volatile StreamChatService live;
+    private static volatile long ytRevision;
+    private long activeYtRevision = -1;
+    private String ytConfig;
+    private YtLocal localYt;
+    static YtLocal.Transport localTransport = new YtLocal.PhoneTransport();
+    static synchronized void youtubeSettingsChanged() {
+        ytQuotaStop = false;
+        ytRevision++;
+        StreamChatService s = live;
+        if (s != null && s.ytThread != null) s.ytThread.interrupt();
+    }
     /** Test hook + panel feedback: queue one chat line (already plain text; escaped on send). */
     static void post(String author, String text) {
         StreamChatService s = live;
@@ -80,6 +91,9 @@ public class StreamChatService extends Service {
         state = "OFF";
         try { if (server != null) server.close(); } catch (Exception ignored) {}
         closeClient();
+        if (ytThread != null) ytThread.interrupt();
+        if (sendThread != null) sendThread.interrupt();
+        ytState = "YT OFF";
         super.onDestroy();
     }
 
@@ -203,68 +217,117 @@ public class StreamChatService extends Service {
         }
     }
 
-    // ---------- YouTube live chat feed (official Data API; key from launcher settings) ----------
-
+    // ---------- YouTube sources. Official mode remains the existing default. ----------
     private void startYt() {
         ytThread = new Thread(new Runnable() { public void run() {
             while (live == StreamChatService.this) {
-                try { ytCycle(); } catch (Exception ignored) {}
-                try { Thread.sleep(5000); } catch (InterruptedException e) { return; }
+                long delay = 5000;
+                try { delay = ytStep(); } catch (Exception e) { ytState = "YT ERROR"; delay = 30000; }
+                if (live != StreamChatService.this) return;
+                try { Thread.sleep(Math.max(1000, delay)); }
+                catch (InterruptedException e) { if (live != StreamChatService.this) return; }
             }
         } }, "yt-poll");
         ytThread.start();
     }
 
-    private void ytCycle() {
+    // One bounded step enables settings changes/cancellation between responses.
+    // Package-private so fixtures can run the actual service state path without networking.
+    long ytStep() {
         SharedPreferences sp = getSharedPreferences("ui", MODE_PRIVATE);
-        String url = sp.getString("stream_yt_url", "");
+        String url = sp.getString("stream_yt_url", "").trim();
+        String source = sp.getString("stream_yt_source", "api");
+        long revision = ytRevision;
+        String config = source + "\n" + url + "\n" + sp.getString("stream_yt_key_enc", "");
+        if (!config.equals(ytConfig) || activeYtRevision != revision) {
+            ytConfig = config; activeYtRevision = revision;
+            ytVideo = null; ytChatId = null; ytToken = null; localYt = null;
+        }
+        if (url.isEmpty()) { ytState = "YT OFF"; return 5000; }
+        if ("local".equals(source)) return localStep(sp, url, config, revision);
+        if (ytQuotaStop) { ytState = "YT QUOTA STOP"; return 5000; }
         String key;
         try {
             key = KeyBox.unprotect(this, sp.getString("stream_yt_key_enc", ""));
-            // one-time migration from the early plaintext field, then remove it
             String legacy = sp.getString("stream_yt_key", "");
             if (legacy.length() > 0) {
                 sp.edit().putString("stream_yt_key_enc", KeyBox.protect(this, legacy)).remove("stream_yt_key").apply();
                 key = legacy;
             }
-        } catch (Exception e) { ytState = "YT KEY STORAGE ERROR"; return; }
-        if (url.length() == 0) { ytState = "YT OFF"; ytChatId = null; return; }
-        if (ytQuotaStop) { ytState = "YT QUOTA STOP"; return; }
-        if (key.length() == 0) { ytState = "YT NO KEY"; ytChatId = null; return; }
+        } catch (Exception e) { ytState = "YT KEY STORAGE ERROR"; return 5000; }
+        if (key.isEmpty()) { ytState = "YT NO KEY"; return 5000; }
         String vid = Yt.videoId(url);
-        if (vid == null) { ytState = "YT BAD URL"; ytChatId = null; return; }
+        if (vid == null) { ytState = "YT BAD URL"; return 5000; }
         if (!vid.equals(ytVideo)) { ytVideo = vid; ytChatId = null; ytToken = null; }
         try {
             if (ytChatId == null) {
                 ytState = "YT CONNECTING";
-                ytChatId = Yt.resolveChatId(vid, key);
-                ytToken = null;
-                if (ytChatId == null) { ytState = "YT NOT LIVE / KEY?"; sleep(30000); return; }
+                ytChatId = Yt.resolveChatId(vid, key); ytToken = null;
+                if (ytChatId == null) { ytState = "YT NOT LIVE / KEY?"; return 30000; }
             }
-            ytState = "YT LIVE";
-            while (live == this && ytChatId != null) {
-                Yt.PollResult r = Yt.poll(ytChatId, key, ytToken);
-                if (r.quota) { ytState = "YT QUOTA STOP"; ytQuotaStop = true; ytChatId = null; return; }
-                if (r.error != null) {
-                    ytState = "YT ERROR";
-                    ytChatId = null;
-                    sleep(r.retryAfterMs > 0 ? r.retryAfterMs : 30000);
-                    return;
-                }
-                ytToken = r.nextToken;
-                for (Yt.Msg m : r.msgs) queue.add(Ws.scriptChat(m.author, m.text));
-                droppedTotal = queue.dropped;
-                sleep(r.pollMs);
+            if (!current(config, revision)) return 1000;
+            Yt.PollResult r = Yt.poll(ytChatId, key, ytToken);
+            if (!current(config, revision)) return 1000;
+            if (r.quota) { ytState = "YT QUOTA STOP"; ytQuotaStop = true; ytChatId = null; return 5000; }
+            if (r.error != null) { ytState = "YT ERROR"; ytChatId = null; return r.retryAfterMs > 0 ? r.retryAfterMs : 30000; }
+            ytToken = r.nextToken;
+            for (Yt.Msg m : r.msgs) queue.add(Ws.scriptChat(m.author, m.text));
+            droppedTotal = queue.dropped; ytState = "YT LIVE";
+            return r.pollMs;
+        } catch (Exception e) { ytState = "YT ERROR"; ytChatId = null; return 30000; }
+    }
+
+    private boolean current(String config, long revision) {
+        SharedPreferences p = getSharedPreferences("ui", MODE_PRIVATE);
+        return live == this && ytRevision == revision && config.equals(p.getString("stream_yt_source", "api") + "\n"
+            + p.getString("stream_yt_url", "").trim() + "\n" + p.getString("stream_yt_key_enc", ""));
+    }
+
+    private long localStep(SharedPreferences sp, String url, String config, long revision) {
+        long until = sp.getLong("stream_local_retry_at", 0);
+        if (until > System.currentTimeMillis()) {
+            ytState = "YT LOCAL RATE LIMIT, WAIT"; return Math.max(5000, until - System.currentTimeMillis());
+        }
+        String halted = sp.getString("stream_local_halt", "");
+        if (!halted.isEmpty() && url.equals(sp.getString("stream_local_halt_url", ""))) {
+            ytState = localStatus(halted); return 5000;
+        }
+        try {
+            if (localYt == null) {
+                ytState = "YT LOCAL CONNECTING";
+                localYt = new YtLocal(localTransport); localYt.open(url);
             }
+            if (!current(config, revision)) return 1000;
+            YtLocal.Batch b = localYt.next();
+            if (!current(config, revision)) return 1000;
+            for (Yt.Msg m : b.messages) queue.add(Ws.scriptChat(m.author, m.text));
+            droppedTotal = queue.dropped;
+            if (b.ended) { haltLocal(sp, url, YtLocal.State.END, 0); return 5000; }
+            ytState = "YT LOCAL LIVE";
+            return b.waitMs;
         } catch (Exception e) {
-            ytState = "YT ERROR";
-            ytChatId = null;
-            sleep(30000);
+            if (!current(config, revision)) return 1000;
+            YtLocal.State reason = e instanceof YtLocal.Failure ? ((YtLocal.Failure)e).state : YtLocal.State.NETWORK_ERROR;
+            long wait = e instanceof YtLocal.Failure ? ((YtLocal.Failure)e).retryAfterMs : 0;
+            haltLocal(sp, url, reason, wait); return 5000;
         }
     }
 
-    private static void sleep(long ms) {
-        try { Thread.sleep(ms); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+    private void haltLocal(SharedPreferences sp, String url, YtLocal.State reason, long retry) {
+        sp.edit().putString("stream_local_halt", reason.name()).putString("stream_local_halt_url", url)
+            .putLong("stream_local_retry_at", retry > 0 ? System.currentTimeMillis() + retry : 0).apply();
+        localYt = null; ytState = localStatus(reason.name());
+    }
+    static String localStatus(String state) {
+        if ("LOGIN_REQUIRED".equals(state)) return "YT LOCAL LOGIN REQUIRED, STOPPED";
+        if ("CONSENT_REQUIRED".equals(state)) return "YT LOCAL CONSENT REQUIRED, STOPPED";
+        if ("RATE_LIMITED".equals(state)) return "YT LOCAL RATE LIMIT, STOPPED";
+        if ("FORBIDDEN".equals(state)) return "YT LOCAL ACCESS DENIED, STOPPED";
+        if ("END".equals(state)) return "YT LOCAL CHAT ENDED";
+        if ("NOT_LIVE".equals(state)) return "YT LOCAL NOT LIVE";
+        if ("CHAT_UNAVAILABLE".equals(state)) return "YT LOCAL CHAT UNAVAILABLE";
+        if ("NETWORK_ERROR".equals(state)) return "YT LOCAL NETWORK ERROR, STOPPED";
+        return "YT LOCAL RESPONSE ERROR, STOPPED";
     }
 
     private String mode() {

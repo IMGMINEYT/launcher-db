@@ -4,7 +4,7 @@ export JAVA_HOME=~/apk/jdk-17.0.21+9; export PATH=$JAVA_HOME/bin:$PATH
 SDK=~/apk/sdk; BT=$SDK/build-tools/34.0.0; AJ=$SDK/platforms/android-34/android.jar
 cd ~/apk; rm -rf out; mkdir -p out/gen out/cls out/dex out/res
 $BT/aapt2 compile --dir app/res -o out/res
-$BT/aapt2 link -o out/base.apk -I $AJ --manifest app/AndroidManifest.xml --min-sdk-version 21 --target-sdk-version 33 --version-code 18 --version-name 2.8-stream-ui --java out/gen out/res/*.flat -A app/assets
+$BT/aapt2 link -o out/base.apk -I $AJ --manifest app/AndroidManifest.xml --min-sdk-version 21 --target-sdk-version 33 --version-code 21 --version-name 2.11-experimental.1 --java out/gen out/res/*.flat -A app/assets
 javac -nowarn -source 8 -target 8 -cp $AJ -d out/cls $(find out/gen app/src -name '*.java')
 $BT/d8 --min-api 21 --lib $AJ --output out/dex $(find out/cls -name '*.class')
 cp out/base.apk out/un.apk; (cd out/dex && zip -q ../un.apk classes.dex)

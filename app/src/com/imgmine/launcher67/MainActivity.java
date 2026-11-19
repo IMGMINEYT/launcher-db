@@ -171,7 +171,13 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams ab = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         ab.topMargin = Ui.dp(8);
         stream.addView(addonBtn, ab);
-        final EditText ytUrl = input("YouTube live URL", prefs.getString("stream_yt_url", ""));
+        final boolean[] localChoice = {"local".equals(prefs.getString("stream_yt_source", "api"))};
+        final TextView ytSource = Ui.button(this, localChoice[0] ? "SOURCE: PHONE-LOCAL (EXPERIMENTAL)" : "SOURCE: YOUTUBE API", Ui.CARD, Ui.GREEN);
+        ytSource.setTextSize(11);
+        stream.addView(ytSource, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        final TextView sourceNote = label("Tap SOURCE to switch. Phone-local is unverified on live streams. Stops on login, consent or access limits. No unlimited guarantee.", 12, Ui.MUTE);
+        sourceNote.setTypeface(null); stream.addView(sourceNote);
+        final EditText ytUrl = input("YouTube live URL / @handle (local)", prefs.getString("stream_yt_url", ""));
         LinearLayout.LayoutParams yu = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         yu.topMargin = Ui.dp(8);
         stream.addView(ytUrl, yu);
@@ -180,13 +186,23 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams yk = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         yk.topMargin = Ui.dp(6);
         stream.addView(ytKey, yk);
+        ytKey.setVisibility(localChoice[0] ? View.GONE : View.VISIBLE);
+        ytSource.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                localChoice[0] = !localChoice[0];
+                ytSource.setText(Ui.fix(localChoice[0] ? "SOURCE: PHONE-LOCAL (EXPERIMENTAL)" : "SOURCE: YOUTUBE API"));
+                ytKey.setVisibility(localChoice[0] ? View.GONE : View.VISIBLE);
+            }
+        });
         TextView ytSave = Ui.button(this, "SAVE YOUTUBE", Ui.CARD, Ui.INK);
         ytSave.setTextSize(12);
         ytSave.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 String k = ytKey.getText().toString().trim();
                 android.content.SharedPreferences.Editor ed = prefs.edit()
-                        .putString("stream_yt_url", ytUrl.getText().toString().trim());
+                        .putString("stream_yt_url", ytUrl.getText().toString().trim())
+                        .putString("stream_yt_source", localChoice[0] ? "local" : "api")
+                        .remove("stream_local_halt").remove("stream_local_halt_url");
                 if (k.length() > 0) {
                     try {
                         ed.putString("stream_yt_key_enc", KeyBox.protect(MainActivity.this, k)).remove("stream_yt_key");
@@ -197,8 +213,8 @@ public class MainActivity extends Activity {
                     }
                 }
                 ed.apply();
-                StreamChatService.ytQuotaStop = false;
-                Toast.makeText(MainActivity.this, "Saved. Bridge picks it up within seconds.", Toast.LENGTH_SHORT).show();
+                StreamChatService.youtubeSettingsChanged();
+                Toast.makeText(MainActivity.this, "Saved. Starts/restarts selected source. Rate-limit wait is kept.", Toast.LENGTH_SHORT).show();
             }
         });
         LinearLayout.LayoutParams ys = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -233,7 +249,7 @@ public class MainActivity extends Activity {
         ltp.topMargin = Ui.dp(8);
         stream.addView(lt, ltp);
 
-        TextView bridgeNote = label("1) INSTALL STREAM CHAT ADDON above, activate BOTH packs on a cheats-ON world.\n2) Minecraft settings: WebSockets ON, encrypted websockets OFF.\n3) START BRIDGE, open the world, tap the 67 ball, then the chat icon.\n4) COPY the /connect command there, run it in Minecraft chat.\n5) For live chat: paste your YouTube live URL + API key above, SAVE. TEST works without YouTube.", 12, Ui.MUTE);
+        TextView bridgeNote = label("1) INSTALL STREAM CHAT ADDON above, activate BOTH packs on a cheats-ON world.\n2) Minecraft settings: WebSockets ON, encrypted websockets OFF.\n3) START BRIDGE, open the world, tap the 67 ball, then the chat icon.\n4) COPY the /connect command there, run it in Minecraft chat.\n5) Choose YouTube API with your key, or experimental phone-local without a key. Paste live URL, SAVE. Local also accepts @handle. TEST works without YouTube. If local stops, SAVE retries manually, never bypasses access limits.", 12, Ui.MUTE);
         bridgeNote.setTypeface(null);
         bridgeNote.setPadding(0, Ui.dp(8), 0, 0);
         stream.addView(bridgeNote);
