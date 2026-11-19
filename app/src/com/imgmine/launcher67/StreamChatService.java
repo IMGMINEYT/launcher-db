@@ -236,7 +236,7 @@ public class StreamChatService extends Service {
     long ytStep() {
         SharedPreferences sp = getSharedPreferences("ui", MODE_PRIVATE);
         String url = sp.getString("stream_yt_url", "").trim();
-        String source = sp.getString("stream_yt_source", "api");
+        String source = YtUi.source(sp);
         long revision = ytRevision;
         String config = source + "\n" + url + "\n" + sp.getString("stream_yt_key_enc", "");
         if (!config.equals(ytConfig) || activeYtRevision != revision) {
@@ -279,7 +279,7 @@ public class StreamChatService extends Service {
 
     private boolean current(String config, long revision) {
         SharedPreferences p = getSharedPreferences("ui", MODE_PRIVATE);
-        return live == this && ytRevision == revision && config.equals(p.getString("stream_yt_source", "api") + "\n"
+        return live == this && ytRevision == revision && config.equals(YtUi.source(p) + "\n"
             + p.getString("stream_yt_url", "").trim() + "\n" + p.getString("stream_yt_key_enc", ""));
     }
 

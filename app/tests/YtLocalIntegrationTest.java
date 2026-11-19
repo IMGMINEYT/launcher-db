@@ -20,7 +20,7 @@ public class YtLocalIntegrationTest {
         StreamChatService.localTransport=new YtLocal.PhoneTransport();StreamChatService.ytQuotaStop=false;StreamChatService.ytState="YT OFF";
     }
     @Test public void existingInstallDefaultsToApiAndDoesNotFetchLocal() {
-        sp.edit().putString("stream_yt_url","abcdefghijk").commit();service.ytStep();
+        sp.edit().putString("stream_yt_source","api").putString("stream_yt_url","abcdefghijk").commit();service.ytStep();
         assertEquals("YT NO KEY",StreamChatService.ytState);assertEquals(0,calls);
     }
     @Test public void localDoesNotDecryptOrReplaceOldKeyAndHaltsPersistently() throws Exception {
@@ -93,11 +93,11 @@ public class YtLocalIntegrationTest {
     private TextView find(View v,String prefix){if(v instanceof TextView&&((TextView)v).getText().toString().startsWith(prefix))return(TextView)v;
         if(v instanceof ViewGroup){ViewGroup g=(ViewGroup)v;for(int i=0;i<g.getChildCount();i++){TextView t=find(g.getChildAt(i),prefix);if(t!=null)return t;}}return null;}
     @Test public void sourceUiSavesExplicitLocalAndPreservesOldPrefsAndPixels() throws Exception {
-        sp.edit().putString("stream_yt_key_enc","untouched").putInt("stream_lifetime",7).putString("stream_mode","bubble").putBoolean("stream_expanded",true).commit();
+        sp.edit().putString("stream_yt_source","local").putString("stream_yt_key_enc","untouched").putInt("stream_lifetime",7).putString("stream_mode","bubble").putBoolean("stream_expanded",true).commit();
         Activity a=Robolectric.buildActivity(MainActivity.class).setup().get();View root=a.findViewById(android.R.id.content);
         TextView toggle=find(root,"STREAM CHAT");TextView save=find(root,"SAVE YOUTUBE");if(!save.isShown())toggle.performClick();
-        TextView source=find(root,"SOURCE: YOUTUBE API");assertNotNull(source);
-        source.performClick();assertTrue(source.getText().toString().contains("PHONE-LOCAL"));
+        TextView source=find(root,"YOUTUBE: PHONE-LOCAL");assertNotNull(source);
+        assertTrue(source.getText().toString().contains("PHONE-LOCAL"));
         save.performClick();assertEquals("local",sp.getString("stream_yt_source",""));assertEquals("untouched",sp.getString("stream_yt_key_enc",""));
         assertEquals(7,sp.getInt("stream_lifetime",0));assertEquals("bubble",sp.getString("stream_mode",""));
         String dir=System.getProperty("launcher.renderDir","/tmp/yt-local-renders");

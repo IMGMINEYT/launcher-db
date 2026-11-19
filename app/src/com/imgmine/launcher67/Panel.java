@@ -439,7 +439,6 @@ final class Panel {
 
     private void showScreen(int s) {
         screen = s;
-        if (s == 0 && Vip.feedLocked(ctx)) { showVipLock(""); return; }
         vipView.setVisibility(View.GONE);
         boolean feed = s == 0;
         searchBox.setVisibility(feed ? View.VISIBLE : View.GONE);
@@ -591,7 +590,7 @@ final class Panel {
         v.setPadding(Ui.dp(12), Ui.dp(8), Ui.dp(12), Ui.dp(12));
         sc.addView(v, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        v.addView(text("STREAM CHAT", 14, Ui.GREEN));
+        v.addView(text("STREAM CHAT", 14, Ui.RED));
         brStatus = text("OFF", 12, Ui.MUTE);
         brStatus.setTypeface(null);
         brStatus.setPadding(0, Ui.dp(6), 0, 0);
@@ -603,7 +602,7 @@ final class Panel {
         brPort = text("", 12, Ui.INK);
         brPort.setTypeface(android.graphics.Typeface.MONOSPACE);
         cmdRow.addView(brPort, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView copy = Ui.button(ctx, "COPY", Ui.GREEN, 0xFF0C1A0E);
+        TextView copy = Ui.button(ctx, "COPY", 0xFFAD2424, 0xFFFFFFFF);
         copy.setTextSize(11);
         copy.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { copyConnect(); } });
         cmdRow.addView(copy, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -621,7 +620,7 @@ final class Panel {
 
         LinearLayout r1 = new LinearLayout(ctx);
         r1.setPadding(0, Ui.dp(8), 0, 0);
-        TextView start = Ui.button(ctx, "START BRIDGE", Ui.GREEN, 0xFF0C1A0E);
+        TextView start = Ui.button(ctx, "START BRIDGE", 0xFFAD2424, 0xFFFFFFFF);
         start.setTextSize(11);
         start.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { startBridge(); } });
         r1.addView(start, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
@@ -652,7 +651,7 @@ final class Panel {
 
         LinearLayout r3 = new LinearLayout(ctx);
         r3.setPadding(0, Ui.dp(6), 0, 0);
-        TextView test = Ui.button(ctx, "TEST", Ui.GREEN, 0xFF0C1A0E);
+        TextView test = Ui.button(ctx, "TEST", 0xFFAD2424, 0xFFFFFFFF);
         test.setTextSize(11);
         test.setOnClickListener(new View.OnClickListener() { public void onClick(View v) { StreamChatService.postTest(); } });
         r3.addView(test, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
@@ -668,6 +667,11 @@ final class Panel {
         note.setTypeface(null);
         note.setPadding(0, Ui.dp(8), 0, 0);
         v.addView(note);
+        TextView ytHead=text("YOUTUBE LIVE CHAT",14,Ui.RED);
+        ytHead.setPadding(0,Ui.dp(14),0,Ui.dp(8));v.addView(ytHead);
+        v.addView(YtUi.controls(ctx));
+        LinearLayout.LayoutParams addonLp=new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT);
+        addonLp.topMargin=Ui.dp(10);v.addView(YtUi.addonButton(ctx),addonLp);
         return sc;
     }
 
@@ -719,7 +723,11 @@ final class Panel {
         brStatus.setTextColor(st.equals("CONNECTED") ? Ui.GREEN : st.equals("WAITING") ? Ui.GOLD : Ui.RED);
         brPort.setText(Ui.fix(st.equals("OFF") ? "bridge stopped - tap START BRIDGE" : "/connect 127.0.0.1:" + StreamChatService.port));
         brYt.setText(Ui.fix("YOUTUBE: " + StreamChatService.ytState.replaceFirst("^YT ", "")));
-        brYt.setTextColor((StreamChatService.ytState.equals("YT LIVE") || StreamChatService.ytState.equals("YT LOCAL LIVE")) ? Ui.GREEN : StreamChatService.ytState.startsWith("YT ERR") || StreamChatService.ytState.startsWith("YT BAD") || StreamChatService.ytState.startsWith("YT NOT") ? Ui.RED : Ui.MUTE);
+        brYt.setTextColor(0xFFFFFFFF);
+        boolean ytLive=StreamChatService.ytState.equals("YT LIVE")||StreamChatService.ytState.equals("YT LOCAL LIVE");
+        boolean ytOff=StreamChatService.ytState.equals("YT OFF");
+        brYt.setBackgroundColor(ytLive?0xFF17452A:ytOff?0xFF2C3035:0xFF6E2020);
+        brYt.setPadding(Ui.dp(6),Ui.dp(5),Ui.dp(6),Ui.dp(5));
         String ce = StreamChatService.lastCmdError;
         brErr.setText(Ui.fix(ce.isEmpty() ? "" : "last command error: " + ce));
         brErr.setVisibility(ce.isEmpty() ? View.GONE : View.VISIBLE);
@@ -792,7 +800,7 @@ final class Panel {
 
     // ---------- data ----------
     private void fetch() {
-        if (Vip.feedLocked(ctx)) { showVipLock(""); return; }
+        if (Vip.feedLocked(ctx)) { all.clear(); loading=false; refilter(false); loadMore(); return; }
         loading = true;
         if (all.isEmpty()) setState("Loading addons...");
         Api.fetch(ctx.getApplicationContext(), new Api.CB() {
@@ -806,7 +814,7 @@ final class Panel {
             }
             public void fail() {
                 loading = false;
-                if (Api.lastFailAuth) { showVipLock("Code expired or declined - enter it again."); return; }
+                if (Api.lastFailAuth) { all.clear(); refilter(false); loadMore(); return; }
                 if (Api.lastFailGateOff) { setState("VIP server is temporarily off.\nTap to retry."); return; }
                 if (all.isEmpty()) setState("Cannot load addons.\nCheck internet, tap to retry.");
                 loadMore();
@@ -949,7 +957,7 @@ final class Panel {
         boolean searching = qs.trim().length() >= 2;
         view = new ArrayList<>();
         List<Addon> typed = new ArrayList<>();
-        for (Addon a : all) if (tabHas(a)) typed.add(a);
+        if(!Vip.feedLocked(ctx)) for (Addon a : all) if (tabHas(a)) typed.add(a);
         List<Addon> db = Fuzzy.search(typed, qs);
         if (searching && typeFilter == 6){List<Addon> commands=new ArrayList<>();for(Addon a:cmdFeed)if(cmdCat.equals("daily")?a.cmd.daily:cmdCat.equals(a.cmd.cat))commands.add(a);db=Fuzzy.search(commands,qs);}
         if (searching) {
@@ -1355,6 +1363,10 @@ final class Panel {
 
     private void download(final Addon a) {
         if (a == null || prog.containsKey(a.id)) return;
+        if (!a.cf && !a.nine && !a.laby && Vip.feedLocked(ctx)) {
+            Toast.makeText(ctx,"Database locked. Enter VIP code on the main screen. Saved downloads remain in Downloads.",Toast.LENGTH_LONG).show();return;
+        }
+        if (a.cf && redDot(a)) { Toast.makeText(ctx,"Not listed for your Minecraft version. No page was opened.",Toast.LENGTH_LONG).show();return; }
         if (a.laby) { labyDownload(a); return; }
         if (a.nine && a.download.length() == 0) { nineDownload(a); return; }
         if (a.cf && a.download.length() == 0) { cfDownload(a); return; }
@@ -1401,10 +1413,9 @@ final class Panel {
                     public void run() {
                         prog.remove(a.id);
                         refreshRow(a.id);
-                        if (f == null) { openPage(a); return; }
+                        if (f == null) { Toast.makeText(ctx, "No direct download available. No page was opened.", Toast.LENGTH_LONG).show(); return; }
                         if ("no".equals(f[2])) {
-                            Toast.makeText(ctx, "No file listed for your Minecraft version. Opening the addon page so you can pick one.", Toast.LENGTH_LONG).show();
-                            openPage(a);
+                            Toast.makeText(ctx, "Not listed for your Minecraft version. Download stopped; no page was opened.", Toast.LENGTH_LONG).show();
                             return;
                         }
                         a.download = f[0];

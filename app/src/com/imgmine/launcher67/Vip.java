@@ -8,14 +8,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import org.json.JSONObject;
 
-/** VIP gate client (design: docs/vip-gate-contract.md). The gate endpoint does not
- *  exist yet - the bot/hosting changes it needs await the user's approval. While
- *  ENABLED is false no VIP code path runs and app behavior is unchanged. Flip
- *  ENABLED only after the gate is deployed and its use is approved.
- *
- *  Scope honesty: this is the code-validation control plane. It protects nothing
- *  by itself - content is only hidden once the catalog is served exclusively by
- *  the gate. The user's existing downloads and history are never gated. */
+/** VIP gate client. Without a deployed gate the app hides database discovery,
+ * including old cache, while external catalogs and local downloads stay usable.
+ * ENABLED means the real verified gate is configured, not a UI-only unlock.
+ * App-side hiding does not protect already-public assets or existing copies. */
 final class Vip {
     static boolean ENABLED = false; // non-final so tests can exercise the routing
     static String GATE = "https://UNSET.apps.bot-hosting.cloud"; // set when the gate is deployed
@@ -124,9 +120,9 @@ final class Vip {
         } catch (Exception e) { return ""; }
     }
 
-    /** DB discovery (the feed) is locked when VIP mode is on and no valid token is
-     *  stored. Local downloads and history are never locked. */
-    static boolean feedLocked(Context c) { return ENABLED && token(c).length() == 0; }
+    /** Database discovery fails closed until a deployed gate and valid token exist.
+     * External catalogs, existing local downloads and history are not locked. */
+    static boolean feedLocked(Context c) { return !ENABLED || token(c).length() == 0; }
 
     static void forget(Context c) {
         try { store(c).clear(); } catch (Exception ignored) {}

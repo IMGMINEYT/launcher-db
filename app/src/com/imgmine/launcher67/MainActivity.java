@@ -127,7 +127,7 @@ public class MainActivity extends Activity {
         col.addView(vip, wrap(4));
 
         // STREAM CHAT card: bridge + addon + YouTube + bubble time
-        TextView streamToggle = Ui.button(this, "STREAM CHAT  +", Ui.CARD, Ui.INK);
+        TextView streamToggle = Ui.button(this, "STREAM CHAT  +", 0xFFAD2424, 0xFFFFFFFF);
         streamToggle.setTextSize(14);
         col.addView(streamToggle, wrap(12));
         final LinearLayout stream = cardBox();
@@ -140,7 +140,7 @@ public class MainActivity extends Activity {
             prefs.edit().putBoolean("stream_settings_open", open).apply();
         });
         LinearLayout brRow = new LinearLayout(this);
-        TextView bridge = Ui.button(this, "START BRIDGE", Ui.GREEN, 0xFF0C1A0E);
+        TextView bridge = Ui.button(this, "START BRIDGE", Ui.RED, 0xFFFFFFFF);
         bridge.setTextSize(12);
         bridge.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -163,7 +163,7 @@ public class MainActivity extends Activity {
         bsl.leftMargin = Ui.dp(8);
         brRow.addView(bridgeStop, bsl);
         stream.addView(brRow);
-        TextView addonBtn = Ui.button(this, "INSTALL STREAM CHAT ADDON", Ui.CARD, Ui.INK);
+        TextView addonBtn = Ui.button(this, "INSTALL STREAM CHAT ADDON", 0xFFAD2424, 0xFFFFFFFF);
         addonBtn.setTextSize(12);
         addonBtn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { installStreamAddon(); }
@@ -171,56 +171,7 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams ab = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         ab.topMargin = Ui.dp(8);
         stream.addView(addonBtn, ab);
-        final boolean[] localChoice = {"local".equals(prefs.getString("stream_yt_source", "api"))};
-        final TextView ytSource = Ui.button(this, localChoice[0] ? "SOURCE: PHONE-LOCAL (EXPERIMENTAL)" : "SOURCE: YOUTUBE API", Ui.CARD, Ui.GREEN);
-        ytSource.setTextSize(11);
-        stream.addView(ytSource, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        final TextView sourceNote = label("Tap SOURCE to switch. Phone-local is unverified on live streams. Stops on login, consent or access limits. No unlimited guarantee.", 12, Ui.MUTE);
-        sourceNote.setTypeface(null); stream.addView(sourceNote);
-        final EditText ytUrl = input(localChoice[0] ? "YouTube live URL / @handle" : "YouTube live URL (API)", prefs.getString("stream_yt_url", ""));
-        LinearLayout.LayoutParams yu = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        yu.topMargin = Ui.dp(8);
-        stream.addView(ytUrl, yu);
-        final EditText ytKey = input("YouTube Data API key", "");
-        ytKey.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        LinearLayout.LayoutParams yk = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        yk.topMargin = Ui.dp(6);
-        stream.addView(ytKey, yk);
-        ytKey.setVisibility(localChoice[0] ? View.GONE : View.VISIBLE);
-        ytSource.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                localChoice[0] = !localChoice[0];
-                ytSource.setText(Ui.fix(localChoice[0] ? "SOURCE: PHONE-LOCAL (EXPERIMENTAL)" : "SOURCE: YOUTUBE API"));
-                ytKey.setVisibility(localChoice[0] ? View.GONE : View.VISIBLE);
-                ytUrl.setHint(localChoice[0] ? "YouTube live URL / @handle" : "YouTube live URL (API)");
-            }
-        });
-        TextView ytSave = Ui.button(this, "SAVE YOUTUBE", Ui.CARD, Ui.INK);
-        ytSave.setTextSize(12);
-        ytSave.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                String k = ytKey.getText().toString().trim();
-                android.content.SharedPreferences.Editor ed = prefs.edit()
-                        .putString("stream_yt_url", ytUrl.getText().toString().trim())
-                        .putString("stream_yt_source", localChoice[0] ? "local" : "api")
-                        .remove("stream_local_halt").remove("stream_local_halt_url");
-                if (k.length() > 0) {
-                    try {
-                        ed.putString("stream_yt_key_enc", KeyBox.protect(MainActivity.this, k)).remove("stream_yt_key");
-                        ytKey.setText("");
-                    } catch (Exception e) {
-                        Toast.makeText(MainActivity.this, "Secure storage unavailable, key not saved.", Toast.LENGTH_LONG).show();
-                        return;
-                    }
-                }
-                ed.apply();
-                StreamChatService.youtubeSettingsChanged();
-                Toast.makeText(MainActivity.this, "Saved. Starts/restarts selected source. Rate-limit wait is kept.", Toast.LENGTH_SHORT).show();
-            }
-        });
-        LinearLayout.LayoutParams ys = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        ys.topMargin = Ui.dp(6);
-        stream.addView(ytSave, ys);
+        stream.addView(YtUi.controls(this));
 
         // Bubble lifetime (contract tysc:lifetime, clamped 1-10s, persisted by the addon)
         LinearLayout lt = new LinearLayout(this);
@@ -250,7 +201,7 @@ public class MainActivity extends Activity {
         ltp.topMargin = Ui.dp(8);
         stream.addView(lt, ltp);
 
-        TextView bridgeNote = label("1) INSTALL STREAM CHAT ADDON above, activate BOTH packs on a cheats-ON world.\n2) Minecraft settings: WebSockets ON, encrypted websockets OFF.\n3) START BRIDGE, open the world, tap the 67 ball, then the chat icon.\n4) COPY the /connect command there, run it in Minecraft chat.\n5) Choose YouTube API with your key, or experimental phone-local without a key. Paste live URL, SAVE. Local also accepts @handle. TEST works without YouTube. If local stops, SAVE retries manually, never bypasses access limits.", 12, Ui.MUTE);
+        TextView bridgeNote = label("1) INSTALL STREAM CHAT ADDON above, activate BOTH packs on a cheats-ON world.\n2) Minecraft settings: WebSockets ON, encrypted websockets OFF.\n3) START BRIDGE, open the world, tap the 67 ball, then the chat icon.\n4) COPY the /connect command there, run it in Minecraft chat.\n5) Choose YouTube API with your key, or phone-local without a key. Paste live URL, SAVE. Local also accepts @handle. TEST works without YouTube. If local stops, SAVE retries manually, never bypasses access limits.", 12, Ui.MUTE);
         bridgeNote.setTypeface(null);
         bridgeNote.setPadding(0, Ui.dp(8), 0, 0);
         stream.addView(bridgeNote);
@@ -263,7 +214,7 @@ public class MainActivity extends Activity {
     private TextView vipStatus;
 
     private String vipStatusText() {
-        if (!Vip.ENABLED) return "VIP addon database: not active in this build.";
+        if (!Vip.ENABLED) return "Database hidden. VIP unlock service is not active yet.";
         String tok = Vip.token(this);
         if (tok.length() == 0) return "Enter your VIP code to unlock the addon database.";
         long exp = Vip.tokenExp(tok);
@@ -273,7 +224,7 @@ public class MainActivity extends Activity {
 
     private void showVipDialog() {
         if (!Vip.ENABLED) {
-            Toast.makeText(this, "VIP is not active in this build.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Database is hidden. Secure VIP unlock service is not ready yet.", Toast.LENGTH_LONG).show();
             return;
         }
         final EditText in = input("VIP code", "");
@@ -348,22 +299,7 @@ public class MainActivity extends Activity {
     }
 
     /** Copies the bundled stream-chat addon into the app download library and hands it to Minecraft. */
-    private void installStreamAddon() {
-        try {
-            java.io.File dir = new java.io.File(getFilesDir(), "dl");
-            dir.mkdirs();
-            java.io.File out = new java.io.File(dir, "StreamChat.mcaddon");
-            java.io.InputStream in = getAssets().open("streamchat.mcaddon");
-            java.io.FileOutputStream fo = new java.io.FileOutputStream(out);
-            byte[] buf = new byte[16384];
-            int n;
-            while ((n = in.read(buf)) > 0) fo.write(buf, 0, n);
-            fo.close(); in.close();
-            Downloader.install(this, "StreamChat.mcaddon");
-        } catch (Exception e) {
-            Toast.makeText(this, "Addon copy failed", Toast.LENGTH_LONG).show();
-        }
-    }
+    private void installStreamAddon() { YtUi.installAddon(this); }
 
     private void go() {
         if (!canOverlay()) {

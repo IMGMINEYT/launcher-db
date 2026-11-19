@@ -180,6 +180,12 @@ final class Mc {
         if (info == null || info.files.isEmpty()) return null;
         String[] latest = info.files.get(0);
         if (userVer != null && userVer.length() > 0) {
+            // Prefer an exact/broad matching file before the owner's 26.x forward fallback.
+            for(String[] f:info.files)for(String t:fileTokens(f[1])) {
+                String d=McVer.norm(t),u=McVer.norm(userVer);
+                if(d!=null && u!=null && (d.equals(u)||u.startsWith(d+".")))
+                    return new String[]{f[0],f[1],"yes"};
+            }
             List<String[]> tok = new ArrayList<>();
             for (String[] f : info.files) {
                 for (String t : fileTokens(f[1])) {

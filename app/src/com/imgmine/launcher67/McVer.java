@@ -52,9 +52,25 @@ final class McVer {
         return norm(previewRaw(c));
     }
 
-    /** True when a declared version fits the installed version. A broad declaration ("26.0") covers a narrower install ("26.0.1"); a narrow declaration ("26.0.1") never implies broader support. */
+    /** Selection policy: exact/broad versions, plus the owner's explicit 26.x forward rule.
+     * This is a file-selection rule, not a guarantee that a pack runs without game changes. */
     static boolean matches(String declared, String userVer) {
-        return declared.equals(userVer) || userVer.startsWith(declared + ".");
+        if(declared==null || userVer==null)return false;
+        String d=norm(declared),u=norm(userVer);
+        if(d==null||u==null)return false;
+        if(d.equals(u)||u.startsWith(d+"."))return true;
+        // Owner-requested 26.x forward-selection rule, not a tested compatibility guarantee.
+        if(d.startsWith("26.")&&u.startsWith("26.")) {
+            String[] a=d.split("\\."),b=u.split("\\.");
+            for(int i=0;i<Math.max(a.length,b.length);i++) {
+                try {
+                    int x=i<a.length?Integer.parseInt(a[i]):0,y=i<b.length?Integer.parseInt(b[i]):0;
+                    if(x!=y)return x<y;
+                } catch(NumberFormatException badVersion) { return false; }
+            }
+            return true;
+        }
+        return false;
     }
 
     static boolean matchesAny(java.util.List<String> declared, String userVer) {

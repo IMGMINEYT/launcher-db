@@ -156,9 +156,9 @@ public class VipTest {
         assertEquals("", Vip.token(c));
     }
 
-    @Test public void feedLockedOnlyWhenEnabledAndNoToken() throws Exception {
+    @Test public void feedLockedWhenGateUnavailableOrNoToken() throws Exception {
         Vip.ENABLED = false;
-        assertFalse(Vip.feedLocked(c));              // dark flag: never locks
+        assertTrue(Vip.feedLocked(c));               // missing gate must fail closed
         Vip.ENABLED = true;
         assertTrue(Vip.feedLocked(c));
         mem.set(futureToken());

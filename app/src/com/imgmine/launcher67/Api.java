@@ -155,6 +155,7 @@ final class Api {
     }
 
     static List<Addon> cached(Context c) {
+        if(Vip.feedLocked(c))return null;
         try {
             File f = new File(c.getFilesDir(), "addons.json");
             if (!f.exists()) return null;
@@ -237,7 +238,9 @@ final class Api {
                         if (tok.length() == 0) { lastFailAuth = true; b = null; }
                         else b = gateCatalog(tok);
                     } else {
-                        b = race();
+                        // Owner requested no database discovery before verified VIP.
+                        // Gate not deployed: return an empty DB, never public mirrors.
+                        res = new ArrayList<Addon>(); b = null;
                     }
                     if (b != null) {
                         res = parse(new String(b, "UTF-8"));
