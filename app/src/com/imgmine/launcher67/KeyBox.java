@@ -17,13 +17,22 @@ final class KeyBox {
 
     /** Encrypt for storage; throws when Keystore is unavailable (caller must not fall back to plaintext). */
     static String protect(Context c, String plain) throws Exception {
+        return protect(c, ALIAS, plain);
+    }
+
+    /** Same, under a caller-chosen alias (e.g. the VIP gate token uses its own key). */
+    static String protect(Context c, String alias, String plain) throws Exception {
         if (plain.length() == 0) return "";
-        return encrypt(keyStore(c).getKey(ALIAS, null), plain);
+        return encrypt(keyStore(c, alias).getKey(alias, null), plain);
     }
 
     static String unprotect(Context c, String enc) throws Exception {
+        return unprotect(c, ALIAS, enc);
+    }
+
+    static String unprotect(Context c, String alias, String enc) throws Exception {
         if (enc == null || enc.length() == 0) return "";
-        return decrypt(keyStore(c).getKey(ALIAS, null), enc);
+        return decrypt(keyStore(c, alias).getKey(alias, null), enc);
     }
 
     /** AES/GCM with a fresh random IV per message, iv prepended to ciphertext, Base64 wrapped.
@@ -46,12 +55,12 @@ final class KeyBox {
         return new String(cp.doFinal(all, 12, all.length - 12), "UTF-8");
     }
 
-    private static KeyStore keyStore(Context c) throws Exception {
+    private static KeyStore keyStore(Context c, String alias) throws Exception {
         KeyStore ks = KeyStore.getInstance("AndroidKeyStore");
         ks.load(null);
-        if (!ks.containsAlias(ALIAS)) {
+        if (!ks.containsAlias(alias)) {
             KeyGenerator g = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore");
-            g.init(new KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+            g.init(new KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
                     .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                     .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                     .build());
@@ -62,7 +71,7 @@ final class KeyBox {
 
     private static final char[] T = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
 
-    private static String b64(byte[] d) {
+    static String b64(byte[] d) {
         StringBuilder s = new StringBuilder((d.length + 2) / 3 * 4);
         for (int i = 0; i < d.length; i += 3) {
             int b0 = d[i] & 0xFF, b1 = i + 1 < d.length ? d[i + 1] & 0xFF : 0, b2 = i + 2 < d.length ? d[i + 2] & 0xFF : 0;
@@ -74,7 +83,7 @@ final class KeyBox {
         return s.toString();
     }
 
-    private static byte[] b64dec(String s) {
+    static byte[] b64dec(String s) {
         int[] rev = new int[128];
         for (int i = 0; i < T.length; i++) rev[T[i]] = i;
         java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();

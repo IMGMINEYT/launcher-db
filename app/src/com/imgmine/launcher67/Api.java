@@ -17,8 +17,34 @@ final class Api {
     private static final java.util.concurrent.ExecutorService IO = java.util.concurrent.Executors.newSingleThreadExecutor();
     static volatile long lastFetch;
     static volatile List<String[]> promos = new ArrayList<>();
+    /** True when the last catalog fetch failed because the VIP gate rejected/missing the token. */
+    static volatile boolean lastFailAuth;
+    /** True when the last catalog fetch failed because the gate itself is off (503 gate_off). */
+    static volatile boolean lastFailGateOff;
 
     interface CB { void ok(List<Addon> list); void fail(); }
+
+    /** VIP-mode catalog fetch: one HTTPS GET to the gate with the token header.
+     *  Returns the catalog body, or null on failure (401 also sets lastFailAuth). */
+    private static byte[] gateCatalog(String tok) {
+        HttpURLConnection c = null;
+        try {
+            c = Net.connections.connect(new URL(Vip.GATE + "/vip/catalog"));
+            c.setConnectTimeout(5000);
+            c.setReadTimeout(7000);
+            c.setRequestProperty("User-Agent", "67Launcher/1.5");
+            c.setRequestProperty("Accept", "application/json");
+            c.setRequestProperty("X-VIP-Token", tok);
+            int rc = c.getResponseCode();
+            if (rc == 401) { lastFailAuth = true; return null; }
+            if (rc == 503) { lastFailGateOff = true; return null; }   // fail closed: gate off serves nothing
+            if (rc != 200) return null;
+            byte[] b = readAll(c.getInputStream(), 8 << 20);
+            new JSONObject(new String(b, "UTF-8"));   // must be valid
+            return b;
+        } catch (Exception e) { return null; }
+        finally { if (c != null) c.disconnect(); }
+    }
 
     static List<Addon> parse(String json) throws Exception {
         JSONObject o = new JSONObject(json);
@@ -45,6 +71,8 @@ final class Api {
             d.name = j.optString("name");
             d.desc = j.optString("description");
             d.download = j.optString("download");
+            // VIP gate catalogs use root-relative file URLs; resolve against the gate base.
+            if (d.download.startsWith("/")) d.download = Vip.GATE + d.download;
             d.type = j.optString("type", "file");
             if (d.type.equals("map")) d.type = "world";
             d.filename = j.optString("filename");
@@ -137,8 +165,19 @@ final class Api {
         IO.execute(new Runnable() {
             public void run() {
                 List<Addon> res = null;
+                lastFailAuth = false;
+                lastFailGateOff = false;
                 try {
-                    byte[] b = race();
+                    byte[] b;
+                    if (Vip.ENABLED) {
+                        // VIP mode: the gate is the only catalog source. No silent
+                        // fallback to the public mirrors (contract: honest failure).
+                        String tok = Vip.token(app);
+                        if (tok.length() == 0) { lastFailAuth = true; b = null; }
+                        else b = gateCatalog(tok);
+                    } else {
+                        b = race();
+                    }
                     if (b != null) {
                         res = parse(new String(b, "UTF-8"));
                         FileOutputStream fo = new FileOutputStream(new File(app.getFilesDir(), "addons.json"));

@@ -73,6 +73,9 @@ final class Panel {
     private HorizontalScrollView chipsRow;
     private FrameLayout bodyBox;
     private View dlView, bridgeView;
+    private View vipView;
+    private EditText vipCode;
+    private TextView vipErr;
     private TextView dlHead;
     private DlAd dlAd;
     private final List<Downloader.Task> dlRows = new ArrayList<>();
@@ -354,12 +357,90 @@ final class Panel {
         bridgeView = buildBridgeView();
         bridgeView.setVisibility(View.GONE);
         body.addView(bridgeView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        vipView = buildVipView();
+        vipView.setVisibility(View.GONE);
+        body.addView(vipView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+
+    // ---------- VIP lock (dark while Vip.ENABLED is false; docs/vip-gate-contract.md) ----------
+
+    private View buildVipView() {
+        LinearLayout v = new LinearLayout(ctx);
+        v.setOrientation(LinearLayout.VERTICAL);
+        v.setGravity(Gravity.CENTER_HORIZONTAL);
+        v.setBackgroundColor(Ui.BG);
+        v.setPadding(Ui.dp(24), Ui.dp(28), Ui.dp(24), Ui.dp(24));
+        TextView title = text("VIP ADDONS", 16, Ui.GREEN);
+        title.setGravity(Gravity.CENTER);
+        v.addView(title, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextView body = text("The addon database is for VIP members. Enter your VIP code to browse and download.", 13, Ui.MUTE);
+        body.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        blp.topMargin = Ui.dp(10);
+        v.addView(body, blp);
+        vipCode = new EditText(ctx);
+        vipCode.setHint("VIP code");
+        vipCode.setHintTextColor(0xFF6B7480);
+        vipCode.setTextColor(Ui.INK);
+        vipCode.setTypeface(Ui.PX);
+        vipCode.setTextSize(15);
+        vipCode.setSingleLine(true);
+        vipCode.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        vipCode.setImeOptions(EditorInfo.IME_ACTION_DONE | EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+        LinearLayout.LayoutParams elp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(40));
+        elp.topMargin = Ui.dp(16);
+        v.addView(vipCode, elp);
+        TextView unlock = Ui.button(ctx, "UNLOCK", 0xFFFFFFFF, Ui.GREEN);
+        unlock.setGravity(Gravity.CENTER);
+        unlock.setOnClickListener(new View.OnClickListener() { public void onClick(View b) { unlockVip(); } });
+        LinearLayout.LayoutParams ulp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, Ui.dp(40));
+        ulp.topMargin = Ui.dp(10);
+        v.addView(unlock, ulp);
+        vipErr = text("", 12, Ui.RED);
+        vipErr.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams xlp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        xlp.topMargin = Ui.dp(10);
+        v.addView(vipErr, xlp);
+        return v;
+    }
+
+    private void showVipLock(String err) {
+        searchBox.setVisibility(View.GONE);
+        chipsRow.setVisibility(View.GONE);
+        if (seedRow != null) seedRow.setVisibility(View.GONE);
+        if (cmdRow != null) cmdRow.setVisibility(View.GONE);
+        if (allRow != null) allRow.setVisibility(View.GONE);
+        list.setVisibility(View.GONE);
+        state.setVisibility(View.GONE);
+        dlView.setVisibility(View.GONE);
+        bridgeView.setVisibility(View.GONE);
+        vipErr.setText(err);
+        vipView.setVisibility(View.VISIBLE);
+    }
+
+    private void unlockVip() {
+        String code = vipCode.getText().toString().trim();
+        if (code.length() == 0) return;
+        vipErr.setText("Checking...");
+        hideKeys();
+        Vip.check(ctx.getApplicationContext(), code, new Vip.CB() {
+            public void ok() {
+                vipCode.setText("");
+                vipView.setVisibility(View.GONE);
+                showScreen(0);
+                fetch();
+            }
+            public void badCode() { vipErr.setText("Wrong code."); }
+            public void error() { vipErr.setText("VIP server unreachable. Try again later."); }
+        });
     }
 
     // ---------- in-panel screens (feed / downloads / bridge) ----------
 
     private void showScreen(int s) {
         screen = s;
+        if (s == 0 && Vip.feedLocked(ctx)) { showVipLock(""); return; }
+        vipView.setVisibility(View.GONE);
         boolean feed = s == 0;
         searchBox.setVisibility(feed ? View.VISIBLE : View.GONE);
         chipsRow.setVisibility(feed ? View.VISIBLE : View.GONE);
@@ -711,6 +792,7 @@ final class Panel {
 
     // ---------- data ----------
     private void fetch() {
+        if (Vip.feedLocked(ctx)) { showVipLock(""); return; }
         loading = true;
         if (all.isEmpty()) setState("Loading addons...");
         Api.fetch(ctx.getApplicationContext(), new Api.CB() {
@@ -724,6 +806,8 @@ final class Panel {
             }
             public void fail() {
                 loading = false;
+                if (Api.lastFailAuth) { showVipLock("Code expired or declined - enter it again."); return; }
+                if (Api.lastFailGateOff) { setState("VIP server is temporarily off.\nTap to retry."); return; }
                 if (all.isEmpty()) setState("Cannot load addons.\nCheck internet, tap to retry.");
                 loadMore();
             }

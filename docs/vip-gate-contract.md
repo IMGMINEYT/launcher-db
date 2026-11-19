@@ -1,10 +1,11 @@
-# VIP Gate Contract (DRAFT v2 — not implemented; no bot/hosting/content changes made)
+# VIP Gate Contract (DRAFT v3 — aligned with bot rev2 implementation; nothing deployed)
 
-Status: design proposal. Owner: this doc is app-side + contract design; bot
-implementation belongs to the bot worker via main. Nothing here has been
-deployed, exposed, or migrated.
+Status: design + local code on both sides (app: dark-flagged client; bot:
+unwired module). v3 records the as-implemented protocol after the bot
+worker's rev2 hardening; v2's plain-SHA verifier, rotation-surviving tokens
+and gen-free signed URLs are superseded.
 
-Approval gates (user, timed by main):
+Approval gates (user, timed by main; NONE granted yet):
 - A: bot code change + opening the bot's one port (bot/hosting mutation)
 - B: uploading catalog files to a new private vault channel (content copy)
 - C: deleting public release assets / public catalog (destructive, separate
@@ -48,33 +49,55 @@ files.
 
 ### POST /vip/check
 Body: `{"code": "<user-entered code>"}`
-- Constant-time compare of SHA-256(code) with the stored hash.
-- Success 200: `{"token": "<base64(exp)>.<HMAC_SHA256(exp, gate_secret)>", "exp": <unix>}`, TTL 30 days.
-- Failure 401: `{"error": "bad_code"}`. Rate limit: 5 tries/min/IP, fixed 1s delay on failure.
+- Verifier: scrypt(code, random salt) stored server-side (slow KDF; a leaked
+  state file does not trivialize brute force). Owner codes pass a strength
+  check; `/vip code gen` mints a high-entropy code shown once to the owner.
+- Success 200: `{"token": "<b64url(exp.gen)>.<b64url(HMAC-SHA256(payload))>", "exp": <unix>}`, TTL 30 days.
+- Failure 401 `bad_code` (fixed 1s delay); 503 `gate_off` when the gate is off.
+- Rate limit: 5 tries/min/IP + 30/min global (spoofed-IP rotation still hits
+  the global wall). X-Forwarded-For is IGNORED by default; honored only from
+  a configured trusted-proxy set whose behavior is verified at deploy time.
 - The code is never logged, returned, or stored in plaintext.
 
 ### GET /vip/catalog
-Header: `X-VIP-Token`; 401 if invalid/expired.
-Returns the addons.json document with per-file signed URLs:
-`"download": "/vip/file/<id>?s=<hmac(id,exp)>&e=<exp>"`, signatures expire in 24h.
+Header: `X-VIP-Token`; 401 `unauthorized` if invalid/expired/rotated;
+503 `gate_off` when off (fail closed — the gate never re-exposes anything
+on its own; returning to a public catalog would need the user's explicit
+instruction, which does not exist).
+Returns the addons.json document with ROOT-RELATIVE per-file signed URLs:
+`"download": "/vip/file/<id>?s=<hmac(id,exp,gen)>&e=<exp>"` — the app
+resolves them against the gate base URL. Signatures are generation-bound
+and expire in 24h. OPEN USER DECISION: these are bearer URLs — anyone given
+the link can use it within its lifetime (24h, or until rotation).
 
 ### GET /vip/file/<id>?s=..&e=..
 - The per-file signature IS the authorization (no token header), so Android
   download managers can fetch the URL directly.
-- Streams bytes from Telegram; supports `Range` for resume.
-- Unsigned/invalid requests get 404 (no catalog or metadata leak).
+- Streams bytes from Telegram; single `Range` supported (200/206/416);
+  max 3 concurrent streams (free-plan sizing).
+- Unsigned/invalid/gate-off requests get 404 (no catalog or metadata leak).
 
 ### GET /vip/health
-`{"ok": true, "vault": <count>}` — no auth; lets the app distinguish
-"gate down" from "bad code".
+`{"ok": true, "on": <bool>, "vault": <count>}` — no auth.
+
+### Token/session semantics (rev2)
+- Rotating the code (`/vip code <new>` or `/vip code gen`) bumps the
+  generation: every previously issued token AND signed URL dies at once.
+- `/vip revokeall` resets the gate secret AND clears the code verifier:
+  everything dies; owner must set a fresh code.
+- App-side mapping: 401 → lock screen ("code expired or declined"); 503 →
+  "VIP server is temporarily off, tap to retry"; transport failure → honest
+  error. The app NEVER falls back to the public mirrors in VIP mode.
 
 ## Owner commands (ADDON MANIA bot, owner-only via existing owner_gate)
 
 | command | effect |
 | --- | --- |
-| `/vip code <newcode>` | stores SHA-256 hash; instantly active for new checks (already-issued tokens stay valid until their exp) |
-| `/vip off` | kill switch: catalog open again |
-| `/vip status` | gate on/off, code set-at time, vault file count |
+| `/vip code <newcode>` | strength-checked; stores scrypt verifier; instantly active; bumps generation (all earlier tokens and signed URLs die) |
+| `/vip code gen` | generates a high-entropy code, shown once in the owner's own chat; same generation bump |
+| `/vip off` | fail closed: checks/catalog 503, files 404, nothing served until a new code |
+| `/vip status` | gate on/off, code set-at time, generation, vault file count |
+| `/vip revokeall` | resets the gate secret + clears verifier: all tokens and signed URLs die; new code required |
 
 ## App side (owned by launcher executor; local work, no new permissions)
 
