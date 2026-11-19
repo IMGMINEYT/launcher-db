@@ -70,24 +70,22 @@ resolves them against the gate base URL. Signatures are generation-bound
 and expire in 24h. OPEN USER DECISION: these are bearer URLs — anyone given
 the link can use it within its lifetime (24h, or until rotation).
 
-### GET /vip/file/<id>?s=..&e=..
-- The per-file signature IS the authorization (no token header), so Android
-  download managers can fetch the URL directly.
+### GET /vip/file/<id>?s=..&e=.. (rev3: token REQUIRED)
+- A valid `X-VIP-Token` is required in addition to the signature (bot rev3,
+  implemented): gate off -> 404, missing/bad token -> 401, bad signature -> 404.
+  A shared bearer URL alone is useless. The app's downloader always sends the
+  header on gate-origin requests.
+- Signed URLs live 10 minutes (bot rev3, FILE_URL_TTL_SECONDS=600). There is no
+  separate refresh endpoint: the app re-fetches /vip/catalog (token-auth) and
+  takes the fresh signature. App-side: a 404 on a gate URL triggers exactly one
+  catalog refresh and retry (Api.refreshGateUrl + Downloader.openFresh), never
+  an off-origin URL, verified end-to-end with a real Range resume across expiry.
 - Streams bytes from Telegram; single `Range` supported (200/206/416);
   max 3 concurrent streams (free-plan sizing).
-- Unsigned/invalid/gate-off requests get 404 (no catalog or metadata leak).
-- APP-SIDE HARDENING (implemented, dark): the app's downloader sends
-  `X-VIP-Token` on every gate-origin request and refuses redirects that
-  leave the gate origin. RECOMMENDED bot change (bot worker, via main):
-  REQUIRE a valid `X-VIP-Token` on /vip/file too, and drop the signed-URL
-  TTL from 24h to ~10 min (resume window only). That removes the
-  bearer-URL shareability weakness by design instead of asking the user
-  to accept it; the app's own downloader always carries the header, so no
-  capability is lost.
-- Origin rule (implemented, dark): in VIP mode the app accepts download
-  URLs only on the gate's exact origin (scheme+host+port); cleartext is
-  accepted only against a loopback test gate (127.0.0.1/localhost), never
-  in production.
+- Origin rule (implemented, dark): in VIP mode the app accepts download URLs
+  only on the gate's exact origin (scheme+host+port); cleartext is accepted
+  only against a loopback test gate (127.0.0.1/localhost), never in production,
+  and redirects leaving the gate origin are refused.
 
 ### GET /vip/health
 `{"ok": true, "on": <bool>, "vault": <count>}` — no auth.
@@ -148,13 +146,21 @@ Unverified residuals:
   blocks ALL gated DB access.
 
 Verification DONE since v2:
-- Cross-language end-to-end: the real Python rev2 gate (aiohttp, loopback,
-  fake vault) against the real Java client: health, wrong-code 401, token
-  mint/parse both directions, catalog with relative-URL resolution, full +
-  Range download (byte-accurate), forged-signature 404, no-auth 401. Plus a
-  Java mock-gate suite covering rotation/revokeall/gate-off kill semantics.
-  74 offline tests green (2 live Laby tests skip loudly under a runner-side
-  429 rate limit; laby.net itself is up).
+- Cross-language end-to-end vs the bot worker's REAL rev3 Python gate
+  (aiohttp, loopback, fake vault, real scrypt/HMAC paths), real Java client,
+  zero protocol mocking, two tests: (1) health, wrong-code 401, real token
+  parses+stores, catalog with relative-URL resolution, 10min TTL asserted on
+  catalog URLs, file-without-token 401, full + Range download byte-accurate
+  with the token header, forged-signature 404, no-auth catalog 401; (2) the
+  app's REAL Downloader resuming an expired-URL partial download: Range-seeded
+  partial -> stale URL confirmed 404 -> automatic catalog refresh -> 206 resume
+  -> byte-accurate completion. Plus a Java mock-gate suite covering
+  rotation/revokeall/gate-off kill semantics. 78 offline tests green.
+- laby.net skins: fixture-verified only. The test runner is 429-banned
+  (multi-hour Retry-After, observed 2026-11-19); the suite makes zero live
+  laby.net requests (JVM-wide fixture). Live availability unknown; nothing
+  claimed about normal users. Production handling: per-origin 429 cooldown
+  honoring Retry-After with stale-cache fallback.
 
 ## Honest scope statement
 
