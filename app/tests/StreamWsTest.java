@@ -131,9 +131,16 @@ public class StreamWsTest {
         java.io.File f = new java.io.File(System.getProperty("launcher.root"), "app/assets/streamchat.mcaddon");
         assertTrue("bundled addon exists", f.isFile());
         java.util.zip.ZipFile z = new java.util.zip.ZipFile(f);
-        assertNotNull("behavior pack manifest", z.getEntry("StreamChatBP/manifest.json"));
-        assertNotNull("resource pack manifest", z.getEntry("StreamChatRP/manifest.json"));
-        assertNotNull("script entry", z.getEntry("StreamChatBP/scripts/main.js"));
+        assertNotNull("behavior pack archive", z.getEntry("StreamChatBP.mcpack"));
+        assertNotNull("resource pack archive", z.getEntry("StreamChatRP.mcpack"));
+        boolean script=false,manifest=false;
+        try(java.util.zip.ZipInputStream nested=new java.util.zip.ZipInputStream(z.getInputStream(z.getEntry("StreamChatBP.mcpack")))) {
+            java.util.zip.ZipEntry e;while((e=nested.getNextEntry())!=null){
+                if(e.getName().equals("manifest.json"))manifest=true;
+                if(e.getName().equals("scripts/main.js"))script=true;
+            }
+        }
+        assertTrue("behavior pack manifest",manifest);assertTrue("script entry",script);
         z.close();
         assertTrue(Downloader.isPack("StreamChat.mcaddon"));
         java.lang.reflect.Method lp = Downloader.class.getDeclaredMethod("looksPaid", java.io.File.class);
