@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-17T11:27:17Z",
+ "updated": "2026-11-20T14:44:25Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -959,6 +959,19 @@
    "filename": "Secret Doors Add-On by FREE MC MARKET PLACE.mcaddon",
    "sha256": "5b2aa6377a76f5b00662040dc2f37152e183cc5ab305fc617ec3b6f1feef645a",
    "added": "2026-11-17T11:27:17Z"
+  },
+  {
+   "id": "mob-farm-in-a-block-add-on",
+   "name": "Mob Farm in a Block Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/mob-farm-in-a-block-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/mob-farm-in-a-block-add-on/Mob.Farm.in.a.Block.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 952436,
+   "type": "addon",
+   "filename": "Mob Farm in a Block Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "d6b1777412da7ef0803b2e92f348c2c5fd0ced3a6b1391e9c6871d571c1f2f8e",
+   "added": "2026-11-20T14:44:24Z",
+   "icon": true
   }
  ],
  "promos": [
