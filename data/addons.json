@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-20T14:46:47Z",
+ "updated": "2026-11-20T14:47:00Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -985,6 +985,18 @@
    "sha256": "5255454c60b513f373418345e7b8eadaf926a34795b726bbf0f3aa12187bd81f",
    "added": "2026-11-20T14:46:46Z",
    "icon": true
+  },
+  {
+   "id": "aphmaus-elementals",
+   "name": "Aphmaus Elementals",
+   "description": "",
+   "banner": null,
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/aphmaus-elementals/Aphmaus.Elementals.BY.MARKETPLACE.TRADER.mcpack",
+   "size": 125650,
+   "type": "pack",
+   "filename": "Aphmaus Elementals BY MARKETPLACE TRADER.mcpack",
+   "sha256": "811ae793b74ab57e9cf22874f691eb7ada328df7c810cafdd0d913877cdd740c",
+   "added": "2026-11-20T14:46:59Z"
   }
  ],
  "promos": [
