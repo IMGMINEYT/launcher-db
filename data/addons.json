@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-20T14:44:25Z",
+ "updated": "2026-11-20T14:46:47Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -971,6 +971,19 @@
    "filename": "Mob Farm in a Block Add-On BY MARKETPLACE TRADER.mcaddon",
    "sha256": "d6b1777412da7ef0803b2e92f348c2c5fd0ced3a6b1391e9c6871d571c1f2f8e",
    "added": "2026-11-20T14:44:24Z",
+   "icon": true
+  },
+  {
+   "id": "rally",
+   "name": "Rally",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/rally.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/rally/Rally.BY.MARKETPLACE.TRADER.mcworld",
+   "size": 96771036,
+   "type": "world",
+   "filename": "Rally BY MARKETPLACE TRADER.mcworld",
+   "sha256": "5255454c60b513f373418345e7b8eadaf926a34795b726bbf0f3aa12187bd81f",
+   "added": "2026-11-20T14:46:46Z",
    "icon": true
   }
  ],
