@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "updated": "2026-11-20T14:47:00Z",
+ "updated": "2026-11-20T14:47:26Z",
  "addons": [
   {
    "id": "block-furniture-add-on",
@@ -997,6 +997,19 @@
    "filename": "Aphmaus Elementals BY MARKETPLACE TRADER.mcpack",
    "sha256": "811ae793b74ab57e9cf22874f691eb7ada328df7c810cafdd0d913877cdd740c",
    "added": "2026-11-20T14:46:59Z"
+  },
+  {
+   "id": "modern-furniture-add-on",
+   "name": "Modern Furniture Add-On",
+   "description": "",
+   "banner": "https://raw.githubusercontent.com/IMGMINEYT/launcher-db/main/banners/modern-furniture-add-on.png",
+   "download": "https://github.com/IMGMINEYT/launcher-db/releases/download/modern-furniture-add-on/Modern.Furniture.Add-On.BY.MARKETPLACE.TRADER.mcaddon",
+   "size": 5416403,
+   "type": "addon",
+   "filename": "Modern Furniture Add-On BY MARKETPLACE TRADER.mcaddon",
+   "sha256": "1d2398cd96905649918b3cfe9c1458ecde72970014980f1d7759b4edbd398384",
+   "added": "2026-11-20T14:47:25Z",
+   "icon": true
   }
  ],
  "promos": [
